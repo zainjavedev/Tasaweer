@@ -1,0 +1,34 @@
+import React from 'react';
+
+export type Page = 'home' | 'restoration' | 'replace' | 'text2image' | 'myimages' | 'camera';
+
+export interface PromptTemplate {
+  label: string;
+  prompt: string;
+}
+
+// Legacy types removed for simplified app pages
+
+export interface EditedImageResult {
+  imageUrl: string;
+  text: string;
+}
+
+export interface SelectionBox {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+export type GeneratedKind = 'restoration' | 'replace' | 'text2image' | 'camera';
+
+export interface UserImage {
+  id: string;
+  createdAt: number;
+  kind: GeneratedKind;
+  prompt?: string;
+  original?: string; // data URL
+  generated: string; // data URL
+  meta?: Record<string, unknown>;
+}

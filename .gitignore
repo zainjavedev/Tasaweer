@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Builds / outputs
+dist/
+.next/
+out/
+coverage/
+
+# Env and local
+.env*
+.DS_Store
+*.log
+
+# Tooling caches
+.turbo/
+.pnpm-store/
+.parcel-cache/
+.eslintcache
+
+# Editor
+.idea/
+.vscode/
+
