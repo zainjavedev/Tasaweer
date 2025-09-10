@@ -10,11 +10,12 @@ export const editImageWithNanoBanana = async (
   prompt: string,
   additionalImages?: { data: string; mimeType: string }[]
 ): Promise<EditedImageResult> => {
-  if (!process.env.API_KEY) {
-    throw new Error("API_KEY environment variable is not set.");
+  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("API key not set. Define NEXT_PUBLIC_GEMINI_API_KEY (or API_KEY).");
   }
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey });
 
   try {
     const parts: any[] = [
@@ -71,11 +72,12 @@ export const editImageWithNanoBanana = async (
 export const generateImageFromText = async (
   prompt: string
 ): Promise<EditedImageResult> => {
-  if (!process.env.API_KEY) {
-    throw new Error("API_KEY environment variable is not set.");
+  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("API key not set. Define NEXT_PUBLIC_GEMINI_API_KEY (or API_KEY).");
   }
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey });
 
   try {
     const response: GenerateContentResponse = await ai.models.generateContent({
