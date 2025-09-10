@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Script from 'next/script';
+import type { ReactNode } from 'react';
 import './globals.css';
 import { Header } from '@/components/Header';
 import { NavigationNext } from '@/components/NavigationNext';
@@ -9,13 +9,13 @@ export const metadata: Metadata = {
   description: 'AI visual editor for real estate, products, and more',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
         <link rel="icon" href="/vite.svg" />
         {/* Tailwind via CDN for parity with Vite setup */}
-        <Script src="https://cdn.tailwindcss.com" strategy="beforeInteractive" />
+        <script src="https://cdn.tailwindcss.com"></script>
         <style>{`
           body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
         `}</style>
@@ -31,4 +31,3 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
-
