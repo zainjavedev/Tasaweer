@@ -125,9 +125,6 @@ const ObjectReplacementPage: React.FC = () => {
       {editedResult && (
         <div className="space-y-4">
           <ImageDisplay original={originalPreview!} edited={editedResult} />
-          <div className="flex justify-center">
-            <button onClick={downloadEdited} className="px-5 py-2 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700">Download result</button>
-          </div>
         </div>
       )}
     </div>

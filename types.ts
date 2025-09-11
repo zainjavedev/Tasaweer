@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type Page = 'home' | 'restoration' | 'replace' | 'text2image' | 'myimages' | 'camera';
+export type Page = 'home' | 'text2image' | 'try-apparel' | 'photo-editor';
 
 export interface PromptTemplate {
   label: string;
@@ -21,7 +21,7 @@ export interface SelectionBox {
     height: number;
 }
 
-export type GeneratedKind = 'restoration' | 'replace' | 'text2image' | 'camera';
+export type GeneratedKind = 'restoration' | 'replace' | 'text2image' | 'camera' | 'edit';
 
 export interface UserImage {
   id: string;

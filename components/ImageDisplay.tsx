@@ -17,11 +17,24 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({ original, edited }) 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <h3 className="text-lg font-semibold mb-2 text-center text-gray-700 dark:text-gray-300">Original</h3>
-          <img src={original} alt="Original" className="rounded-lg shadow-lg w-full h-auto object-contain" />
+          <img loading="lazy" src={original} alt="Original" className="rounded-lg shadow-lg w-full h-auto object-contain" />
         </div>
         <div>
           <h3 className="text-lg font-semibold mb-2 text-center text-gray-700 dark:text-gray-300">Generated</h3>
-          <img src={edited.imageUrl} alt="Edited" className="rounded-lg shadow-lg w-full h-auto object-contain" />
+          <div className="relative group">
+            <img loading="lazy" src={edited.imageUrl} alt="Edited" className="rounded-lg shadow-lg w-full h-auto object-contain transition-transform duration-300 group-hover:scale-[1.01]" />
+            <button
+              onClick={() => { const a = document.createElement('a'); a.href = edited.imageUrl; a.download = 'edited-image.png'; a.click(); }}
+              className="absolute top-2 right-2 p-2 rounded-full bg-white/90 dark:bg-gray-800/80 border shadow opacity-0 group-hover:opacity-100 transition-opacity"
+              aria-label="Download"
+              title="Download"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-gray-700 dark:text-gray-200">
+                <path fillRule="evenodd" d="M12 3.75a.75.75 0 01.75.75v8.19l2.47-2.47a.75.75 0 111.06 1.06l-3.75 3.75a.75.75 0 01-1.06 0L7.72 11.28a.75.75 0 111.06-1.06l2.47 2.47V4.5A.75.75 0 0112 3.75z" clipRule="evenodd" />
+                <path d="M3.75 15a.75.75 0 01.75-.75h15a.75.75 0 01.75.75v3A2.25 2.25 0 0118 20.25H6A2.25 2.25 0 013.75 18v-3z" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
       {edited.text && (

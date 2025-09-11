@@ -16,6 +16,8 @@ const TryApparelPage: React.FC = () => {
   const [camLoading, setCamLoading] = useState(false);
   const [camError, setCamError] = useState<string | null>(null);
   const [facing, setFacing] = useState<'user' | 'environment'>('user');
+  const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const [userImage, setUserImage] = useState<string | null>(null); // data URL
 
   // Apparel selection (upload + suggestions)
@@ -43,7 +45,7 @@ const TryApparelPage: React.FC = () => {
     }
   };
 
-  const startStream = useCallback(async () => {
+  const startStream = useCallback(async (opts?: { deviceId?: string }) => {
     setCamLoading(true);
     setCamError(null);
     stopStream();
@@ -54,12 +56,34 @@ const TryApparelPage: React.FC = () => {
         throw new DOMException('Camera access requires HTTPS or localhost', 'SecurityError');
       }
       if (!navigator.mediaDevices?.getUserMedia) throw new Error('Camera API not available');
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: false });
+      const constraints: MediaStreamConstraints = { video: {}, audio: false };
+      if (opts?.deviceId) {
+        (constraints.video as MediaTrackConstraints).deviceId = { exact: opts.deviceId };
+      } else {
+        (constraints.video as MediaTrackConstraints).facingMode = { ideal: facing } as any;
+      }
+      let stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
+
+      // Populate device list after permission is granted
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const vids = devices.filter((d) => d.kind === 'videoinput');
+        setVideoDevices(vids);
+        // Auto-select deviceId matching facing if present, else keep current
+        if (!opts?.deviceId && vids.length > 0) {
+          const preferBack = vids.find((d) => /back|rear/i.test(d.label));
+          const preferFront = vids.find((d) => /front|user/i.test(d.label));
+          const preferred = facing === 'environment' ? (preferBack || preferFront || vids[0]) : (preferFront || preferBack || vids[0]);
+          setSelectedDeviceId(preferred.deviceId);
+        } else if (opts?.deviceId) {
+          setSelectedDeviceId(opts.deviceId);
+        }
+      } catch {}
     } catch (e) {
       const err = e as any;
       setCamError(err?.message || 'Failed to open camera');
@@ -71,6 +95,16 @@ const TryApparelPage: React.FC = () => {
   useEffect(() => () => stopStream(), []);
 
   const flipCamera = () => setFacing((f) => (f === 'user' ? 'environment' : 'user'));
+
+  // When facing changes and no explicit deviceId chosen, try to restart with facing constraint
+  useEffect(() => {
+    if (!selectedDeviceId) {
+      // Debounce a bit to avoid double calls when mounting
+      const t = setTimeout(() => startStream().catch(() => {}), 50);
+      return () => clearTimeout(t);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [facing]);
 
   const captureUser = () => {
     const video = videoRef.current;
@@ -230,7 +264,7 @@ const TryApparelPage: React.FC = () => {
             {suggestions.map((s, idx) => (
               <div key={idx} className="border rounded-lg overflow-hidden bg-white dark:bg-gray-700">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={s.src} alt={s.label || 'Apparel'} className="w-full h-24 object-contain bg-white dark:bg-gray-800" />
+                <img loading="lazy" src={s.src} alt={s.label || 'Apparel'} className="w-full h-24 object-contain bg-white dark:bg-gray-800" />
                 <div className="p-2 flex items-center justify-between gap-2">
                   <div className="text-xs text-gray-700 dark:text-gray-200 truncate">{s.label || 'Apparel'}</div>
                   <button onClick={() => pickSuggestion(s.src)} className="text-xs px-2 py-1 rounded bg-purple-600 text-white hover:bg-purple-700">Insert</button>
@@ -262,9 +296,26 @@ const TryApparelPage: React.FC = () => {
                   )}
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  <button onClick={startStream} className="px-4 py-2 rounded-lg bg-white dark:bg-gray-700 border font-semibold hover:bg-gray-50 dark:hover:bg-gray-600 inline-flex items-center gap-2"><CameraIcon className="w-5 h-5" /> Open Camera</button>
+                  <button onClick={() => startStream()} className="px-4 py-2 rounded-lg bg-white dark:bg-gray-700 border font-semibold hover:bg-gray-50 dark:hover:bg-gray-600 inline-flex items-center gap-2"><CameraIcon className="w-5 h-5" /> Open Camera</button>
                   <button onClick={captureUser} disabled={camLoading || !!camError} className="px-4 py-2 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700 disabled:bg-purple-300 dark:disabled:bg-purple-800 inline-flex items-center gap-2"><CameraIcon className="w-5 h-5" /> Capture</button>
                   <button onClick={flipCamera} disabled={camLoading || !!camError} className="px-4 py-2 rounded-lg bg-white dark:bg-gray-700 border font-semibold hover:bg-gray-50 dark:hover:bg-gray-600 inline-flex items-center gap-2"><SwapIcon className="w-5 h-5" /> Flip</button>
+                  {videoDevices.length > 1 && (
+                    <select
+                      className="px-3 py-2 rounded-lg bg-white dark:bg-gray-700 border font-semibold hover:bg-gray-50 dark:hover:bg-gray-600 text-sm"
+                      value={selectedDeviceId || ''}
+                      onChange={(e) => {
+                        const id = e.target.value;
+                        setSelectedDeviceId(id);
+                        startStream({ deviceId: id });
+                      }}
+                    >
+                      {videoDevices.map((d, idx) => (
+                        <option key={d.deviceId || idx} value={d.deviceId}>
+                          {d.label || `Camera ${idx + 1}`}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                   <label className="px-4 py-2 rounded-lg bg-white dark:bg-gray-700 border font-semibold hover:bg-gray-50 dark:hover:bg-gray-600 inline-flex items-center gap-2 cursor-pointer">
                     Upload Photo
                     <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && onUserUpload(e.target.files[0])} />
@@ -274,7 +325,7 @@ const TryApparelPage: React.FC = () => {
             ) : (
               <div className="space-y-3">
                 <div className="w-full bg-gray-50 dark:bg-gray-900 rounded-xl overflow-hidden border">
-                  <img src={userImage} alt="Your photo" className="w-full h-auto object-contain" />
+                  <img loading="lazy" src={userImage} alt="Your photo" className="w-full h-auto object-contain" />
                 </div>
                 <div className="flex gap-3">
                   <button onClick={() => { setUserImage(null); setResults([]); }} className="px-4 py-2 rounded-lg bg-white dark:bg-gray-700 border font-semibold hover:bg-gray-50 dark:hover:bg-gray-600">Replace Photo</button>
@@ -289,7 +340,7 @@ const TryApparelPage: React.FC = () => {
             <div className="text-sm font-semibold text-gray-800 dark:text-gray-200">Apparel</div>
             <div className="w-full bg-gray-50 dark:bg-gray-900 rounded-xl overflow-hidden border min-h-[160px] flex items-center justify-center p-3">
               {apparelImage ? (
-                <img src={apparelImage} alt="Apparel" className="max-h-64 object-contain" />
+                <img loading="lazy" src={apparelImage} alt="Apparel" className="max-h-64 object-contain" />
               ) : (
                 <div className="text-gray-500 text-sm">Upload an apparel image</div>
               )}
@@ -306,8 +357,7 @@ const TryApparelPage: React.FC = () => {
 
       {/* Actions */}
       <div className="flex flex-wrap gap-3 justify-center">
-        <button onClick={tryOn} disabled={!userImage || !apparelImage || iterLoading} className="px-6 py-3 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700 disabled:bg-purple-300">{iterLoading ? 'Generating…' : 'Try On'}</button>
-        <button onClick={download} disabled={!userImage && results.length === 0} className="px-6 py-3 rounded-lg bg-white dark:bg-gray-700 border font-semibold hover:bg-gray-50 dark:hover:bg-gray-600">Download Latest</button>
+        <button onClick={tryOn} disabled={!userImage || !apparelImage || iterLoading} className="px-4 py-2 rounded-md bg-purple-600 text-white font-semibold hover:bg-purple-700 disabled:bg-purple-300 transition-colors">{iterLoading ? 'Generating…' : 'Try On'}</button>
       </div>
       {iterLoading && (
         <div className="max-w-md mx-auto"><EtaTimer seconds={18} label="Usually ~15–25s for first render" /></div>
@@ -342,14 +392,19 @@ const TryApparelPage: React.FC = () => {
               <div className="text-sm font-semibold text-gray-800 dark:text-gray-200">Results (latest first)</div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {results.map((url, idx) => (
-                  <div key={idx} className="bg-gray-50 dark:bg-gray-900 rounded-xl overflow-hidden border">
-                    <img src={url} alt={`Result ${idx + 1}`} className="w-full h-auto object-contain max-h-72" />
-                    <div className="p-2 flex gap-2 justify-center">
-                      <button onClick={() => {
-                        const a = document.createElement('a'); a.href = url; a.download = `try-apparel-${idx + 1}.png`; a.click();
-                      }} className="px-3 py-1.5 rounded bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700">Download</button>
-                      <button onClick={() => { try { addUserImage({ kind: 'replace', generated: url, original: userImage || undefined, meta: { from: 'try-apparel' } }); alert('Saved'); } catch {} }} className="px-3 py-1.5 rounded bg-white dark:bg-gray-700 border text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-600">Save</button>
-                    </div>
+                  <div key={idx} className="group relative bg-gray-50 dark:bg-gray-900 rounded-xl overflow-hidden border">
+                    <img loading="lazy" src={url} alt={`Result ${idx + 1}`} className="w-full h-auto object-contain max-h-72 transition-transform duration-300 group-hover:scale-[1.01]" />
+                    <button
+                      onClick={() => { const a = document.createElement('a'); a.href = url; a.download = `try-apparel-${idx + 1}.png`; a.click(); }}
+                      className="absolute top-2 right-2 p-2 rounded-full bg-white/90 dark:bg-gray-800/80 border shadow opacity-0 group-hover:opacity-100 transition-opacity"
+                      aria-label="Download"
+                      title="Download"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-gray-700 dark:text-gray-200">
+                        <path fillRule="evenodd" d="M12 3.75a.75.75 0 01.75.75v8.19l2.47-2.47a.75.75 0 111.06 1.06l-3.75 3.75a.75.75 0 01-1.06 0L7.72 11.28a.75.75 0 111.06-1.06l2.47 2.47V4.5A.75.75 0 0112 3.75z" clipRule="evenodd" />
+                        <path d="M3.75 15a.75.75 0 01.75-.75h15a.75.75 0 01.75.75v3A2.25 2.25 0 0118 20.25H6A2.25 2.25 0 013.75 18v-3z" />
+                      </svg>
+                    </button>
                   </div>
                 ))}
               </div>

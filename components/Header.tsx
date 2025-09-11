@@ -1,9 +1,14 @@
+"use client";
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import LogoutButton from './LogoutButton';
 import { CameraIcon, SparklesIcon, VideoCameraIcon, EnhanceIcon, CleanIcon } from './Icon';
+import Link from 'next/link';
+import { getToken } from '@/utils/authClient';
 
 export const Header: React.FC = () => {
+  const [authed, setAuthed] = useState(false);
+  useEffect(() => { setAuthed(!!getToken()); }, []);
   return (
     <header className="bg-white/90 backdrop-blur dark:bg-gray-800/90 shadow-md">
       <div className="container mx-auto px-4 py-6 flex flex-col items-center gap-3">
@@ -29,7 +34,11 @@ export const Header: React.FC = () => {
           <CleanIcon className="w-5 h-5" />
         </div>
         <div className="mt-2">
-          <LogoutButton />
+          {authed ? (
+            <LogoutButton />
+          ) : (
+            <Link href="/login" className="px-3 py-1.5 rounded bg-white/70 dark:bg-gray-700/70 border text-sm font-semibold hover:bg-white dark:hover:bg-gray-700">Login</Link>
+          )}
         </div>
       </div>
     </header>

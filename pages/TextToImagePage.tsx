@@ -8,7 +8,7 @@ import { SparklesIcon } from '../components/Icon';
 
 const TextToImagePage: React.FC = () => {
   const [prompt, setPrompt] = useState('A cozy coffee shop at sunset with warm lighting, cinematic style');
-  const [result, setResult] = useState<EditedImageResult | null>(null);
+  const [results, setResults] = useState<EditedImageResult[]>([]); // newest first
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,10 +19,10 @@ const TextToImagePage: React.FC = () => {
     }
     setIsLoading(true);
     setError(null);
-    setResult(null);
+    // do not clear previous results; we'll prepend new one
     try {
       const generated = await generateImageFromText(prompt.trim());
-      setResult(generated);
+      setResults((arr) => [generated, ...arr]);
       try {
         addUserImage({ kind: 'text2image', prompt: prompt.trim(), generated: generated.imageUrl });
       } catch {}
@@ -33,13 +33,12 @@ const TextToImagePage: React.FC = () => {
     }
   }, [prompt]);
 
-  const download = useCallback(() => {
-    if (!result) return;
+  const download = useCallback((url: string, name = 'generated-image.png') => {
     const a = document.createElement('a');
-    a.href = result.imageUrl;
-    a.download = 'generated-image.png';
+    a.href = url;
+    a.download = name;
     a.click();
-  }, [result]);
+  }, []);
 
   return (
     <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden p-8 space-y-8">
@@ -72,19 +71,30 @@ const TextToImagePage: React.FC = () => {
         </div>
       )}
 
-      {result && (
-        <div className="space-y-4">
-          <div>
-            <img src={result.imageUrl} alt="Generated" className="w-full h-auto rounded-lg border shadow" />
+      {results.length > 0 && (
+        <div className="space-y-3">
+          <div className="text-sm font-semibold text-gray-800 dark:text-gray-200">Results (latest first)</div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {results.map((res, idx) => (
+              <div key={idx} className="group relative bg-gray-50 dark:bg-gray-900 rounded-xl overflow-hidden border">
+                <img loading="lazy" src={res.imageUrl} alt={`Generated ${idx + 1}`} className="w-full h-auto object-contain max-h-80 transition-transform duration-300 group-hover:scale-[1.01]" />
+                <button
+                  onClick={() => download(res.imageUrl, `t2i-${idx + 1}.png`)}
+                  className="absolute top-2 right-2 p-2 rounded-full bg-white/90 dark:bg-gray-800/80 border shadow opacity-0 group-hover:opacity-100 transition-opacity"
+                  aria-label="Download"
+                  title="Download"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-gray-700 dark:text-gray-200">
+                    <path fillRule="evenodd" d="M12 3.75a.75.75 0 01.75.75v8.19l2.47-2.47a.75.75 0 111.06 1.06l-3.75 3.75a.75.75 0 01-1.06 0L7.72 11.28a.75.75 0 111.06-1.06l2.47 2.47V4.5A.75.75 0 0112 3.75z" clipRule="evenodd" />
+                    <path d="M3.75 15a.75.75 0 01.75-.75h15a.75.75 0 01.75.75v3A2.25 2.25 0 0118 20.25H6A2.25 2.25 0 013.75 18v-3z" />
+                  </svg>
+                </button>
+                {res.text && (
+                  <div className="p-2 text-xs text-gray-700 dark:text-gray-300">{res.text}</div>
+                )}
+              </div>
+            ))}
           </div>
-          <div className="flex justify-center">
-            <button onClick={download} className="px-5 py-2 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700">Download</button>
-          </div>
-          {result.text && (
-            <div className="p-3 rounded-md bg-gray-50 dark:bg-gray-900/40 border text-sm text-gray-700 dark:text-gray-300">
-              {result.text}
-            </div>
-          )}
         </div>
       )}
     </div>
