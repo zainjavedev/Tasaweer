@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { MagicWandIcon, SwapIcon, SparklesIcon, CameraIcon, MenuIcon, XIcon, ChevronDownIcon } from './Icon';
+import { getToken } from '@/utils/authClient';
 
 type NavItem =
   | { type: 'link'; href: string; label: string; icon?: React.FC<any> }
@@ -11,11 +12,9 @@ type NavItem =
 
 const navItems: NavItem[] = [
   { type: 'link', href: '/', label: 'Home', icon: SparklesIcon },
-  { type: 'menu', id: 't2i', label: 'Text → Image', icon: SparklesIcon, items: [{ href: '/text2image', label: 'Text to Image', icon: SparklesIcon }] },
-  { type: 'menu', id: 'i2i', label: 'Image → Image', icon: SwapIcon, items: [{ href: '/replace', label: 'Object Replacement', icon: SwapIcon }] },
-  { type: 'menu', id: 'edit', label: 'Image Editing', icon: MagicWandIcon, items: [{ href: '/restoration', label: 'Image Restoration', icon: MagicWandIcon }] },
+  { type: 'link', href: '/text2image', label: 'Text → Image', icon: SparklesIcon },
   { type: 'link', href: '/try-apparel', label: 'Try Apparel', icon: CameraIcon },
-  { type: 'link', href: '/myimages', label: 'My Images', icon: CameraIcon },
+  { type: 'link', href: '/photo-editor', label: 'Photo Editor', icon: MagicWandIcon },
 ];
 
 export const NavigationNext: React.FC = () => {
@@ -23,6 +22,9 @@ export const NavigationNext: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const navRef = useRef<HTMLDivElement | null>(null);
+  const [authed, setAuthed] = useState(false);
+
+  useEffect(() => { setAuthed(!!getToken()); }, []);
 
   // Close menus on outside click
   useEffect(() => {
@@ -113,6 +115,8 @@ export const NavigationNext: React.FC = () => {
     );
   };
 
+  const items = authed ? navItems : [{ type: 'link', href: '/', label: 'Home', icon: SparklesIcon } as const];
+
   return (
     <nav className="bg-white/90 backdrop-blur dark:bg-gray-800/90 shadow-sm sticky top-0 z-30" ref={navRef as any}>
       <div className="container mx-auto px-4">
@@ -131,13 +135,13 @@ export const NavigationNext: React.FC = () => {
             </button>
           </div>
           <div className="hidden sm:flex sm:items-center sm:gap-2">
-            {navItems.map((item, idx) => renderItem(item, `top-${idx}`))}
+            {items.map((item, idx) => renderItem(item, `top-${idx}`))}
           </div>
         </div>
         {/* Mobile drawer */}
         {mobileOpen && (
           <div className="sm:hidden pb-3 flex flex-col gap-1 border-t border-gray-200 dark:border-gray-700">
-            {navItems.map((item, idx) => renderItem(item, `mobile-${idx}`))}
+            {items.map((item, idx) => renderItem(item, `mobile-${idx}`))}
           </div>
         )}
       </div>

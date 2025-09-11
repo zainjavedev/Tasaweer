@@ -71,11 +71,12 @@ const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 text-xs font-semibold">
               <SparklesIcon className="w-4 h-4" /> AI visual editing
             </div>
-            <h2 className="mt-4 text-4xl md:text-6xl font-extrabold leading-tight">Create, restore, and replace — with Tasaweer</h2>
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">Restore old photos to life, or swap objects seamlessly with guided samples.</p>
+            <h2 className="mt-4 text-4xl md:text-6xl font-extrabold leading-tight">Create stunning visuals with AI</h2>
+            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">Generate images from text, try apparel on your photo, or quickly edit a photo — all in one place.</p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <button onClick={() => goTo('restoration')} className="px-5 py-3 rounded-lg bg-purple-600 text-white font-semibold shadow hover:bg-purple-700 inline-flex items-center gap-2"><MagicWandIcon className="w-5 h-5"/>Start Restoration</button>
-              <button onClick={() => goTo('replace')} className="px-5 py-3 rounded-lg bg-white dark:bg-gray-700 border font-semibold shadow hover:bg-gray-50 dark:hover:bg-gray-600 inline-flex items-center gap-2"><SwapIcon className="w-5 h-5"/>Try Replacement</button>
+              <button onClick={() => goTo('text2image')} className="px-4 py-2 rounded-md bg-purple-600 text-white font-semibold shadow hover:bg-purple-700 inline-flex items-center gap-2"><SparklesIcon className="w-5 h-5"/>Text → Image</button>
+              <button onClick={() => goTo('try-apparel')} className="px-4 py-2 rounded-md bg-white dark:bg-gray-700 border font-semibold shadow hover:bg-gray-50 dark:hover:bg-gray-600 inline-flex items-center gap-2"><SwapIcon className="w-5 h-5"/>Try Apparel</button>
+              <button onClick={() => goTo('photo-editor')} className="px-4 py-2 rounded-md bg-white dark:bg-gray-700 border font-semibold shadow hover:bg-gray-50 dark:hover:bg-gray-600 inline-flex items-center gap-2"><MagicWandIcon className="w-5 h-5"/>Photo Editor</button>
             </div>
           </div>
           <div className="relative" onMouseMove={onHeroMove} onMouseLeave={onHeroLeave}>
@@ -151,20 +152,20 @@ const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
           <div className="rounded-2xl border bg-white dark:bg-gray-800 overflow-hidden">
             <div className="grid md:grid-cols-2 items-start">
               <div className="p-3 bg-gray-50 dark:bg-gray-900/30 flex flex-col items-center justify-center">
-                <img src={laptopBefore.src} alt="Laptop before" className="max-w-full h-auto object-contain" />
+                <img loading="lazy" src={laptopBefore.src} alt="Laptop before" className="max-w-full h-auto object-contain" />
                 <span className="mt-2 text-xs text-gray-600 dark:text-gray-300">Original</span>
               </div>
               <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="relative rounded-lg overflow-hidden border-2 border-purple-500 bg-white dark:bg-gray-800 flex items-center justify-center">
-                  <img src={laptopAfter.src} alt="Laptop after Omnitrix" className="max-w-full h-auto object-contain" />
+                  <img loading="lazy" src={laptopAfter.src} alt="Laptop after Omnitrix" className="max-w-full h-auto object-contain" />
                   <span className="absolute left-2 top-2 text-[10px] font-semibold bg-purple-600 text-white px-1.5 py-0.5 rounded">Omnitrix</span>
                 </div>
                 <div className="relative rounded-lg overflow-hidden border-2 border-purple-500 bg-white dark:bg-gray-800 flex items-center justify-center">
-                  <img src={laptopAfterDragonBalls.src} alt="Laptop after Dragon Balls" className="max-w-full h-auto object-contain" />
+                  <img loading="lazy" src={laptopAfterDragonBalls.src} alt="Laptop after Dragon Balls" className="max-w-full h-auto object-contain" />
                   <span className="absolute left-2 top-2 text-[10px] font-semibold bg-purple-600 text-white px-1.5 py-0.5 rounded">Dragon Balls</span>
                 </div>
                 <div className="relative rounded-lg overflow-hidden border-2 border-purple-500 bg-white dark:bg-gray-800 flex items-center justify-center sm:col-span-2">
-                  <img src={laptopAfterDominoes.src} alt="Laptop after Dominoes" className="max-w-full h-auto object-contain" />
+                  <img loading="lazy" src={laptopAfterDominoes.src} alt="Laptop after Dominoes" className="max-w-full h-auto object-contain" />
                   <span className="absolute left-2 top-2 text-[10px] font-semibold bg-purple-600 text-white px-1.5 py-0.5 rounded">Dominoes</span>
                 </div>
               </div>
@@ -208,8 +209,9 @@ const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
           <SparklesIcon className="w-4 h-4" /> Start editing in seconds
         </div>
         <div className="mt-4 flex gap-3 justify-center">
-          <button onClick={() => goTo('restoration')} className="px-5 py-3 rounded-lg bg-purple-600 text-white font-semibold shadow hover:bg-purple-700 inline-flex items-center gap-2"><MagicWandIcon className="w-5 h-5"/>Restore a photo</button>
-          <button onClick={() => goTo('replace')} className="px-5 py-3 rounded-lg bg-white dark:bg-gray-700 border font-semibold shadow hover:bg-gray-50 dark:hover:bg-gray-600 inline-flex items-center gap-2"><SwapIcon className="w-5 h-5"/>Replace an object</button>
+          <button onClick={() => goTo('text2image')} className="px-4 py-2 rounded-md bg-purple-600 text-white font-semibold shadow hover:bg-purple-700 inline-flex items-center gap-2"><SparklesIcon className="w-5 h-5"/>Text → Image</button>
+          <button onClick={() => goTo('try-apparel')} className="px-4 py-2 rounded-md bg-white dark:bg-gray-700 border font-semibold shadow hover:bg-gray-50 dark:hover:bg-gray-600 inline-flex items-center gap-2"><SwapIcon className="w-5 h-5"/>Try Apparel</button>
+          <button onClick={() => goTo('photo-editor')} className="px-4 py-2 rounded-md bg-white dark:bg-gray-700 border font-semibold shadow hover:bg-gray-50 dark:hover:bg-gray-600 inline-flex items-center gap-2"><MagicWandIcon className="w-5 h-5"/>Photo Editor</button>
         </div>
       </section>
     </div>
