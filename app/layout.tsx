@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import './globals.css';
 import { Header } from '@/components/Header';
 import { NavigationNext } from '@/components/NavigationNext';
+import { Analytics } from '@vercel/analytics/next';
 
 export const metadata: Metadata = {
   title: 'Tasaweer',
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <footer className="text-center py-6 text-sm text-gray-500 dark:text-gray-400">
           <p>Powered by Gemini API. Built for Professionals.</p>
         </footer>
+        <Analytics />
       </body>
     </html>
   );
