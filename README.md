@@ -21,7 +21,7 @@ Prerequisites: Node.js
 1) Install dependencies: `npm install`
 2) Configure environment in `.env.local` (see `.env.example`):
    - `GEMINI_API_KEY` (required)
-   - `AUTH_USERNAME` / `AUTH_PASSWORD` (for simple auth)
+   - `AUTH_USERNAME` / `AUTH_PASSWORD` (optional simple auth)
    - Optional Supabase keys if you want private sync
 3) Run the app: `npm run dev`
 
@@ -70,6 +70,19 @@ Notes:
 - `npm run dev` – start the dev server
 - `npm run build` – build for production
 - `npm start` – run the production build
+
+## Testing & Checklist
+
+This project uses Node’s built‑in test runner to verify critical endpoints and image generation.
+
+- Run the checklist with fake AI responses (no external calls):
+  - `npm run checklist`
+  - Sets `GEMINI_FAKE=1` so image endpoints return a tiny data URL.
+
+- Run tests directly:
+  - `npm test`
+
+When running tests without `GEMINI_FAKE=1`, you must set `GEMINI_API_KEY`. If `AUTH_USERNAME`/`AUTH_PASSWORD` are unset, APIs allow anonymous access and the login page is bypassed automatically. The endpoint `GET /api/auth/status` reports whether auth is required.
 
 ---
 
