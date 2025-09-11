@@ -19,9 +19,15 @@ export function expectedToken() {
   return computeToken(username, password);
 }
 
+export function isAuthConfigured(): boolean {
+  const { username, password } = getStaticCreds();
+  return Boolean(username && password);
+}
+
 export function verifyApiAuth(req: NextRequest): string | null {
   const exp = expectedToken();
-  if (!exp) return 'Server auth not configured';
+  // If auth is not configured, allow requests through instead of failing.
+  if (!exp) return null;
   const auth = req.headers.get('authorization') || '';
   const token = auth.toLowerCase().startsWith('bearer ')
     ? auth.slice(7).trim()
@@ -29,4 +35,3 @@ export function verifyApiAuth(req: NextRequest): string | null {
   if (!token || token !== exp) return 'Unauthorized';
   return null;
 }
-

@@ -10,6 +10,16 @@ function client() {
 }
 
 export async function generateImage(prompt: string) {
+  if (process.env.GEMINI_FAKE === '1') {
+    // 1x1 transparent PNG
+    const tinyPngBase64 =
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg=='
+    ;
+    return {
+      imageUrl: `data:image/png;base64,${tinyPngBase64}`,
+      text: 'FAKE: image generated (test mode)'
+    };
+  }
   const ai = client();
   const response: GenerateContentResponse = await ai.models.generateContent({
     model: MODEL_NAME,
@@ -38,6 +48,16 @@ export async function editImage(
   prompt: string,
   additionalImages?: { data: string; mimeType: string }[]
 ) {
+  if (process.env.GEMINI_FAKE === '1') {
+    // Echo back a tiny PNG to simulate edited output
+    const tinyPngBase64 =
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg=='
+    ;
+    return {
+      imageUrl: `data:image/png;base64,${tinyPngBase64}`,
+      text: 'FAKE: image edited (test mode)'
+    };
+  }
   const ai = client();
   const parts: any[] = [{ inlineData: { data: base64ImageData, mimeType } }];
   if (Array.isArray(additionalImages) && additionalImages.length) {
@@ -66,4 +86,3 @@ export async function editImage(
   if (!imageUrl) throw new Error('No image returned by model');
   return { imageUrl, text };
 }
-
