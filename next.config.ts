@@ -2,7 +2,8 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  output: 'export',
+  // Use the default Node runtime to enable route handlers/server actions.
+  // For production, build with `output: 'standalone'` on platforms like Docker.
   typescript: {
     // Allow building even if type errors exist during initial migration
     ignoreBuildErrors: true,

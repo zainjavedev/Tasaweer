@@ -4,6 +4,7 @@ import React from 'react';
 import HomePage from '@/pages/HomePage';
 import { useRouter } from 'next/navigation';
 import type { Page } from '@/types';
+import AuthGate from '@/components/AuthGate';
 
 export default function Page() {
   const router = useRouter();
@@ -18,6 +19,9 @@ export default function Page() {
     };
     router.push(map[p]);
   };
-  return <HomePage goTo={goTo} />;
+  return (
+    <AuthGate>
+      <HomePage goTo={goTo} />
+    </AuthGate>
+  );
 }
-

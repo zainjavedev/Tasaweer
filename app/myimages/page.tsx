@@ -1,5 +1,12 @@
 'use client';
-import React from 'react';
-import MyImagesPage from '@/pages/MyImagesPage';
-export default function Page() { return <MyImagesPage />; }
 
+import MyImagesPage from '@/pages/MyImagesPage';
+import AuthGate from '@/components/AuthGate';
+
+export default function Page() {
+  return (
+    <AuthGate>
+      <MyImagesPage />
+    </AuthGate>
+  );
+}

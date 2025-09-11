@@ -1,5 +1,6 @@
 
 import React from 'react';
+import LogoutButton from './LogoutButton';
 import { CameraIcon, SparklesIcon, VideoCameraIcon, EnhanceIcon, CleanIcon } from './Icon';
 
 export const Header: React.FC = () => {
@@ -26,6 +27,9 @@ export const Header: React.FC = () => {
           <VideoCameraIcon className="w-5 h-5" />
           <EnhanceIcon className="w-5 h-5" />
           <CleanIcon className="w-5 h-5" />
+        </div>
+        <div className="mt-2">
+          <LogoutButton />
         </div>
       </div>
     </header>

@@ -1,5 +1,12 @@
 'use client';
-import React from 'react';
-import RestorationPage from '@/pages/RestorationPage';
-export default function Page() { return <RestorationPage />; }
 
+import RestorationPage from '@/pages/RestorationPage';
+import AuthGate from '@/components/AuthGate';
+
+export default function Page() {
+  return (
+    <AuthGate>
+      <RestorationPage />
+    </AuthGate>
+  );
+}

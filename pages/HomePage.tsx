@@ -83,19 +83,19 @@ const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
             <div className="relative rounded-2xl border glass p-4 shadow-xl will-change-transform" style={{ transform: `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)` }}>
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-2 rounded-lg bg-gray-50 dark:bg-gray-900/30 flex flex-col items-center">
-                  <img src={bookBefore} alt="before" className="w-11/12 h-auto object-contain" />
+                  <img src={bookBefore.src} alt="before" className="w-11/12 h-auto object-contain" />
                   <span className="mt-1 text-xs">Original</span>
                 </div>
                 <div className="p-2 rounded-lg bg-white dark:bg-gray-800 border-2 border-purple-500 flex flex-col items-center">
-                  <img src={bookAfterManga} alt="after" className="w-11/12 h-auto object-contain" />
+                  <img src={bookAfterManga.src} alt="after" className="w-11/12 h-auto object-contain" />
                   <span className="mt-1 text-xs">Generated</span>
                 </div>
                 <div className="p-2 rounded-lg bg-gray-50 dark:bg-gray-900/30 flex flex-col items-center">
-                  <img src={laptopBefore} alt="before" className="w-11/12 h-auto object-contain" />
+                  <img src={laptopBefore.src} alt="before" className="w-11/12 h-auto object-contain" />
                   <span className="mt-1 text-xs">Original</span>
                 </div>
                 <div className="p-2 rounded-lg bg-white dark:bg-gray-800 border-2 border-purple-500 flex flex-col items-center">
-                  <img src={laptopAfter} alt="after" className="w-11/12 h-auto object-contain" />
+                  <img src={laptopAfter.src} alt="after" className="w-11/12 h-auto object-contain" />
                   <span className="mt-1 text-xs">Generated</span>
                 </div>
               </div>
@@ -128,15 +128,15 @@ const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
           <div className="rounded-2xl border bg-white dark:bg-gray-800 overflow-hidden">
             <div className="grid md:grid-cols-2 items-start">
               <div className="p-3 bg-gray-50 dark:bg-gray-900/30 flex flex-col items-center justify-center">
-                <img src={wandBefore} alt="Wand before" className="max-w-full h-auto object-contain" />
+                <img src={wandBefore.src} alt="Wand before" className="max-w-full h-auto object-contain" />
                 <span className="mt-2 text-xs text-gray-600 dark:text-gray-300">Original</span>
               </div>
               <div className="p-3 grid grid-cols-2 gap-3">
                 {[
-                  { src: wandAfter1, label: 'Hold Wand' },
-                  { src: wandAfter2, label: 'Add Magic' },
-                  { src: wandAfter3, label: 'Add Electricity' },
-                  { src: wandAfter4, label: 'Make Simple' },
+                  { src: wandAfter1.src, label: 'Hold Wand' },
+                  { src: wandAfter2.src, label: 'Add Magic' },
+                  { src: wandAfter3.src, label: 'Add Electricity' },
+                  { src: wandAfter4.src, label: 'Make Simple' },
                 ].map((it) => (
                   <div key={it.label} className="relative rounded-lg overflow-hidden border-2 border-purple-500 bg-white dark:bg-gray-800 flex items-center justify-center">
                     <img src={it.src} alt={it.label} className="max-w-full h-auto object-contain" />
@@ -151,20 +151,20 @@ const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
           <div className="rounded-2xl border bg-white dark:bg-gray-800 overflow-hidden">
             <div className="grid md:grid-cols-2 items-start">
               <div className="p-3 bg-gray-50 dark:bg-gray-900/30 flex flex-col items-center justify-center">
-                <img src={laptopBefore} alt="Laptop before" className="max-w-full h-auto object-contain" />
+                <img src={laptopBefore.src} alt="Laptop before" className="max-w-full h-auto object-contain" />
                 <span className="mt-2 text-xs text-gray-600 dark:text-gray-300">Original</span>
               </div>
               <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="relative rounded-lg overflow-hidden border-2 border-purple-500 bg-white dark:bg-gray-800 flex items-center justify-center">
-                  <img src={laptopAfter} alt="Laptop after Omnitrix" className="max-w-full h-auto object-contain" />
+                  <img src={laptopAfter.src} alt="Laptop after Omnitrix" className="max-w-full h-auto object-contain" />
                   <span className="absolute left-2 top-2 text-[10px] font-semibold bg-purple-600 text-white px-1.5 py-0.5 rounded">Omnitrix</span>
                 </div>
                 <div className="relative rounded-lg overflow-hidden border-2 border-purple-500 bg-white dark:bg-gray-800 flex items-center justify-center">
-                  <img src={laptopAfterDragonBalls} alt="Laptop after Dragon Balls" className="max-w-full h-auto object-contain" />
+                  <img src={laptopAfterDragonBalls.src} alt="Laptop after Dragon Balls" className="max-w-full h-auto object-contain" />
                   <span className="absolute left-2 top-2 text-[10px] font-semibold bg-purple-600 text-white px-1.5 py-0.5 rounded">Dragon Balls</span>
                 </div>
                 <div className="relative rounded-lg overflow-hidden border-2 border-purple-500 bg-white dark:bg-gray-800 flex items-center justify-center sm:col-span-2">
-                  <img src={laptopAfterDominoes} alt="Laptop after Dominoes" className="max-w-full h-auto object-contain" />
+                  <img src={laptopAfterDominoes.src} alt="Laptop after Dominoes" className="max-w-full h-auto object-contain" />
                   <span className="absolute left-2 top-2 text-[10px] font-semibold bg-purple-600 text-white px-1.5 py-0.5 rounded">Dominoes</span>
                 </div>
               </div>

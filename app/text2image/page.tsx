@@ -1,5 +1,12 @@
 'use client';
-import React from 'react';
-import TextToImagePage from '@/pages/TextToImagePage';
-export default function Page() { return <TextToImagePage />; }
 
+import TextToImagePage from '@/pages/TextToImagePage';
+import AuthGate from '@/components/AuthGate';
+
+export default function Page() {
+  return (
+    <AuthGate>
+      <TextToImagePage />
+    </AuthGate>
+  );
+}
