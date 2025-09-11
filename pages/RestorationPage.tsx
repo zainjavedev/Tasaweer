@@ -7,6 +7,7 @@ import { editImageWithNanoBanana } from '../services/geminiService';
 import { EditedImageResult } from '../types';
 import { addUserImage } from '../utils/userImages';
 import { MagicWandIcon } from '../components/Icon';
+import { compressImageFile } from '@/utils/image';
 
 const DEFAULT_PROMPT = 'Restore this image: repair scratches and blemishes, reduce noise, enhance sharpness and contrast, and color-correct while keeping it natural.';
 
@@ -27,12 +28,16 @@ const RestorationPage: React.FC = () => {
     reader.readAsDataURL(file);
   }, []);
 
-  const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve((r.result as string).split(',')[1]);
-    r.onerror = reject;
-    r.readAsDataURL(file);
-  });
+  const toCompressedBase64 = async (file: File) => {
+    const { blob } = await compressImageFile(file, { maxDim: 1600, type: 'image/webp', quality: 0.85 });
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve((r.result as string).split(',')[1]);
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+    return { base64, mimeType: blob.type };
+  };
 
   const handleSubmit = useCallback(async () => {
     if (!originalImage) {
@@ -43,11 +48,11 @@ const RestorationPage: React.FC = () => {
     setError(null);
     setEditedResult(null);
     try {
-      const base64 = await toBase64(originalImage);
+      const { base64, mimeType } = await toCompressedBase64(originalImage);
       const fullPrompt = extraInstructions
         ? `${DEFAULT_PROMPT}\nAdditional instructions: ${extraInstructions}`
         : DEFAULT_PROMPT;
-      const result = await editImageWithNanoBanana(base64, originalImage.type, fullPrompt);
+      const result = await editImageWithNanoBanana(base64, mimeType, fullPrompt);
       setEditedResult(result);
       try {
         addUserImage({ kind: 'restoration', prompt: fullPrompt, original: originalPreview!, generated: result.imageUrl });

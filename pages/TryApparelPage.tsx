@@ -4,6 +4,7 @@ import { addUserImage } from '../utils/userImages';
 import { editImageWithNanoBanana } from '../services/geminiService';
 import EtaTimer from '../components/EtaTimer';
 import { authorizedFetch } from '@/utils/authClient';
+import { compressImageFile, dataURLToBase64 } from '@/utils/image';
 
 type ColorOption = string;
 
@@ -26,6 +27,8 @@ const TryApparelPage: React.FC = () => {
   const [suggestions, setSuggestions] = useState<ApparelSuggestion[]>([]);
   const [suggLoading, setSuggLoading] = useState(true);
   const [suggError, setSuggError] = useState<string | null>(null);
+  // Mobile UI: collapse suggestions to save space
+  const [mobileSuggOpen, setMobileSuggOpen] = useState(false);
 
   // Results / iteration
   const [results, setResults] = useState<string[]>([]); // newest first
@@ -112,26 +115,28 @@ const TryApparelPage: React.FC = () => {
     const w = video.videoWidth;
     const h = video.videoHeight;
     if (!w || !h) return;
+    const maxDim = 1600;
+    const scale = Math.min(1, maxDim / Math.max(w, h));
+    const outW = Math.max(1, Math.round(w * scale));
+    const outH = Math.max(1, Math.round(h * scale));
     const canvas = document.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h;
+    canvas.width = outW;
+    canvas.height = outH;
     const ctx = canvas.getContext('2d')!;
-    ctx.drawImage(video, 0, 0, w, h);
-    const url = canvas.toDataURL('image/png');
+    ctx.drawImage(video, 0, 0, outW, outH);
+    const url = canvas.toDataURL('image/webp', 0.85);
     setUserImage(url);
     stopStream();
   };
 
-  const onUserUpload = (file: File) => {
-    const r = new FileReader();
-    r.onload = () => setUserImage(r.result as string);
-    r.readAsDataURL(file);
+  const onUserUpload = async (file: File) => {
+    const { dataUrl } = await compressImageFile(file, { maxDim: 1600, type: 'image/webp', quality: 0.85 });
+    setUserImage(dataUrl);
   };
 
-  const onApparelUpload = (file: File) => {
-    const r = new FileReader();
-    r.onload = () => setApparelImage(r.result as string);
-    r.readAsDataURL(file);
+  const onApparelUpload = async (file: File) => {
+    const { dataUrl } = await compressImageFile(file, { maxDim: 1600, type: 'image/webp', quality: 0.85 });
+    setApparelImage(dataUrl);
   };
 
   const fetchUrlAsDataUrl = async (url: string): Promise<string> => {
@@ -197,16 +202,18 @@ const TryApparelPage: React.FC = () => {
     setIterError(null);
     // don't clear previous results; we'll prepend the new one
     try {
-      const base64User = (userImage.split(',')[1]) || '';
-      const base64Apparel = (apparelImage.split(',')[1]) || '';
+      const base64User = dataURLToBase64(userImage);
+      const base64Apparel = dataURLToBase64(apparelImage);
+      const userMime = (userImage.split(';')[0].split(':')[1]) || 'image/webp';
+      const apparelMime = (apparelImage.split(';')[0].split(':')[1]) || 'image/webp';
       const prompt = [
         'Place the apparel from the reference image onto the person in the base photo.',
         'Fit it realistically to the body, preserve the person’s face and hair, maintain proportions,',
         'add natural folds and shadows, and match lighting. Keep the background unchanged.',
         'Do not distort facial features. Make it look like a real try-on.'
       ].join(' ');
-      const result = await editImageWithNanoBanana(base64User, 'image/png', prompt, [
-        { data: base64Apparel, mimeType: 'image/png' }
+      const result = await editImageWithNanoBanana(base64User, userMime, prompt, [
+        { data: base64Apparel, mimeType: apparelMime }
       ]);
       setResults((arr) => [result.imageUrl, ...arr]);
       try { addUserImage({ kind: 'replace', prompt, original: userImage, generated: result.imageUrl, meta: { apparelSource: 'custom' } }); } catch {}
@@ -223,9 +230,10 @@ const TryApparelPage: React.FC = () => {
     setIterError(null);
     setColorLoading(color);
     try {
-      const base64 = (base.split(',')[1]) || '';
+      const base64 = dataURLToBase64(base);
+      const mime = (base.split(';')[0].split(':')[1]) || 'image/webp';
       const prompt = `Change the color of the apparel being worn to ${color}. Keep everything else (person, background, pose, lighting) unchanged.`;
-      const result = await editImageWithNanoBanana(base64, 'image/png', prompt);
+      const result = await editImageWithNanoBanana(base64, mime, prompt);
       setResults((arr) => [result.imageUrl, ...arr]);
       try { addUserImage({ kind: 'replace', prompt, original: userImage || undefined, generated: result.imageUrl, meta: { variant: 'color', color } }); } catch {}
     } catch (e) {
@@ -255,10 +263,24 @@ const TryApparelPage: React.FC = () => {
 
       {/* Layout: Sidebar suggestions + main content */}
       <div className="grid gap-6 md:grid-cols-[240px_1fr]">
-        {/* Sidebar suggestions */}
-        <aside className="hidden md:block">
-          <div className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Apparel Suggestions</div>
-          <div className="h-[70vh] overflow-y-auto pr-1 space-y-2">
+        {/* Sidebar suggestions (collapsible on mobile) */}
+        <aside className="block">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-sm font-semibold text-gray-800 dark:text-gray-200">Apparel Suggestions</div>
+            <button
+              type="button"
+              onClick={() => setMobileSuggOpen((v) => !v)}
+              className="md:hidden text-xs px-2 py-1 rounded border bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+              aria-expanded={mobileSuggOpen}
+              aria-controls="apparel-suggestions-list"
+            >
+              {mobileSuggOpen ? 'Hide' : 'Show'}
+            </button>
+          </div>
+          <div
+            id="apparel-suggestions-list"
+            className={`${mobileSuggOpen ? 'block' : 'hidden'} md:block h-[70vh] overflow-y-auto pr-1 space-y-2`}
+          >
             {suggLoading && <div className="text-sm text-gray-500">Loading…</div>}
             {suggError && <div className="text-xs text-gray-500">{suggError}</div>}
             {suggestions.map((s, idx) => (

@@ -7,6 +7,7 @@ import { editImageWithNanoBanana } from '../services/geminiService';
 import { EditedImageResult } from '../types';
 import { addUserImage } from '../utils/userImages';
 import { SwapIcon } from '../components/Icon';
+import { compressImageFile } from '@/utils/image';
 
 const ObjectReplacementPage: React.FC = () => {
   const [originalImage, setOriginalImage] = useState<File | null>(null);
@@ -36,12 +37,16 @@ const ObjectReplacementPage: React.FC = () => {
     r.readAsDataURL(file);
   };
 
-  const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve((r.result as string).split(',')[1]);
-    r.onerror = reject;
-    r.readAsDataURL(file);
-  });
+  const toCompressedBase64 = async (file: File) => {
+    const { blob } = await compressImageFile(file, { maxDim: 1600, type: 'image/webp', quality: 0.85 });
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve((r.result as string).split(',')[1]);
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+    return { base64, mimeType: blob.type };
+  };
 
   const handleSubmit = useCallback(async () => {
     if (!originalImage || !sourceObject || !targetObject) {
@@ -52,10 +57,14 @@ const ObjectReplacementPage: React.FC = () => {
     setError(null);
     setEditedResult(null);
     try {
-      const base64 = await toBase64(originalImage);
+      const { base64, mimeType } = await toCompressedBase64(originalImage);
       const prompt = `Replace ${sourceObject} with ${targetObject} in this photo. Preserve scene lighting, perspective, and shadows. Blend seamlessly.`;
-      const additional = sampleFile ? [{ data: await toBase64(sampleFile), mimeType: sampleFile.type }] : undefined;
-      const result = await editImageWithNanoBanana(base64, originalImage.type, prompt, additional);
+      let additional: { data: string; mimeType: string }[] | undefined;
+      if (sampleFile) {
+        const { base64: sBase64, mimeType: sMime } = await toCompressedBase64(sampleFile);
+        additional = [{ data: sBase64, mimeType: sMime }];
+      }
+      const result = await editImageWithNanoBanana(base64, mimeType, prompt, additional);
       setEditedResult(result);
       try {
         addUserImage({ kind: 'replace', prompt, original: originalPreview!, generated: result.imageUrl, meta: { sourceObject, targetObject } });

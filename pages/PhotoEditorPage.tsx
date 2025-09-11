@@ -3,6 +3,7 @@ import { ImageUploader } from '../components/ImageUploader';
 import { editImageWithNanoBanana } from '../services/geminiService';
 import EtaTimer from '../components/EtaTimer';
 import { addUserImage } from '../utils/userImages';
+import { compressImageFile } from '@/utils/image';
 
 const PhotoEditorPage: React.FC = () => {
   const [originalImage, setOriginalImage] = useState<File | null>(null);
@@ -20,12 +21,17 @@ const PhotoEditorPage: React.FC = () => {
     r.readAsDataURL(file);
   }, []);
 
-  const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve((r.result as string).split(',')[1]);
-    r.onerror = reject;
-    r.readAsDataURL(file);
-  });
+  const toCompressedBase64 = async (file: File) => {
+    // Downscale large mobile photos to reduce payload; output WebP for efficiency
+    const { blob } = await compressImageFile(file, { maxDim: 1600, type: 'image/webp', quality: 0.85 });
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve((r.result as string).split(',')[1]);
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+    return { base64, mimeType: blob.type };
+  };
 
   const handleSubmit = useCallback(async () => {
     if (!originalImage) { setError('Please upload a photo.'); return; }
@@ -33,8 +39,8 @@ const PhotoEditorPage: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const base64 = await toBase64(originalImage);
-      const result = await editImageWithNanoBanana(base64, originalImage.type, prompt.trim());
+      const { base64, mimeType } = await toCompressedBase64(originalImage);
+      const result = await editImageWithNanoBanana(base64, mimeType, prompt.trim());
       setResults((arr) => [result.imageUrl, ...arr]);
       try { addUserImage({ kind: 'edit', prompt: prompt.trim(), original: originalPreview || undefined, generated: result.imageUrl }); } catch {}
     } catch (e) {
