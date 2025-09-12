@@ -8,12 +8,12 @@ export async function POST(req: NextRequest) {
   try {
     const authErr = verifyApiAuth(req);
     if (authErr) return NextResponse.json({ error: authErr }, { status: 401 });
-    const { prompt } = await req.json();
+    const { prompt, additionalImages } = await req.json();
     if (!prompt || typeof prompt !== 'string') {
       return NextResponse.json({ error: 'Missing prompt' }, { status: 400 });
     }
 
-    const result = await generateImage(prompt);
+    const result = await generateImage(prompt, additionalImages);
     return NextResponse.json(result);
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || 'Unknown error' }, { status: 500 });

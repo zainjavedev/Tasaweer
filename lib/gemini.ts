@@ -9,7 +9,10 @@ function client() {
   return new GoogleGenAI({ apiKey });
 }
 
-export async function generateImage(prompt: string) {
+export async function generateImage(
+  prompt: string,
+  additionalImages?: { data: string; mimeType: string }[]
+) {
   if (process.env.GEMINI_FAKE === '1') {
     // 1x1 transparent PNG
     const tinyPngBase64 =
@@ -21,16 +24,23 @@ export async function generateImage(prompt: string) {
     };
   }
   const ai = client();
+  const parts: any[] = [];
+  if (Array.isArray(additionalImages) && additionalImages.length) {
+    parts.push({ text: 'Reference images to guide generation:' });
+    for (const img of additionalImages) parts.push({ inlineData: { data: img.data, mimeType: img.mimeType } });
+  }
+  parts.push({ text: prompt });
+
   const response: GenerateContentResponse = await ai.models.generateContent({
     model: MODEL_NAME,
-    contents: { parts: [{ text: prompt }] },
+    contents: { parts },
     config: { responseModalities: [Modality.IMAGE, Modality.TEXT] },
   });
 
   let imageUrl = '';
   let text = '';
-  const parts = response.candidates?.[0]?.content?.parts ?? [];
-  for (const part of parts as any[]) {
+  const rparts = response.candidates?.[0]?.content?.parts ?? [];
+  for (const part of rparts as any[]) {
     if (part.text) text += part.text;
     if (part.inlineData) {
       const data = part.inlineData.data as string;

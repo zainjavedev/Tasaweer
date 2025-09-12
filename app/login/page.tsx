@@ -36,7 +36,10 @@ export default function Page() {
   return (
     <div className="max-w-sm mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 space-y-4">
       <h2 className="text-xl font-bold text-gray-900 dark:text-white">Sign in</h2>
-      <p className="text-sm text-gray-600 dark:text-gray-400">Enter the credentials to continue.</p>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Enter the credentials to continue. This app uses users defined in the
+        <code className="px-1">AUTH_USERS</code> env var.
+      </p>
       <form onSubmit={onSubmit} className="space-y-3">
         <div>
           <label className="block text-sm mb-1">Username</label>
@@ -51,7 +54,10 @@ export default function Page() {
           {loading ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
+      <div className="text-xs text-gray-500 dark:text-gray-400">
+        Tip: when running locally, set <code className="px-1">AUTH_USERS</code> in <code className="px-1">.env.local</code>.
+        Example: <code className="px-1">[{`{"username":"admin","password":"secret"}`}]</code>
+      </div>
     </div>
   );
 }
-

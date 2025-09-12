@@ -8,6 +8,7 @@ import { EditedImageResult } from '../types';
 import { addUserImage } from '../utils/userImages';
 import { MagicWandIcon } from '../components/Icon';
 import { compressImageFile } from '@/utils/image';
+import CaptureWidget from '@/components/CaptureWidget';
 
 const DEFAULT_PROMPT = 'Restore this image: repair scratches and blemishes, reduce noise, enhance sharpness and contrast, and color-correct while keeping it natural.';
 
@@ -26,6 +27,13 @@ const RestorationPage: React.FC = () => {
     const reader = new FileReader();
     reader.onloadend = () => setOriginalPreview(reader.result as string);
     reader.readAsDataURL(file);
+  }, []);
+
+  const handleCapture = useCallback((file: File, preview: string) => {
+    setOriginalImage(file);
+    setOriginalPreview(preview);
+    setEditedResult(null);
+    setError(null);
   }, []);
 
   const toCompressedBase64 = async (file: File) => {
@@ -80,6 +88,8 @@ const RestorationPage: React.FC = () => {
       </div>
 
       <ImageUploader onImageUpload={handleImageUpload} preview={originalPreview} />
+      <div className="text-center text-xs text-gray-500 dark:text-gray-400">or</div>
+      <CaptureWidget onCapture={handleCapture} />
 
       <div className="space-y-2">
         <div className="text-sm text-gray-700 dark:text-gray-300 font-medium">Default prompt sent:</div>

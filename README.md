@@ -21,7 +21,8 @@ Prerequisites: Node.js
 1) Install dependencies: `npm install`
 2) Configure environment in `.env.local` (see `.env.example`):
    - `GEMINI_API_KEY` (required)
-   - `AUTH_USERNAME` / `AUTH_PASSWORD` (optional simple auth)
+   - `AUTH_USERS` (JSON array of users for simple auth, optional). Example:
+     `AUTH_USERS=[{"username":"admin","password":"secret"},{"username":"guest","password":"guestpass"}]`
    - Optional Supabase keys if you want private sync
 3) Run the app: `npm run dev`
 
@@ -82,8 +83,19 @@ This project uses Node’s built‑in test runner to verify critical endpoints a
 - Run tests directly:
   - `npm test`
 
-When running tests without `GEMINI_FAKE=1`, you must set `GEMINI_API_KEY`. If `AUTH_USERNAME`/`AUTH_PASSWORD` are unset, APIs allow anonymous access and the login page is bypassed automatically. The endpoint `GET /api/auth/status` reports whether auth is required.
+When running tests without `GEMINI_FAKE=1`, you must set `GEMINI_API_KEY`. If `AUTH_USERS` is unset or empty, APIs allow anonymous access and the login page is bypassed automatically. The endpoint `GET /api/auth/status` reports whether auth is required.
 
 ---
 
 Questions or want to tailor the workflow to your brokerage/brand? Open an issue or start a discussion.
+
+## Optional Samples
+
+You can show clickable sample images/prompts on the Photo Editor and Text→Image pages. They are off by default.
+
+- Add images to `public/samples/` (create the folder if needed).
+- Edit `lib/samples.ts` and populate:
+  - `photoEditingSamples`: array of image paths like `/samples/living-room.jpg`.
+  - `textToImageSamples`: array of `{ prompt, preview? }` entries; `preview` is optional.
+
+If these arrays are left empty, the UI hides the sample sections automatically.

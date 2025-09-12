@@ -4,13 +4,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { MagicWandIcon, SwapIcon, SparklesIcon, CameraIcon, MenuIcon, XIcon, ChevronDownIcon } from './Icon';
-import { getToken } from '@/utils/authClient';
+import { getToken, getUsernameFromToken } from '@/utils/authClient';
 
 type NavItem =
   | { type: 'link'; href: string; label: string; icon?: React.FC<any> }
   | { type: 'menu'; label: string; icon?: React.FC<any>; id: string; items: { href: string; label: string; icon?: React.FC<any> }[] };
 
-const navItems: NavItem[] = [
+const baseNavItems: NavItem[] = [
   { type: 'link', href: '/', label: 'Home', icon: SparklesIcon },
   { type: 'link', href: '/text2image', label: 'Text → Image', icon: SparklesIcon },
   { type: 'link', href: '/try-apparel', label: 'Try Apparel', icon: CameraIcon },
@@ -23,8 +23,13 @@ export const NavigationNext: React.FC = () => {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const navRef = useRef<HTMLDivElement | null>(null);
   const [authed, setAuthed] = useState(false);
+  const [user, setUser] = useState<string | null>(null);
 
-  useEffect(() => { setAuthed(!!getToken()); }, []);
+  useEffect(() => {
+    const t = getToken();
+    setAuthed(!!t);
+    setUser(getUsernameFromToken());
+  }, []);
 
   // Close menus on outside click
   useEffect(() => {
@@ -115,7 +120,12 @@ export const NavigationNext: React.FC = () => {
     );
   };
 
-  const items = authed ? navItems : [{ type: 'link', href: '/', label: 'Home', icon: SparklesIcon } as const];
+  const items = (() => {
+    if (!authed) return [{ type: 'link', href: '/', label: 'Home', icon: SparklesIcon } as const];
+    const items = [...baseNavItems];
+    if (user === 'zain') items.push({ type: 'link', href: '/bulk-edit', label: 'Bulk Edit', icon: SparklesIcon });
+    return items;
+  })();
 
   return (
     <nav className="bg-white/90 backdrop-blur dark:bg-gray-800/90 shadow-sm sticky top-0 z-30" ref={navRef as any}>

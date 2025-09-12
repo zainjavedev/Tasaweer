@@ -5,6 +5,7 @@ import { editImageWithNanoBanana } from '../services/geminiService';
 import EtaTimer from '../components/EtaTimer';
 import { authorizedFetch } from '@/utils/authClient';
 import { compressImageFile, dataURLToBase64 } from '@/utils/image';
+import Lightbox from '@/components/Lightbox';
 
 type ColorOption = string;
 
@@ -32,6 +33,7 @@ const TryApparelPage: React.FC = () => {
 
   // Results / iteration
   const [results, setResults] = useState<string[]>([]); // newest first
+  const [lightbox, setLightbox] = useState<string | null>(null);
   const [iterLoading, setIterLoading] = useState(false); // initial try-on
   const [iterError, setIterError] = useState<string | null>(null);
   const [customColor, setCustomColor] = useState('');
@@ -138,6 +140,24 @@ const TryApparelPage: React.FC = () => {
     const { dataUrl } = await compressImageFile(file, { maxDim: 1600, type: 'image/webp', quality: 0.85 });
     setApparelImage(dataUrl);
   };
+
+  const extractApparel = useCallback(async () => {
+    if (!apparelImage) return;
+    setIterError(null);
+    setIterLoading(true);
+    try {
+      const base64 = dataURLToBase64(apparelImage);
+      const mime = (apparelImage.split(';')[0].split(':')[1]) || 'image/webp';
+      const prompt = 'Extract only the clothes/apparel the person is wearing and return the apparel on a transparent background, tightly cropped.';
+      const res = await editImageWithNanoBanana(base64, mime, prompt);
+      setApparelImage(res.imageUrl);
+      setSuggestions((arr) => [{ src: res.imageUrl, label: 'Extracted' }, ...arr]);
+    } catch (e) {
+      setIterError(e instanceof Error ? e.message : 'Failed to extract apparel');
+    } finally {
+      setIterLoading(false);
+    }
+  }, [apparelImage]);
 
   const fetchUrlAsDataUrl = async (url: string): Promise<string> => {
     const res = await fetch(url);
@@ -372,6 +392,9 @@ const TryApparelPage: React.FC = () => {
                 Upload Apparel
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && onApparelUpload(e.target.files[0])} />
               </label>
+              {apparelImage && (
+                <button onClick={extractApparel} className="px-4 py-2 rounded-lg bg-white dark:bg-gray-700 border font-semibold hover:bg-gray-50 dark:hover:bg-gray-600">Extract Apparel</button>
+              )}
             </div>
           </div>
         </div>
@@ -414,11 +437,11 @@ const TryApparelPage: React.FC = () => {
               <div className="text-sm font-semibold text-gray-800 dark:text-gray-200">Results (latest first)</div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {results.map((url, idx) => (
-                  <div key={idx} className="group relative bg-gray-50 dark:bg-gray-900 rounded-xl overflow-hidden border">
-                    <img loading="lazy" src={url} alt={`Result ${idx + 1}`} className="w-full h-auto object-contain max-h-72 transition-transform duration-300 group-hover:scale-[1.01]" />
+                  <div key={idx} className="relative bg-gray-50 dark:bg-gray-900 rounded-xl overflow-hidden border">
+                    <img onClick={() => setLightbox(url)} loading="lazy" src={url} alt={`Result ${idx + 1}`} className="cursor-zoom-in w-full h-auto object-contain max-h-72" />
                     <button
                       onClick={() => { const a = document.createElement('a'); a.href = url; a.download = `try-apparel-${idx + 1}.png`; a.click(); }}
-                      className="absolute top-2 right-2 p-2 rounded-full bg-white/90 dark:bg-gray-800/80 border shadow opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-2 right-2 p-2 rounded-full bg-white/90 dark:bg-gray-800/80 border shadow"
                       aria-label="Download"
                       title="Download"
                     >
@@ -434,6 +457,7 @@ const TryApparelPage: React.FC = () => {
           )}
         </div>
       )}
+      <Lightbox url={lightbox} onClose={() => setLightbox(null)} />
     </div>
   );
 };

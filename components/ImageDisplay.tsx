@@ -1,6 +1,7 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { EditedImageResult } from '../types';
+import Lightbox from './Lightbox';
 
 interface ImageDisplayProps {
   original: string;
@@ -8,6 +9,7 @@ interface ImageDisplayProps {
 }
 
 export const ImageDisplay: React.FC<ImageDisplayProps> = ({ original, edited }) => {
+  const [open, setOpen] = useState<string | null>(null);
   return (
     <div className="mt-8 space-y-6">
        <div className="text-center">
@@ -21,11 +23,11 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({ original, edited }) 
         </div>
         <div>
           <h3 className="text-lg font-semibold mb-2 text-center text-gray-700 dark:text-gray-300">Generated</h3>
-          <div className="relative group">
-            <img loading="lazy" src={edited.imageUrl} alt="Edited" className="rounded-lg shadow-lg w-full h-auto object-contain transition-transform duration-300 group-hover:scale-[1.01]" />
+          <div className="relative">
+            <img onClick={() => setOpen(edited.imageUrl)} loading="lazy" src={edited.imageUrl} alt="Edited" className="cursor-zoom-in rounded-lg shadow-lg w-full h-auto object-contain" />
             <button
               onClick={() => { const a = document.createElement('a'); a.href = edited.imageUrl; a.download = 'edited-image.png'; a.click(); }}
-              className="absolute top-2 right-2 p-2 rounded-full bg-white/90 dark:bg-gray-800/80 border shadow opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute top-2 right-2 p-2 rounded-full bg-white/90 dark:bg-gray-800/80 border shadow"
               aria-label="Download"
               title="Download"
             >
@@ -43,6 +45,7 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({ original, edited }) 
           <p className="text-gray-600 dark:text-gray-400 mt-1">{edited.text}</p>
         </div>
       )}
+      <Lightbox url={open} onClose={() => setOpen(null)} />
     </div>
   );
 };

@@ -21,12 +21,13 @@ export const editImageWithNanoBanana = async (
 };
 
 export const generateImageFromText = async (
-  prompt: string
+  prompt: string,
+  additionalImages?: { data: string; mimeType: string }[]
 ): Promise<EditedImageResult> => {
   const res = await authorizedFetch('/api/gemini/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt }),
+    body: JSON.stringify({ prompt, additionalImages }),
   });
   if (!res.ok) {
     const payload = await res.json().catch(() => ({}));

@@ -8,6 +8,7 @@ import { EditedImageResult } from '../types';
 import { addUserImage } from '../utils/userImages';
 import { SwapIcon } from '../components/Icon';
 import { compressImageFile } from '@/utils/image';
+import CaptureWidget from '@/components/CaptureWidget';
 
 const ObjectReplacementPage: React.FC = () => {
   const [originalImage, setOriginalImage] = useState<File | null>(null);
@@ -27,6 +28,13 @@ const ObjectReplacementPage: React.FC = () => {
     const reader = new FileReader();
     reader.onloadend = () => setOriginalPreview(reader.result as string);
     reader.readAsDataURL(file);
+  }, []);
+
+  const handleCapture = useCallback((file: File, preview: string) => {
+    setOriginalImage(file);
+    setOriginalPreview(preview);
+    setEditedResult(null);
+    setError(null);
   }, []);
 
   const handleSampleUpload = (file: File | null) => {
@@ -92,6 +100,8 @@ const ObjectReplacementPage: React.FC = () => {
       </div>
 
       <ImageUploader onImageUpload={handleImageUpload} preview={originalPreview} />
+      <div className="text-center text-xs text-gray-500 dark:text-gray-400">or</div>
+      <CaptureWidget onCapture={handleCapture} />
 
       <div className="grid md:grid-cols-2 gap-4">
         <div>

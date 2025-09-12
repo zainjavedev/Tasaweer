@@ -38,3 +38,13 @@ export function ensureAuthedOrRedirect() {
     window.location.replace('/login');
   }
 }
+
+export function getUsernameFromToken(): string | null {
+  const token = getToken();
+  if (!token) return null;
+  // New format: username:hash
+  const idx = token.indexOf(':');
+  if (idx > 0) return token.slice(0, idx);
+  // Legacy tokens have no username
+  return null;
+}
