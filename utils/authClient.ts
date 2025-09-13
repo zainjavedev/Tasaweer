@@ -17,6 +17,11 @@ export function clearToken() {
   window.localStorage.removeItem(TOKEN_KEY);
 }
 
+export function hasSessionCookie(): boolean {
+  if (typeof document === 'undefined') return false;
+  return document.cookie.split('; ').some((c) => c.startsWith('auth_token='));
+}
+
 export async function authorizedFetch(input: RequestInfo | URL, init: RequestInit = {}) {
   const token = getToken();
   const headers = new Headers(init.headers || {});
@@ -34,7 +39,14 @@ export async function authorizedFetch(input: RequestInfo | URL, init: RequestIni
 export function ensureAuthedOrRedirect() {
   if (typeof window === 'undefined') return;
   const token = getToken();
-  if (!token) {
+  if (token) return;
+  try {
+    fetch('/api/users/me', { cache: 'no-store' })
+      .then((res) => {
+        if (!res.ok) window.location.replace('/login');
+      })
+      .catch(() => window.location.replace('/login'));
+  } catch {
     window.location.replace('/login');
   }
 }
@@ -42,9 +54,17 @@ export function ensureAuthedOrRedirect() {
 export function getUsernameFromToken(): string | null {
   const token = getToken();
   if (!token) return null;
-  // New format: username:hash
+  // Env-based format: username:hash
   const idx = token.indexOf(':');
   if (idx > 0) return token.slice(0, idx);
-  // Legacy tokens have no username
+  // JWT format: header.payload.signature
+  if (token.split('.').length === 3) {
+    try {
+      const payloadSeg = token.split('.')[1];
+      const json = atob(payloadSeg.replace(/-/g, '+').replace(/_/g, '/'));
+      const data = JSON.parse(json);
+      return data?.username || null;
+    } catch {}
+  }
   return null;
 }
