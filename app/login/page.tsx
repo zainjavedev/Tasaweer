@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { setToken } from '@/utils/authClient';
 
 export default function Page() {
-  const [username, setUsername] = useState('');
+  const [identifier, setIdentifier] = useState(''); // email or username
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -19,7 +19,7 @@ export default function Page() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username: identifier.includes('@') ? undefined : identifier, email: identifier.includes('@') ? identifier : undefined, password }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Login failed');
@@ -42,8 +42,8 @@ export default function Page() {
       </p>
       <form onSubmit={onSubmit} className="space-y-3">
         <div>
-          <label className="block text-sm mb-1">Username</label>
-          <input value={username} onChange={(e) => setUsername(e.target.value)} className="w-full p-2 rounded-md border bg-white dark:bg-gray-700" />
+          <label className="block text-sm mb-1">Email or Username</label>
+          <input value={identifier} onChange={(e) => setIdentifier(e.target.value)} className="w-full p-2 rounded-md border bg-white dark:bg-gray-700" />
         </div>
         <div>
           <label className="block text-sm mb-1">Password</label>
@@ -55,8 +55,7 @@ export default function Page() {
         </button>
       </form>
       <div className="text-xs text-gray-500 dark:text-gray-400">
-        Tip: when running locally, set <code className="px-1">AUTH_USERS</code> in <code className="px-1">.env.local</code>.
-        Example: <code className="px-1">[{`{"username":"admin","password":"secret"}`}]</code>
+        No account? <a href="/register" className="text-purple-700 dark:text-purple-300 underline">Create one</a>.
       </div>
     </div>
   );
