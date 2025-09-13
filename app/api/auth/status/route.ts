@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { isAuthConfigured } from '@/lib/auth';
+// Database mode only
 
 export const runtime = 'nodejs';
 
 export async function GET() {
   try {
-    const authRequired = isAuthConfigured() || !!process.env.DATABASE_URL;
-    return NextResponse.json({ authRequired });
+    // Always require auth in DB mode
+    return NextResponse.json({ authRequired: true });
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || 'Failed' }, { status: 500 });
   }

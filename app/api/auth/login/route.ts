@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getStaticUsers, makeBearerToken } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { signToken, verifyPassword, setAuthCookieHeaders } from '@/lib/authDb';
 
@@ -12,38 +11,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing password' }, { status: 400 });
     }
 
-    // Prefer DB auth when DATABASE_URL is set
-    if (process.env.DATABASE_URL) {
-      if (!email) {
-        return NextResponse.json({ error: 'Missing email' }, { status: 400 });
-      }
-      const where = { email };
-      const user = await prisma.user.findUnique({ where: where as any });
-      if (!user) return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
-      const ok = await verifyPassword(password, user.passwordHash);
-      if (!ok) return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
-      if (!user.email || !user.emailVerifiedAt) {
-        return NextResponse.json({ error: 'Email not verified. Please check your inbox.' }, { status: 403 });
-      }
-      const token = await signToken({ sub: user.id, username: user.username, role: user.role });
-      return NextResponse.json(
-        { token, username: user.username, role: user.role, imageCount: user.imageCount, imageLimit: user.imageLimit },
-        { headers: setAuthCookieHeaders(token) }
-      );
+    // Database mode only
+    if (!process.env.DATABASE_URL) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }
-
-    // Fallback to static env-based auth
-    const users = getStaticUsers();
-    if (users.length === 0) {
-      return NextResponse.json({ error: 'Auth not configured' }, { status: 500 });
+    if (!email && !username) {
+      return NextResponse.json({ error: 'Provide email or username' }, { status: 400 });
     }
-    const id = username || email; // allow email to act as username in static mode
-    const match = users.find((u) => u.username === id && u.password === password);
-    if (!match) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+    const where = email ? { email } : { username };
+    const user = await prisma.user.findUnique({ where: where as any });
+    if (!user) return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+    const ok = await verifyPassword(password, user.passwordHash);
+    if (!ok) return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+    if (!user.email || !user.emailVerifiedAt) {
+      return NextResponse.json({ error: 'Email not verified. Please check your inbox.' }, { status: 403 });
     }
-    const token = makeBearerToken(match.username, match.password);
-    return NextResponse.json({ token, username: match.username });
+    const token = await signToken({ sub: user.id, username: user.username, role: user.role });
+    return NextResponse.json(
+      { token, username: user.username, role: user.role, imageCount: user.imageCount, imageLimit: user.imageLimit },
+      { headers: setAuthCookieHeaders(token) }
+    );
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || 'Login failed' }, { status: 500 });
   }

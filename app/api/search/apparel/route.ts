@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyApiAuth } from '@/lib/auth';
+import { requireApiAuth } from '@/lib/authDb';
 
 // Optional Google Custom Search integration.
 // Set GOOGLE_CSE_ID and GOOGLE_CSE_KEY in env to enable.
@@ -7,7 +7,7 @@ import { verifyApiAuth } from '@/lib/auth';
 export const runtime = 'nodejs';
 
 export async function GET(req: NextRequest) {
-  const authErr = verifyApiAuth(req);
+  const authErr = await requireApiAuth(req);
   if (authErr) return NextResponse.json({ error: authErr }, { status: 401 });
   const { searchParams } = new URL(req.url);
   const q = searchParams.get('q') || '';

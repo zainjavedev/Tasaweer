@@ -1,4 +1,5 @@
 import { SignJWT, jwtVerify } from 'jose';
+import type { NextRequest } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { NextResponse } from 'next/server';
 
@@ -56,3 +57,24 @@ export function jsonWithCookies(body: any, headers: Headers) {
   return NextResponse.json(body, { headers });
 }
 
+export function getTokenFromRequest(req: Request | NextRequest): string | null {
+  const auth = req.headers.get('authorization') || '';
+  const bearer = auth.toLowerCase().startsWith('bearer ')
+    ? auth.slice(7).trim()
+    : null;
+  if (bearer) return bearer;
+  const cookie = req.headers.get('cookie') || '';
+  const cookieToken = cookie.split('; ').find((c) => c.startsWith('auth_token='))?.split('=')[1];
+  return cookieToken ? decodeURIComponent(cookieToken) : null;
+}
+
+export async function requireApiAuth(req: Request | NextRequest): Promise<string | null> {
+  try {
+    const token = getTokenFromRequest(req);
+    if (!token) return 'Unauthorized';
+    await verifyToken(token);
+    return null;
+  } catch {
+    return 'Unauthorized';
+  }
+}

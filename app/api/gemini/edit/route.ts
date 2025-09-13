@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { editImage } from '@/lib/gemini';
-import { verifyApiAuth } from '@/lib/auth';
+import { requireApiAuth } from '@/lib/authDb';
 
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
   try {
-    const authErr = verifyApiAuth(req);
+    const authErr = await requireApiAuth(req);
     if (authErr) return NextResponse.json({ error: authErr }, { status: 401 });
     const { base64ImageData, mimeType, prompt, additionalImages } = await req.json();
     if (!base64ImageData || !mimeType || !prompt) {
