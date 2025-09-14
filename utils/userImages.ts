@@ -1,6 +1,6 @@
 import { UserImage } from '../types';
 
-const KEY = 'tasaweer.images';
+const KEY = 'tasaweers.images';
 
 export function getUserImages(): UserImage[] {
   try {
@@ -38,4 +38,3 @@ export function removeUserImage(id: string) {
 export function clearUserImages() {
   try { localStorage.removeItem(KEY); } catch {}
 }
-

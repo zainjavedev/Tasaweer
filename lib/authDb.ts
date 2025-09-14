@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import { NextResponse } from 'next/server';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'dev-secret-change-me');
-const JWT_ISSUER = process.env.JWT_ISSUER || 'tasaweers';
+const JWT_ISSUER = process.env.JWT_ISSUER || 'Tasaweers';
 const JWT_AUDIENCE = process.env.JWT_AUDIENCE || 'web';
 
 export type JwtPayload = { sub: string; username?: string; role?: string };

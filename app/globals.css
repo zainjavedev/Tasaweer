@@ -70,3 +70,28 @@
   backdrop-filter: blur(10px);
 }
 
+/* Button shine animation */
+@keyframes button-shine {
+  0% { transform: translateX(-200%) skewX(-15deg); opacity: 0; }
+  8% { opacity: 0.6; }
+  92% { opacity: 0.6; }
+  100% { transform: translateX(200%) skewX(-15deg); opacity: 0; }
+}
+
+.btn-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-shine .shine {
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: -50%;
+  width: 65%;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0) 100%);
+  filter: blur(2px);
+  transform: translateX(-220%) skewX(-15deg);
+  animation: button-shine 4s linear infinite;
+}

@@ -132,7 +132,7 @@ export const NavigationNext: React.FC = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between py-2">
           <div className="flex items-center gap-2">
-            <Link href="/" className="text-sm font-semibold text-indigo-600 dark:text-indigo-300">Tasaweer</Link>
+            <Link href="/" className="text-sm font-semibold text-indigo-600 dark:text-indigo-300">Tasaweers</Link>
           </div>
           <div className="sm:hidden">
             <button

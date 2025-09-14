@@ -20,7 +20,7 @@ export const Header: React.FC = () => {
           <div className="text-center">
             <div className="inline-flex items-center gap-2">
               <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-600 via-fuchsia-500 to-amber-400 bg-[length:200%_auto] bg-clip-text text-transparent animate-gradient">
-                Tasaweer
+                Tasaweers
               </h1>
               <span className="px-2 py-0.5 text-xs rounded-full bg-indigo-600/10 text-indigo-700 dark:bg-indigo-400/10 dark:text-indigo-300 border border-indigo-300/40">Beta</span>
             </div>

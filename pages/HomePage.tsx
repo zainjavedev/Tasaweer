@@ -110,7 +110,7 @@ const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
         <FeatureCard title="Image Restoration" desc="Fix damage, denoise, and color-correct — add optional notes." onClick={() => goTo('restoration')} />
         <FeatureCard title="Object Replacement" desc="Describe what to swap and with what; add a sample if you like." onClick={() => goTo('replace')} />
         <div className="rounded-2xl border p-6 bg-white dark:bg-gray-800">
-          <div className="text-lg font-semibold">Why Tasaweer?</div>
+          <div className="text-lg font-semibold">Why Tasaweers?</div>
           <ul className="mt-2 space-y-1 text-sm text-gray-600 dark:text-gray-300">
             <li className="flex items-center gap-2"><CheckIcon className="w-4 h-4 text-green-500"/> Natural-looking edits</li>
             <li className="flex items-center gap-2"><CheckIcon className="w-4 h-4 text-green-500"/> Fast & interactive</li>

@@ -6,20 +6,72 @@ import { Header } from '@/components/Header';
 import { NavigationNext } from '@/components/NavigationNext';
 import { Analytics } from '@vercel/analytics/next';
 import { usePathname } from 'next/navigation';
+import meta from '../metadata.json';
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const hideChrome = pathname === '/login';
+  const hideChrome = pathname === '/login' || pathname === '/register' || pathname === '/verify';
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Tasaweers</title>
+        <meta name="description" content={meta.description} />
+        <meta name="robots" content="index,follow" />
+
+        {/* Open Graph */}
+        <meta property="og:site_name" content="Tasaweers" />
+        <meta property="og:title" content="Tasaweers" />
+        <meta property="og:description" content={meta.description} />
+        <meta property="og:type" content="website" />
+        {(() => {
+          const base = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/\/$/, '');
+          const href = base ? `${base}${pathname}` : undefined;
+          return (
+            <>
+              {href && <meta property="og:url" content={href} />}
+              {href && <link rel="canonical" href={href} />}
+            </>
+          );
+        })()}
+
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Tasaweers" />
+        <meta name="twitter:description" content={meta.description} />
+
+        {/* Theme + Manifest */}
+        <meta name="theme-color" content="#4f46e5" />
+        <link rel="manifest" href="/site.webmanifest" />
+        <link
+          rel="icon"
+          href={`data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%234f46e5'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='Arial,Helvetica,sans-serif' font-size='34' fill='white'>T</text></svg>`}
+        />
         <script src="https://cdn.tailwindcss.com"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet" />
         <style>{`
-          body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+          body {
+            font-family: 'Quicksand', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+          }
         `}</style>
       </head>
-      <body className="bg-gray-50 dark:bg-gray-900 font-sans text-gray-800 dark:text-gray-200">
+      <body className={`${hideChrome ? 'bg-gradient-to-b from-sky-100 via-sky-200 to-white' : 'bg-gray-50'} dark:bg-gray-900 font-sans text-gray-800 dark:text-gray-200`}>
+        {/* Organization JSON-LD */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Organization',
+              name: 'Tasaweers',
+              url: (process.env.NEXT_PUBLIC_BASE_URL || undefined),
+            }),
+          }}
+        />
         {!hideChrome && <Header />}
         {!hideChrome && <NavigationNext />}
         <main className={`container mx-auto px-4 py-8 ${hideChrome ? 'min-h-screen flex items-center justify-center' : ''}`}>{children}</main>

@@ -7,6 +7,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Track usage of generation features
+enum GenerationType {
+  TRY_ON
+  TEXT_TO_IMAGE
+  PHOTO_EDITOR
+}
+
 model User {
   id                      String   @id @default(cuid())
   email                   String?  @unique
@@ -20,5 +27,16 @@ model User {
   verificationTokenExpires DateTime?
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
+
+  generations             Generation[]
 }
 
+model Generation {
+  id        String          @id @default(cuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      GenerationType
+  createdAt DateTime        @default(now())
+
+  @@index([userId, createdAt])
+}

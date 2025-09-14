@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/authDb';
-import { sendVerificationEmail } from '@/lib/email';
+import { sendVerificationCodeEmail } from '@/lib/email';
+import crypto from 'crypto';
 
 export const runtime = 'nodejs';
 
@@ -15,15 +16,14 @@ export async function POST(req: NextRequest) {
     const exists = await prisma.user.findFirst({ where: { OR: [{ email }, { username }] } });
     if (exists) return NextResponse.json({ error: 'Email or username already in use' }, { status: 400 });
     const passwordHash = await hashPassword(password);
-    const token = crypto.randomUUID().replace(/-/g, '') + Math.random().toString(36).slice(2);
-    const expires = new Date(Date.now() + 1000 * 60 * 60 * 24);
-    const user = await prisma.user.create({ data: { email, username, passwordHash, verificationToken: token, verificationTokenExpires: expires } });
-    const baseUrl = process.env.APP_BASE_URL || `${req.nextUrl.protocol}//${req.headers.get('host')}`;
-    const verifyUrl = `${baseUrl}/verify?token=${encodeURIComponent(token)}`;
-    await sendVerificationEmail(email, verifyUrl);
+    // Generate a 6-digit numeric code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const codeHash = crypto.createHash('sha256').update(code).digest('hex');
+    const expires = new Date(Date.now() + 1000 * 60 * 15); // 15 minutes
+    const user = await prisma.user.create({ data: { email, username, passwordHash, verificationToken: codeHash, verificationTokenExpires: expires } });
+    await sendVerificationCodeEmail(email, code);
     return NextResponse.json({ ok: true, userId: user.id });
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || 'Registration failed' }, { status: 500 });
   }
 }
-

@@ -2,7 +2,7 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Real Estate Photo Pro
+# Tasaweers
 
 AI visual editor focused on real estate photos — clean up rooms, remove clutter, replace objects, and generate on‑brand visuals faster. Built with Next.js and powered by the Gemini API, with optional private cloud storage using Supabase and client‑side encryption.
 
