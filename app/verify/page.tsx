@@ -28,6 +28,7 @@ export default function Page() {
   const [resending, setResending] = useState(false);
 
   useEffect(() => {
+    if (!sp) return;
     const prefill = sp.get('email');
     if (prefill) setEmail(prefill);
     setStatus('pending');
@@ -125,7 +126,7 @@ export default function Page() {
                 {Array.from({ length: otpLen }).map((_, i) => (
                   <input
                     key={i}
-                    ref={(el) => (inputsRef.current[i] = el)}
+                    ref={(el) => { inputsRef.current[i] = el; }}
                     inputMode="numeric"
                     pattern="[0-9]*"
                     maxLength={1}
