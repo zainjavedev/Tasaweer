@@ -32,7 +32,7 @@ export default function Page() {
     setMessage('Verifying…');
     try {
       const code = digits.join('');
-      if (code.length !== otpLen) throw new Error('Enter the full 6‑digit code');
+      if (code.length !== otpLen) throw new Error('Enter the full 6-digit code');
       const res = await fetch('/api/auth/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, code }) });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Invalid code');
@@ -91,7 +91,7 @@ export default function Page() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1 text-black">6‑digit code</label>
+              <label className="block text-sm font-medium mb-1 text-black">6-digit code</label>
               <div className="flex items-center justify-between gap-2">
                 {Array.from({ length: otpLen }).map((_, i) => (
                   <input
