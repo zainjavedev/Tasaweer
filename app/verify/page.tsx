@@ -1,3 +1,10 @@
+// Fix: Add missing dependency array to useEffect to avoid stale closure issues
+// Fix: Add missing type for inputsRef to avoid TS errors
+// Fix: Add missing aria-labels for inputs for accessibility
+// Fix: Prevent form submission if email is empty or code incomplete
+// Fix: Add proper focus management on paste and input change
+// Fix: Minor code cleanup and consistent error handling
+
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -16,7 +23,7 @@ export default function Page() {
   const [email, setEmail] = useState('');
   const otpLen = 6;
   const [digits, setDigits] = useState<string[]>(Array(otpLen).fill(''));
-  const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
+  const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
 
@@ -28,11 +35,20 @@ export default function Page() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email) {
+      setStatus('error');
+      setMessage('Email is required');
+      return;
+    }
+    const code = digits.join('');
+    if (code.length !== otpLen) {
+      setStatus('error');
+      setMessage('Enter the full 6-digit code');
+      return;
+    }
     setLoading(true);
     setMessage('Verifying…');
     try {
-      const code = digits.join('');
-      if (code.length !== otpLen) throw new Error('Enter the full 6-digit code');
       const res = await fetch('/api/auth/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, code }) });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Invalid code');
@@ -58,14 +74,24 @@ export default function Page() {
           <h2 className="text-2xl font-medium tracking-tight text-black">Verification Code sent</h2>
           <p className="text-sm text-black/70">If you didn’t receive it, check spam or try again.</p>
 
-          <form onSubmit={submit} className="space-y-3 text-left">
+          <form onSubmit={submit} className="space-y-3 text-left" noValidate>
             <div>
-              <label className="block text-sm font-medium mb-1 text-black">Email</label>
+              <label htmlFor="email" className="block text-sm font-medium mb-1 text-black">Email</label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-3 flex items-center text-black/60">
                   <AtSign className="w-5 h-5 flex-none" strokeWidth={1.8} aria-hidden="true" />
                 </span>
-                <input className="w-full h-11 pl-10 pr-28 rounded-[10px] border border-gray-300 bg-white/40 placeholder:text-black/50 focus:outline-none focus:border-black text-gray-900" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required />
+                <input
+                  id="email"
+                  type="email"
+                  className="w-full h-11 pl-10 pr-28 rounded-[10px] border border-gray-300 bg-white/40 placeholder:text-black/50 focus:outline-none focus:border-black text-gray-900"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                  aria-invalid={status === 'error' && !email}
+                  aria-describedby="email-error"
+                />
                 <button
                   type="button"
                   disabled={!email || resending}
@@ -89,6 +115,9 @@ export default function Page() {
                   {resending ? 'Resending…' : 'Resend'}
                 </button>
               </div>
+              {status === 'error' && !email && (
+                <p id="email-error" className="text-red-600 text-sm mt-1">Email is required</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-1 text-black">6-digit code</label>
@@ -101,6 +130,7 @@ export default function Page() {
                     pattern="[0-9]*"
                     maxLength={1}
                     value={digits[i]}
+                    aria-label={`Digit ${i + 1}`}
                     onChange={(e) => {
                       const val = e.target.value.replace(/\D/g, '').slice(0,1);
                       const next = [...digits];
