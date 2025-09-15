@@ -32,7 +32,7 @@ export const EtaTimer: React.FC<EtaTimerProps> = ({ seconds, label }) => {
       </div>
       <div className="h-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
         <div
-          className="h-full bg-purple-600 dark:bg-purple-500 transition-[width] duration-200 ease-out"
+          className="h-full bg-black transition-[width] duration-200 ease-out"
           style={{ width: `${pct}%` }}
         />
       </div>

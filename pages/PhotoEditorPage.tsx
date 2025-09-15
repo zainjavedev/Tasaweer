@@ -4,6 +4,7 @@ import { editImageWithNanoBanana } from '../services/geminiService';
 import EtaTimer from '../components/EtaTimer';
 import { addUserImage } from '../utils/userImages';
 import { compressImageFile } from '@/utils/image';
+import { useUser } from '@/utils/useUser';
 import Lightbox from '@/components/Lightbox';
 import CaptureWidget from '@/components/CaptureWidget';
 import { photoEditingSamples } from '@/lib/samples';
@@ -23,6 +24,7 @@ const PhotoEditorPage: React.FC = () => {
   const maxRefImages = 3;
   const searchParams = useSearchParams();
   const loadedFromQueryRef = useRef(false);
+  const { refreshUserData } = useUser();
 
   const handleImageUpload = useCallback((file: File) => {
     setOriginalImage(file);
@@ -88,13 +90,17 @@ const PhotoEditorPage: React.FC = () => {
       }
       const result = await editImageWithNanoBanana(base64, mimeType, prompt.trim(), additionalImages);
       setResults((arr) => [result.imageUrl, ...arr]);
-      try { addUserImage({ kind: 'edit', prompt: prompt.trim(), original: originalPreview || undefined, generated: result.imageUrl }); } catch {}
+      try {
+        addUserImage({ kind: 'edit', prompt: prompt.trim(), original: originalPreview || undefined, generated: result.imageUrl });
+        // Refresh user data to update image count in header
+        await refreshUserData();
+      } catch {}
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to edit photo.');
     } finally {
       setIsLoading(false);
     }
-  }, [originalImage, prompt, originalPreview, refImages]);
+  }, [originalImage, prompt, originalPreview, refImages, refreshUserData]);
 
   const download = (url: string, name = 'edited-photo.png') => {
     const a = document.createElement('a');
@@ -157,7 +163,7 @@ const PhotoEditorPage: React.FC = () => {
             </div>
           ))}
           {refImages.length < maxRefImages && (
-            <label className="flex items-center justify-center h-20 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 text-xs text-gray-600 dark:text-gray-300 cursor-pointer hover:border-purple-500">
+            <label className="flex items-center justify-center h-20 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 text-xs text-gray-600 dark:text-gray-300 cursor-pointer hover:border-black">
               Add
               <input type="file" accept="image/*" multiple className="sr-only" onChange={(e) => e.target.files && addRefFiles(e.target.files)} />
             </label>
@@ -175,7 +181,7 @@ const PhotoEditorPage: React.FC = () => {
                 key={idx}
                 type="button"
                 onClick={() => setOriginalFromUrl(url)}
-                className="group relative rounded-lg overflow-hidden border bg-gray-50 dark:bg-gray-900 hover:shadow focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="group relative rounded-lg overflow-hidden border bg-gray-50 dark:bg-gray-900 hover:shadow focus:outline-none focus:ring-2 focus:ring-black/30"
                 title="Use this sample image"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -195,7 +201,7 @@ const PhotoEditorPage: React.FC = () => {
           onChange={(e) => setPrompt(e.target.value)}
           rows={3}
           placeholder="e.g., Remove blemishes and brighten the photo"
-          className="w-full p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+          className="w-full p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-black/30 focus:border-black"
         />
       </div>
 
@@ -203,7 +209,7 @@ const PhotoEditorPage: React.FC = () => {
         <button
           onClick={handleSubmit}
           disabled={!originalImage || isLoading}
-          className="px-4 py-2 rounded-md bg-purple-600 text-white font-semibold hover:bg-purple-700 disabled:bg-purple-300 transition-colors"
+          className="btn-shine px-4 py-2 rounded-md bg-black text-white font-semibold shadow-[0_6px_20px_rgba(0,0,0,0.25)] hover:brightness-110 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-black/30 transition-colors"
         >
           {isLoading ? 'Editing…' : 'Apply Edits'}
         </button>

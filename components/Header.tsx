@@ -6,37 +6,20 @@ import { useRouter } from 'next/navigation';
 import { HomeIcon, UsersIcon, StarIcon, MenuIcon, XIcon, SparklesIcon, SwapIcon, MagicWandIcon, SparklesIcon as WandIcon, BoxIcon } from './Icon';
 import { Fredoka } from 'next/font/google';
 import { getToken, clearToken, getUsernameFromToken } from '@/utils/authClient';
+import { useUser } from '@/utils/useUser';
 
 const fredoka = Fredoka({ subsets: ['latin'], weight: ['400','500','600','700'] });
 
 export const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [username, setUsername] = useState<string | null>(null);
+  const { user, refreshUserData } = useUser();
   const router = useRouter();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const closeMenu = () => setIsMenuOpen(false);
 
-  useEffect(() => {
-    const checkAuth = () => {
-      const token = getToken();
-      if (token) {
-        setIsAuthenticated(true);
-        setUsername(getUsernameFromToken());
-      } else {
-        setIsAuthenticated(false);
-        setUsername(null);
-      }
-    };
-
-    checkAuth();
-    // Listen for storage changes (when token is set/cleared in other components)
-    const handleStorageChange = () => checkAuth();
-    window.addEventListener('storage', handleStorageChange);
-
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  const isAuthenticated = !!user;
+  const username = user?.username;
 
   const handleLogout = () => {
     clearToken();
@@ -92,6 +75,12 @@ export const Header: React.FC = () => {
                 <UsersIcon className="w-4 h-4 text-black" />
                 <span className="text-sm font-medium text-black">
                   Hi, {username || 'User'}!
+                </span>
+              </li>
+              <li className="flex items-center gap-2">
+                <BoxIcon className="w-4 h-4 text-black" />
+                <span className="text-sm font-medium text-black">
+                  {user?.imageCount || 0}/{user?.imageLimit ?? '∞'}
                 </span>
               </li>
               <li className="flex items-center gap-2 hover:scale-105 transition-all duration-200">
@@ -187,6 +176,12 @@ export const Header: React.FC = () => {
                     <UsersIcon className="w-5 h-5 text-black flex-shrink-0" />
                     <span className="text-sm font-medium text-black">
                       Hi, {username || 'User'}!
+                    </span>
+                  </li>
+                  <li className="flex items-center gap-2 rounded-lg p-2 transition duration-200">
+                    <BoxIcon className="w-5 h-5 text-black flex-shrink-0" />
+                    <span className="text-sm font-medium text-black">
+                      Images: {user?.imageCount || 0}/{user?.imageLimit ?? '∞'}
                     </span>
                   </li>
                   <li className="flex items-center gap-2 hover:bg-black/10 rounded-lg p-2 transition duration-200">
