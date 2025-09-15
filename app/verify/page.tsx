@@ -7,7 +7,7 @@
 
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, Suspense } from 'react';
 import { AtSign } from 'lucide-react';
 import loginBg from '@/assets/login-bg.png';
 import { Fredoka } from 'next/font/google';
@@ -15,7 +15,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 
 const fredoka = Fredoka({ subsets: ['latin'], weight: ['400','500','600','700'] });
 
-export default function Page() {
+function VerifyForm() {
   const sp = useSearchParams();
   const router = useRouter();
   const [status, setStatus] = useState<'pending'|'ok'|'error'>('pending');
@@ -166,5 +166,13 @@ export default function Page() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="text-center p-8">Loading...</div>}>
+      <VerifyForm />
+    </Suspense>
   );
 }
