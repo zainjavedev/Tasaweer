@@ -41,11 +41,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <meta name="twitter:description" content={meta.description} />
 
         {/* Theme + Manifest */}
-        <meta name="theme-color" content="#4f46e5" />
+        <meta name="theme-color" content="#000000" />
         <link rel="manifest" href="/site.webmanifest" />
         <link
           rel="icon"
-          href={`data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%234f46e5'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='Arial,Helvetica,sans-serif' font-size='34' fill='white'>T</text></svg>`}
+          href={`data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%23000000'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='Arial,Helvetica,sans-serif' font-size='34' fill='white'>T</text></svg>`}
         />
         <script src="https://cdn.tailwindcss.com"></script>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -59,7 +59,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           }
         `}</style>
       </head>
-      <body className={`${hideChrome ? 'bg-gradient-to-b from-sky-100 via-sky-200 to-white' : 'bg-gray-50'} dark:bg-gray-900 font-sans text-gray-800 dark:text-gray-200`}>
+      <body className={`${hideChrome ? 'bg-black' : 'bg-white'} font-sans text-black`}>
         {/* Organization JSON-LD */}
         <script
           type="application/ld+json"
@@ -73,10 +73,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           }}
         />
         {!hideChrome && <Header />}
-        {!hideChrome && <NavigationNext />}
+        {/* {!hideChrome && <NavigationNext />} */}
         <main className={`container mx-auto px-4 py-8 ${hideChrome ? 'min-h-screen flex items-center justify-center' : ''}`}>{children}</main>
         {!hideChrome && (
-          <footer className="text-center py-6 text-sm text-gray-500 dark:text-gray-400">
+          <footer className="text-center py-6 text-sm text-black">
             <p>Powered by Gemini API. Built for Professionals.</p>
           </footer>
         )}

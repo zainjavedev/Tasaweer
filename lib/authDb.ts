@@ -78,3 +78,26 @@ export async function requireApiAuth(req: Request | NextRequest): Promise<string
     return 'Unauthorized';
   }
 }
+
+export async function getAuthenticatedUser(req: Request | NextRequest) {
+  try {
+    const token = getTokenFromRequest(req);
+    if (!token) return null;
+    const payload = await verifyToken(token);
+
+    // Import prisma dynamically to avoid circular imports
+    const { prisma } = await import('@/lib/prisma');
+    const user = await prisma.user.findUnique({ where: { id: payload.sub } });
+    if (!user) return null;
+
+    return {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      imageCount: user.imageCount,
+      imageLimit: user.imageLimit
+    };
+  } catch {
+    return null;
+  }
+}

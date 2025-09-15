@@ -12,7 +12,7 @@ type NavItem =
 
 const baseNavItems: NavItem[] = [
   { type: 'link', href: '/', label: 'Home', icon: SparklesIcon },
-  { type: 'link', href: '/text2image', label: 'Text → Image', icon: SparklesIcon },
+  { type: 'link', href: '/text2image', label: 'Text 12; Image', icon: SparklesIcon },
   { type: 'link', href: '/try-apparel', label: 'Try Apparel', icon: CameraIcon },
   { type: 'link', href: '/photo-editor', label: 'Photo Editor', icon: MagicWandIcon },
 ];
@@ -57,103 +57,65 @@ export const NavigationNext: React.FC = () => {
         <Link
           key={key}
           href={item.href}
-          className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-            active
-              ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'
-              : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'
-          }`}
+          className={`relative flex items-center gap-3 px-4 py-2 rounded font-semibold tracking-wide leading-none select-none focus:ring focus:ring-indigo-300 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900 transition duration-150 ${active ? 'bg-indigo-300/40 text-indigo-700 dark:bg-indigo-700/50 dark:text-indigo-300' : 'text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300'}`}
         >
           {Icon && <Icon className="w-5 h-5" />}
-          <span>{item.label}</span>
+          {item.label}
         </Link>
       );
     }
-
-    const active = item.items.some((it) => it.href === pathname);
-    const Icon = item.icon;
-    const expanded = openMenu === item.id;
-    return (
-      <div key={key} className="relative">
-        <button
-          aria-haspopup="menu"
-          aria-expanded={expanded}
-          onClick={() => setOpenMenu(expanded ? null : item.id)}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') setOpenMenu(null);
-          }}
-          className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-            active
-              ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'
-              : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'
-          }`}
-        >
-          {Icon && <Icon className="w-5 h-5" />}
-          <span>{item.label}</span>
-          <ChevronDownIcon className={`w-4 h-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
-        </button>
-        {/* Desktop dropdown */}
-        <div
-          className={`${expanded ? 'block' : 'hidden'} sm:absolute sm:left-0 sm:mt-1 sm:min-w-[12rem]`}
-          role="menu"
-        >
-          <div className="rounded-md border bg-white dark:bg-gray-800 shadow-lg overflow-hidden">
-            {item.items.map((sub) => {
-              const SubIcon = sub.icon;
-              const subActive = pathname === sub.href;
-              return (
-                <Link
-                  key={sub.href}
-                  href={sub.href}
-                  role="menuitem"
-                  className={`block px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                    subActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-700 dark:text-gray-200'
-                  }`}
-                >
-                  {SubIcon && <SubIcon className="w-4 h-4" />}
-                  <span>{sub.label}</span>
+    if (item.type === 'menu') {
+      const active = item.items.some((i) => i.href === pathname);
+      const Icon = item.icon;
+      return (
+        <div key={key} className="relative">
+          <button
+            type="button"
+            aria-haspopup="true"
+            aria-expanded={openMenu === item.id}
+            onClick={() => setOpenMenu(openMenu === item.id ? null : item.id)}
+            className={`flex items-center gap-1 rounded px-4 py-2 font-semibold tracking-wide leading-none select-none transition duration-150 focus:ring focus:ring-indigo-300 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900 ${
+              active ? 'bg-indigo-300/40 text-indigo-700 dark:bg-indigo-700/50 dark:text-indigo-300' : 'text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300'
+            }`}
+          >
+            {Icon && <Icon className="w-5 h-5" />}
+            {item.label}
+            <ChevronDownIcon className="w-3 h-3 -mr-1" />
+          </button>
+          {openMenu === item.id && (
+            <div className="absolute top-full left-0 mt-2 w-48 rounded border bg-white dark:bg-gray-800 p-2 shadow-lg text-sm">
+              {item.items.map((subItem) => (
+                <Link key={subItem.href} href={subItem.href} className="block rounded px-3 py-2 hover:bg-indigo-200 dark:hover:bg-indigo-700">
+                  {subItem.label}
                 </Link>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
-    );
+      );
+    }
+    return null;
   };
 
-  const items = (() => {
-    if (!authed) return [{ type: 'link', href: '/', label: 'Home', icon: SparklesIcon } as const];
-    const items = [...baseNavItems];
-    if (user === 'zain') items.push({ type: 'link', href: '/bulk-edit', label: 'Bulk Edit', icon: SparklesIcon });
-    return items;
-  })();
-
   return (
-    <nav className="bg-white/90 backdrop-blur dark:bg-gray-800/90 shadow-sm sticky top-0 z-30" ref={navRef as any}>
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between py-2">
-          <div className="flex items-center gap-2">
-            <Link href="/" className="text-sm font-semibold text-indigo-600 dark:text-indigo-300">Tasaweers</Link>
-          </div>
-          <div className="sm:hidden">
-            <button
-              onClick={() => setMobileOpen((v) => !v)}
-              aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-              aria-expanded={mobileOpen}
-              className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              {mobileOpen ? <XIcon className="w-6 h-6" /> : <MenuIcon className="w-6 h-6" />}
-            </button>
-          </div>
-          <div className="hidden sm:flex sm:items-center sm:gap-2">
-            {items.map((item, idx) => renderItem(item, `top-${idx}`))}
-          </div>
-        </div>
-        {/* Mobile drawer */}
-        {mobileOpen && (
-          <div className="sm:hidden pb-3 flex flex-col gap-1 border-t border-gray-200 dark:border-gray-700">
-            {items.map((item, idx) => renderItem(item, `mobile-${idx}`))}
-          </div>
-        )}
+    <nav
+      ref={navRef}
+      className="relative bg-white/40 backdrop-blur dark:bg-gray-800/40 rounded-[12px] border-2 border-white/30 mx-4 mb-4 flex flex-wrap items-center justify-between gap-1 px-4 py-3 text-indigo-600 dark:text-indigo-400 shadow-md"
+    >
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          className="sm:hidden"
+          onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label="Toggle menu"
+        >
+          {mobileOpen ? <XIcon className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
+        </button>
+        {baseNavItems.map((item, i) => renderItem(item, `nav-${i}`))}
+      </div>
+
+      <div className="hidden sm:flex gap-4 items-center">
+        {authed && <span className="text-indigo-600 dark:text-indigo-400 text-sm font-semibold">{user}</span>}
       </div>
     </nav>
   );

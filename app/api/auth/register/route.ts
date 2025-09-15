@@ -16,11 +16,24 @@ export async function POST(req: NextRequest) {
     const exists = await prisma.user.findFirst({ where: { OR: [{ email }, { username }] } });
     if (exists) return NextResponse.json({ error: 'Email or username already in use' }, { status: 400 });
     const passwordHash = await hashPassword(password);
+    // Get default image limit from environment variables
+    const defaultImageLimit = Number(process.env.DEFAULT_USER_IMAGE_LIMIT) || 50;
+
     // Generate a 6-digit numeric code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const codeHash = crypto.createHash('sha256').update(code).digest('hex');
     const expires = new Date(Date.now() + 1000 * 60 * 15); // 15 minutes
-    const user = await prisma.user.create({ data: { email, username, passwordHash, verificationToken: codeHash, verificationTokenExpires: expires } });
+    const user = await prisma.user.create({
+      data: {
+        email,
+        username,
+        passwordHash,
+        imageLimit: defaultImageLimit,
+        imageCount: 0,
+        verificationToken: codeHash,
+        verificationTokenExpires: expires
+      }
+    });
     await sendVerificationCodeEmail(email, code);
     return NextResponse.json({ ok: true, userId: user.id });
   } catch (err: any) {

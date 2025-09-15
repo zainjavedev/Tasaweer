@@ -273,12 +273,12 @@ const TryApparelPage: React.FC = () => {
   }, [results, userImage]);
 
   return (
-    <div className="max-w-5xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden p-6 md:p-8 space-y-8">
+    <div className="max-w-5xl mx-auto bg-white/40 backdrop-blur-xl rounded-2xl border-2 border-white/30 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] overflow-hidden p-6 md:p-8 space-y-8">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white inline-flex items-center gap-2">
-          <CameraIcon className="w-6 h-6" /> Try Apparel
+        <h2 className="text-2xl font-bold text-black inline-flex items-center gap-2">
+          <CameraIcon className="w-6 h-6 text-black" /> Try Apparel
         </h2>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">Capture or upload your photo, pick an apparel, and see it on you. Then tweak the color.</p>
+        <p className="text-black mt-1">Capture or upload your photo, pick an apparel, and see it on you. Then tweak the color.</p>
       </div>
 
       {/* Layout: Sidebar suggestions + main content */}
@@ -286,11 +286,11 @@ const TryApparelPage: React.FC = () => {
         {/* Sidebar suggestions (collapsible on mobile) */}
         <aside className="block">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-sm font-semibold text-gray-800 dark:text-gray-200">Apparel Suggestions</div>
+            <div className="text-sm font-semibold text-black">Apparel Suggestions</div>
             <button
               type="button"
               onClick={() => setMobileSuggOpen((v) => !v)}
-              className="md:hidden text-xs px-2 py-1 rounded border bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+              className="md:hidden text-xs px-2 py-1 rounded border-2 border-black bg-white text-black hover:bg-gray-50 transition-colors duration-200"
               aria-expanded={mobileSuggOpen}
               aria-controls="apparel-suggestions-list"
             >
@@ -301,15 +301,15 @@ const TryApparelPage: React.FC = () => {
             id="apparel-suggestions-list"
             className={`${mobileSuggOpen ? 'block' : 'hidden'} md:block h-[70vh] overflow-y-auto pr-1 space-y-2`}
           >
-            {suggLoading && <div className="text-sm text-gray-500">Loading…</div>}
-            {suggError && <div className="text-xs text-gray-500">{suggError}</div>}
+            {suggLoading && <div className="text-sm text-black">Loading…</div>}
+            {suggError && <div className="text-xs text-black">{suggError}</div>}
             {suggestions.map((s, idx) => (
-              <div key={idx} className="border rounded-lg overflow-hidden bg-white dark:bg-gray-700">
+              <div key={idx} className="border-2 border-black rounded-lg overflow-hidden bg-white">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img loading="lazy" src={s.src} alt={s.label || 'Apparel'} className="w-full h-24 object-contain bg-white dark:bg-gray-800" />
+                <img loading="lazy" src={s.src} alt={s.label || 'Apparel'} className="w-full h-24 object-contain bg-white" />
                 <div className="p-2 flex items-center justify-between gap-2">
-                  <div className="text-xs text-gray-700 dark:text-gray-200 truncate">{s.label || 'Apparel'}</div>
-                  <button onClick={() => pickSuggestion(s.src)} className="text-xs px-2 py-1 rounded bg-purple-600 text-white hover:bg-purple-700">Insert</button>
+                  <div className="text-xs text-black truncate">{s.label || 'Apparel'}</div>
+                  <button onClick={() => pickSuggestion(s.src)} className="btn-shine text-xs px-2 py-1 rounded bg-black text-white hover:bg-gray-800 transition-colors duration-200"><span aria-hidden className="shine"></span>Insert</button>
                 </div>
               </div>
             ))}
@@ -320,30 +320,30 @@ const TryApparelPage: React.FC = () => {
         <div className="grid gap-6 md:grid-cols-2">
           {/* User photo */}
           <div className="space-y-3">
-            <div className="text-sm font-semibold text-gray-800 dark:text-gray-200">Your Photo</div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">Tip: For best results, center yourself in the camera frame.</div>
+            <div className="text-sm font-semibold text-black">Your Photo</div>
+            <div className="text-xs text-black">Tip: For best results, center yourself in the camera frame.</div>
             {!userImage ? (
               <div className="space-y-3">
-                <div className="aspect-video w-full bg-gray-100 dark:bg-gray-900 rounded-xl overflow-hidden border relative">
+                <div className="aspect-video w-full bg-black rounded-xl overflow-hidden border-2 border-white relative">
                   <video ref={videoRef} playsInline autoPlay muted className="w-full h-full object-cover" />
                   {camLoading && (
-                    <div className="absolute inset-0 flex items-center justify-center text-gray-600 dark:text-gray-300">
+                    <div className="absolute inset-0 flex items-center justify-center text-white">
                       <SparklesIcon className="w-5 h-5 mr-2" /> Opening camera…
                     </div>
                   )}
                   {camError && (
-                    <div className="absolute inset-0 p-4 text-red-600 bg-red-50 dark:bg-red-900/30 flex items-center justify-center text-center">
+                    <div className="absolute inset-0 p-4 text-white bg-black/80 flex items-center justify-center text-center">
                       {camError}
                     </div>
                   )}
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  <button onClick={() => startStream()} className="px-4 py-2 rounded-lg bg-white dark:bg-gray-700 border font-semibold hover:bg-gray-50 dark:hover:bg-gray-600 inline-flex items-center gap-2"><CameraIcon className="w-5 h-5" /> Open Camera</button>
-                  <button onClick={captureUser} disabled={camLoading || !!camError} className="px-4 py-2 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700 disabled:bg-purple-300 dark:disabled:bg-purple-800 inline-flex items-center gap-2"><CameraIcon className="w-5 h-5" /> Capture</button>
-                  <button onClick={flipCamera} disabled={camLoading || !!camError} className="px-4 py-2 rounded-lg bg-white dark:bg-gray-700 border font-semibold hover:bg-gray-50 dark:hover:bg-gray-600 inline-flex items-center gap-2"><SwapIcon className="w-5 h-5" /> Flip</button>
+                  <button onClick={() => startStream()} className="px-4 py-2 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 inline-flex items-center gap-2"><CameraIcon className="w-5 h-5 text-black" /> Open Camera</button>
+                  <button onClick={captureUser} disabled={camLoading || !!camError} className="btn-shine px-4 py-2 rounded-lg bg-black text-white font-bold hover:bg-gray-800 disabled:bg-gray-400 transition-colors duration-200 inline-flex items-center gap-2"><CameraIcon className="w-5 h-5" /> <span aria-hidden className="shine"></span> Capture</button>
+                  <button onClick={flipCamera} disabled={camLoading || !!camError} className="px-4 py-2 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 inline-flex items-center gap-2"><SwapIcon className="w-5 h-5 text-black" /> Flip</button>
                   {videoDevices.length > 1 && (
                     <select
-                      className="px-3 py-2 rounded-lg bg-white dark:bg-gray-700 border font-semibold hover:bg-gray-50 dark:hover:bg-gray-600 text-sm"
+                      className="px-3 py-2 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 text-sm"
                       value={selectedDeviceId || ''}
                       onChange={(e) => {
                         const id = e.target.value;
@@ -358,7 +358,7 @@ const TryApparelPage: React.FC = () => {
                       ))}
                     </select>
                   )}
-                  <label className="px-4 py-2 rounded-lg bg-white dark:bg-gray-700 border font-semibold hover:bg-gray-50 dark:hover:bg-gray-600 inline-flex items-center gap-2 cursor-pointer">
+                  <label className="px-4 py-2 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 inline-flex items-center gap-2 cursor-pointer">
                     Upload Photo
                     <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && onUserUpload(e.target.files[0])} />
                   </label>
@@ -366,12 +366,12 @@ const TryApparelPage: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="w-full bg-gray-50 dark:bg-gray-900 rounded-xl overflow-hidden border">
+                <div className="w-full bg-white rounded-xl overflow-hidden border-2 border-black">
                   <img loading="lazy" src={userImage} alt="Your photo" className="w-full h-auto object-contain" />
                 </div>
                 <div className="flex gap-3">
-                  <button onClick={() => { setUserImage(null); setResults([]); }} className="px-4 py-2 rounded-lg bg-white dark:bg-gray-700 border font-semibold hover:bg-gray-50 dark:hover:bg-gray-600">Replace Photo</button>
-                  <button onClick={() => { setResults([]); }} className="px-4 py-2 rounded-lg bg-white dark:bg-gray-700 border font-semibold hover:bg-gray-50 dark:hover:bg-gray-600">Clear Results</button>
+                  <button onClick={() => { setUserImage(null); setResults([]); }} className="px-4 py-2 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200">Replace Photo</button>
+                  <button onClick={() => { setResults([]); }} className="px-4 py-2 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200">Clear Results</button>
                 </div>
               </div>
             )}
@@ -379,21 +379,21 @@ const TryApparelPage: React.FC = () => {
 
           {/* Apparel picker (upload only) */}
           <div className="space-y-3">
-            <div className="text-sm font-semibold text-gray-800 dark:text-gray-200">Apparel</div>
-            <div className="w-full bg-gray-50 dark:bg-gray-900 rounded-xl overflow-hidden border min-h-[160px] flex items-center justify-center p-3">
+            <div className="text-sm font-semibold text-black">Apparel</div>
+            <div className="w-full bg-white rounded-xl overflow-hidden border-2 border-black min-h-[160px] flex items-center justify-center p-3">
               {apparelImage ? (
                 <img loading="lazy" src={apparelImage} alt="Apparel" className="max-h-64 object-contain" />
               ) : (
-                <div className="text-gray-500 text-sm">Upload an apparel image</div>
+                <div className="text-black text-sm">Upload an apparel image</div>
               )}
             </div>
             <div className="flex flex-wrap gap-3">
-              <label className="px-4 py-2 rounded-lg bg-white dark:bg-gray-700 border font-semibold hover:bg-gray-50 dark:hover:bg-gray-600 inline-flex items-center gap-2 cursor-pointer">
+              <label className="px-4 py-2 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 inline-flex items-center gap-2 cursor-pointer">
                 Upload Apparel
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && onApparelUpload(e.target.files[0])} />
               </label>
               {apparelImage && (
-                <button onClick={extractApparel} className="px-4 py-2 rounded-lg bg-white dark:bg-gray-700 border font-semibold hover:bg-gray-50 dark:hover:bg-gray-600">Extract Apparel</button>
+                <button onClick={extractApparel} className="px-4 py-2 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200">Extract Apparel</button>
               )}
             </div>
           </div>
@@ -402,28 +402,28 @@ const TryApparelPage: React.FC = () => {
 
       {/* Actions */}
       <div className="flex flex-wrap gap-3 justify-center">
-        <button onClick={tryOn} disabled={!userImage || !apparelImage || iterLoading} className="px-4 py-2 rounded-md bg-purple-600 text-white font-semibold hover:bg-purple-700 disabled:bg-purple-300 transition-colors">{iterLoading ? 'Generating…' : 'Try On'}</button>
+        <button onClick={tryOn} disabled={!userImage || !apparelImage || iterLoading} className="btn-shine px-4 py-2 rounded-lg bg-black text-white font-bold hover:bg-gray-800 disabled:bg-gray-400 transition-colors duration-200">{iterLoading ? 'Generating…' : (<>Try On<span aria-hidden className="shine"></span></>)}</button>
       </div>
       {iterLoading && (
         <div className="max-w-md mx-auto"><EtaTimer seconds={18} label="Usually ~15–25s for first render" /></div>
       )}
-      {iterError && <div className="text-center text-red-600 bg-red-50 dark:bg-red-900/30 p-3 rounded">{iterError}</div>}
+      {iterError && <div className="text-center text-white bg-black p-3 rounded-lg border-2 border-white">{iterError}</div>}
 
       {/* Result and color tweaks */}
       {(userImage || results.length > 0) && (
         <div className="space-y-6">
           {/* Color tweak controls with per-button loading and ETA */}
           <div className="space-y-2">
-            <div className="text-sm font-semibold text-gray-800 dark:text-gray-200">Change apparel color</div>
-            <div className="flex flex-wrap gap-2 items-center">
+            <div className="text-sm font-semibold text-black">Change apparel color</div>
+            <div className="flex flex-wrap gap-1.5 items-center">
               {COLOR_OPTIONS.map((c) => (
-                <button key={c} onClick={() => recolor(c)} disabled={!!colorLoading} className={`px-3 py-1.5 rounded-full border text-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${colorLoading === c ? 'bg-purple-600 text-white border-purple-600' : ''}`}>
-                  {colorLoading === c ? 'Generating…' : c}
+                <button key={c} onClick={() => recolor(c)} disabled={!!colorLoading} className={`btn-shine px-3 py-1.5 rounded-full border-2 text-sm border-black bg-white text-black hover:bg-gray-50 transition-colors duration-200 ${colorLoading === c ? 'bg-black text-white' : ''}`}>
+                  {colorLoading === c ? 'Generating…' : (<>{c}<span aria-hidden className="shine"></span></>)}
                 </button>
               ))}
               <div className="flex gap-2 items-center">
-                <input value={customColor} onChange={(e) => setCustomColor(e.target.value)} placeholder="Custom color / style" className="p-2 rounded-md border bg-white dark:bg-gray-700" />
-                <button onClick={() => customColor.trim() && recolor(customColor.trim())} disabled={!customColor.trim() || !!colorLoading} className="px-3 py-2 rounded-lg bg-white dark:bg-gray-700 border font-semibold hover:bg-gray-50 dark:hover:bg-gray-600">Apply</button>
+                <input value={customColor} onChange={(e) => setCustomColor(e.target.value)} placeholder="Custom color / style" className="p-2 rounded-md border-2 border-black bg-white text-black" />
+                <button onClick={() => customColor.trim() && recolor(customColor.trim())} disabled={!customColor.trim() || !!colorLoading} className="px-3 py-2 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200">Apply</button>
               </div>
             </div>
             {colorLoading && (
@@ -434,18 +434,18 @@ const TryApparelPage: React.FC = () => {
           {/* Results grid, newest first, smaller width */}
           {results.length > 0 && (
             <div className="space-y-2">
-              <div className="text-sm font-semibold text-gray-800 dark:text-gray-200">Results (latest first)</div>
+              <div className="text-sm font-semibold text-black">Results (latest first)</div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {results.map((url, idx) => (
-                  <div key={idx} className="relative bg-gray-50 dark:bg-gray-900 rounded-xl overflow-hidden border">
+                  <div key={idx} className="relative bg-white rounded-xl overflow-hidden border-2 border-black">
                     <img onClick={() => setLightbox(url)} loading="lazy" src={url} alt={`Result ${idx + 1}`} className="cursor-zoom-in w-full h-auto object-contain max-h-72" />
                     <button
                       onClick={() => { const a = document.createElement('a'); a.href = url; a.download = `try-apparel-${idx + 1}.png`; a.click(); }}
-                      className="absolute top-2 right-2 p-2 rounded-full bg-white/90 dark:bg-gray-800/80 border shadow"
+                      className="absolute top-2 right-2 p-2 rounded-full bg-white border-2 border-black shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:scale-110 transition-all duration-200"
                       aria-label="Download"
                       title="Download"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-gray-700 dark:text-gray-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-black">
                         <path fillRule="evenodd" d="M12 3.75a.75.75 0 01.75.75v8.19l2.47-2.47a.75.75 0 111.06 1.06l-3.75 3.75a.75.75 0 01-1.06 0L7.72 11.28a.75.75 0 111.06-1.06l2.47 2.47V4.5A.75.75 0 0112 3.75z" clipRule="evenodd" />
                         <path d="M3.75 15a.75.75 0 01.75-.75h15a.75.75 0 01.75.75v3A2.25 2.25 0 0118 20.25H6A2.25 2.25 0 013.75 18v-3z" />
                       </svg>

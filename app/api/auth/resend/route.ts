@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const codeHash = crypto.createHash('sha256').update(code).digest('hex');
     const expires = new Date(Date.now() + 1000 * 60 * 15);
-    await prisma.user.update({ where: { id: user.id }, data: { verificationToken: codeHash, verificationTokenExpires: expires } });
+    await prisma.user.update({ where: { id: user.id }, data: { verificationToken: code, verificationTokenExpires: expires } });
     await sendVerificationCodeEmail(email, code);
     return NextResponse.json({ ok: true });
   } catch (err: any) {

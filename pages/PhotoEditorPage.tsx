@@ -130,10 +130,10 @@ const PhotoEditorPage: React.FC = () => {
   }, [searchParams]);
 
   return (
-    <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden p-6 md:p-8 space-y-6">
+    <div className="max-w-4xl mx-auto bg-white/40 backdrop-blur-xl rounded-2xl border-2 border-white/30 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] overflow-hidden p-6 md:p-8 space-y-6">
       <div className="text-center space-y-1">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Photo Editor</h2>
-        <p className="text-gray-600 dark:text-gray-400">Upload a photo and describe the changes you want.</p>
+        <h2 className="text-2xl font-bold text-black">Photo Editor</h2>
+        <p className="text-black">Upload a photo and describe the changes you want.</p>
       </div>
 
       <ImageUploader onImageUpload={handleImageUpload} preview={originalPreview} />
@@ -143,8 +143,8 @@ const PhotoEditorPage: React.FC = () => {
       {/* Optional reference images */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Reference images (optional)</label>
-          <span className="text-xs text-gray-500 dark:text-gray-400">{refImages.length}/{maxRefImages}</span>
+          <label className="block text-sm font-medium text-black">Reference images (optional)</label>
+          <span className="text-xs text-black">{refImages.length}/{maxRefImages}</span>
         </div>
         <div className="grid gap-3 grid-cols-3 sm:grid-cols-6">
           {refPreviews.map((p, idx) => (

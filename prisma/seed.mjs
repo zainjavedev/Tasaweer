@@ -27,6 +27,8 @@ async function main() {
       passwordHash,
       role: 'ADMIN',
       emailVerifiedAt: new Date(),
+      imageLimit: null,  // Admin has unlimited image generations
+      imageCount: 0,
     },
   });
   console.log(`Seeded admin user '${adminUsername}'.`);

@@ -95,3 +95,24 @@
   transform: translateX(-220%) skewX(-15deg);
   animation: button-shine 4s linear infinite;
 }
+
+/* Remove focus outlines from all clickable elements */
+button:focus,
+button:focus-visible,
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+a:focus,
+a:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Remove focus from specific Tailwind classes */
+.focus\:outline-none:focus,
+.focus\:outline-none:focus-visible,
+.focus\:ring-purple-500:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}

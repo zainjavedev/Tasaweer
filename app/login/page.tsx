@@ -8,6 +8,7 @@ import { Fredoka } from 'next/font/google';
 const fredoka = Fredoka({ subsets: ['latin'], weight: ['400','500','600','700'] });
 import { useRouter } from 'next/navigation';
 import { setToken } from '@/utils/authClient';
+import { setUserLimits } from '@/utils/userLimits';
 
 export default function Page() {
   const [identifier, setIdentifier] = useState(''); // email or username
@@ -35,6 +36,14 @@ export default function Page() {
       if (!res.ok) throw new Error(data.error || 'Login failed');
       if (!data.token) throw new Error('No token returned');
       setToken(data.token);
+
+      // Store user limits data for frontend usage
+      setUserLimits({
+        imageCount: data.imageCount,
+        imageLimit: data.imageLimit,
+        role: data.role
+      });
+
       router.replace('/');
     } catch (e: any) {
       setError(e?.message || 'Login failed');
