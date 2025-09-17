@@ -23,12 +23,8 @@ export function useUser() {
       setError(null);
 
       const token = getToken();
-      if (!token) {
-        setUser(null);
-        setUserLimits({ imageCount: 0, imageLimit: null, role: 'FREE' });
-        return;
-      }
-
+      // Attempt to fetch current user regardless of token presence so that
+      // cookie-based sessions also work in admin and elsewhere.
       const response = await authorizedFetch('/api/users/me');
       if (!response.ok) {
         if (response.status === 401) {

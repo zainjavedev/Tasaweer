@@ -27,6 +27,14 @@ export async function POST(req: NextRequest) {
     // Edit the image
     const result = await editImage(base64ImageData, mimeType, prompt, additionalImages);
 
+    // Create generation record in database
+    await prisma.generation.create({
+      data: {
+        userId: user.id,
+        type: 'PHOTO_EDITOR'
+      }
+    });
+
     // Increment the user's image count in the database (only for non-admin users)
     if (user.imageLimit !== null) {
       await prisma.user.update({

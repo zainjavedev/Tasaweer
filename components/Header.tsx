@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { HomeIcon, UsersIcon, StarIcon, MenuIcon, XIcon, SparklesIcon, SwapIcon, MagicWandIcon, SparklesIcon as WandIcon, BoxIcon } from './Icon';
+import { HomeIcon, UsersIcon, StarIcon, MenuIcon, XIcon, SparklesIcon, SwapIcon, MagicWandIcon, SparklesIcon as WandIcon, BoxIcon, ShieldIcon } from './Icon';
 import { Fredoka } from 'next/font/google';
 import { getToken, clearToken, getUsernameFromToken } from '@/utils/authClient';
 import { useUser } from '@/utils/useUser';
@@ -14,6 +14,15 @@ export const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, refreshUserData } = useUser();
   const router = useRouter();
+  const isNavigating = useRef(false);
+
+  // Prefetch login to reduce perceived latency
+  useEffect(() => {
+    try {
+      // @ts-ignore app router router has prefetch
+      router.prefetch?.('/login');
+    } catch {}
+  }, [router]);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const closeMenu = () => setIsMenuOpen(false);
@@ -22,18 +31,25 @@ export const Header: React.FC = () => {
   const username = user?.username;
 
   const handleLogout = () => {
-    clearToken();
-    // Clear all localStorage
-    if (typeof window !== 'undefined') {
-      window.localStorage.clear();
-      // Clear cookies by setting them to expire
-      document.cookie.split(";").forEach((c) => {
-        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-      });
-    }
-    setIsAuthenticated(false);
-    setUsername(null);
+    if (isNavigating.current) return;
+    isNavigating.current = true;
+    // Navigate first to avoid any flicker in header/menu
     router.push('/login');
+    // Defer clearing until after navigation begins
+    setTimeout(() => {
+      try {
+        clearToken();
+        if (typeof window !== 'undefined') {
+          window.localStorage.clear();
+          document.cookie.split(';').forEach((c) => {
+            document.cookie = c
+              .replace(/^\s+/, '')
+              .replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
+          });
+        }
+      } catch {}
+      refreshUserData();
+    }, 0);
   };
 
   return (
@@ -84,8 +100,23 @@ export const Header: React.FC = () => {
                 </span>
               </li>
               <li className="flex items-center gap-2 hover:scale-105 transition-all duration-200">
+                <UsersIcon className="w-4 h-4 text-black" />
+                <Link href="/profile" className="hover:text-black transition duration-300 text-sm">
+                  Profile
+                </Link>
+              </li>
+              {user?.role === 'ADMIN' && (
+                <li className="flex items-center gap-2 hover:scale-105 transition-all duration-200">
+                  <ShieldIcon className="w-4 h-4 text-black" />
+                  <Link href="/admin" className="hover:text-black transition duration-300 text-sm">
+                    Admin
+                  </Link>
+                </li>
+              )}
+              <li className="flex items-center gap-2 hover:scale-105 transition-all duration-200">
                 <StarIcon className="w-4 h-4 text-black" />
                 <button
+                  onMouseDown={handleLogout}
                   onClick={handleLogout}
                   className="hover:text-black transition duration-300 text-sm"
                 >
@@ -127,7 +158,7 @@ export const Header: React.FC = () => {
 
       {/* Mobile Navigation */}
       {isMenuOpen && (
-        <div className="absolute top-full left-0 right-0 bg-white/40 backdrop-blur-xl border-2 border-white/30 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] md:hidden max-h-96 overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 bg-white/40 backdrop-blur-xl border-2 border-white/30 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] md:hidden max-h-96 overflow-y-auto z-[9999]">
           <nav className="px-6 py-4">
             <ul className="space-y-3 text-black font-semibold">
               <li className="flex items-center gap-2 hover:bg-black/10 rounded-lg p-2 transition duration-200">
@@ -185,8 +216,34 @@ export const Header: React.FC = () => {
                     </span>
                   </li>
                   <li className="flex items-center gap-2 hover:bg-black/10 rounded-lg p-2 transition duration-200">
+                    <UsersIcon className="w-5 h-5 text-black flex-shrink-0" />
+                    <Link
+                      href="/profile"
+                      onClick={closeMenu}
+                      className="hover:text-black transition duration-300"
+                    >
+                      Profile
+                    </Link>
+                  </li>
+                  {user?.role === 'ADMIN' && (
+                    <li className="flex items-center gap-2 hover:bg-black/10 rounded-lg p-2 transition duration-200">
+                      <ShieldIcon className="w-5 h-5 text-black flex-shrink-0" />
+                      <Link
+                        href="/admin"
+                        onClick={closeMenu}
+                        className="hover:text-black transition duration-300"
+                      >
+                        Admin
+                      </Link>
+                    </li>
+                  )}
+                  <li className="flex items-center gap-2 hover:bg-black/10 rounded-lg p-2 transition duration-200">
                     <StarIcon className="w-5 h-5 text-black flex-shrink-0" />
                     <button
+                      onMouseDown={() => {
+                        handleLogout();
+                        closeMenu();
+                      }}
                       onClick={() => {
                         handleLogout();
                         closeMenu();
@@ -228,4 +285,3 @@ export const Header: React.FC = () => {
     </header>
   );
 };
-

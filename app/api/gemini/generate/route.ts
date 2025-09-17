@@ -28,6 +28,14 @@ export async function POST(req: NextRequest) {
     // Generate the image
     const result = await generateImage(prompt, additionalImages);
 
+    // Create generation record in database
+    await prisma.generation.create({
+      data: {
+        userId: user.id,
+        type: 'TEXT_TO_IMAGE'
+      }
+    });
+
     // Increment the user's image count in the database (only for non-admin users)
     if (user.imageLimit !== null) {
       await prisma.user.update({
