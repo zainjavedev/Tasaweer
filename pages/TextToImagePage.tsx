@@ -6,6 +6,7 @@ import { Loader } from '../components/Loader';
 import EtaTimer from '../components/EtaTimer';
 import { SparklesIcon } from '../components/Icon';
 import Lightbox from '@/components/Lightbox';
+import { AspectRatioSelector, AspectRatio } from '@/components/AspectRatioSelector';
 import { textToImageSamples } from '@/lib/samples';
 import { compressImageFile } from '@/utils/image';
 import { useRouter } from 'next/navigation';
@@ -20,6 +21,7 @@ const TextToImagePage: React.FC = () => {
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [refImages, setRefImages] = useState<File[]>([]);
   const [refPreviews, setRefPreviews] = useState<string[]>([]);
+  const [aspectRatio, setAspectRatio] = useState<string>('16:9'); // Default to Landscape
   const maxRefImages = 3;
   const router = useRouter();
 
@@ -97,7 +99,7 @@ const TextToImagePage: React.FC = () => {
         }));
         additionalImages = pairs;
       }
-      const generated = await generateImageFromText(prompt.trim(), additionalImages);
+      const generated = await generateImageFromText(prompt.trim(), additionalImages, aspectRatio);
       setResults((arr) => [generated, ...arr]);
       try {
         addUserImage({ kind: 'text2image', prompt: prompt.trim(), generated: generated.imageUrl });
@@ -129,6 +131,11 @@ const TextToImagePage: React.FC = () => {
           className="mt-1 w-full p-3 bg-white border-2 border-black rounded-md shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] focus:ring-black focus:border-black"
           placeholder="Describe what you want to see" />
       </div>
+
+      <AspectRatioSelector
+        selectedRatio={aspectRatio}
+        onSelect={(ratio: AspectRatio) => setAspectRatio(ratio.value)}
+      />
 
       {textToImageSamples.length > 0 && (
         <div className="space-y-2">

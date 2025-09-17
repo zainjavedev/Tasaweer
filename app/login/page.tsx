@@ -31,6 +31,7 @@ export default function Page() {
       const data = await res.json().catch(() => ({}));
       if (res.status === 403 && data?.unverified && data?.email) {
         router.replace(`/verify?email=${encodeURIComponent(data.email)}`);
+        setTimeout(() => setLoading(false), 150);
         return;
       }
       if (!res.ok) throw new Error(data.error || 'Login failed');
@@ -44,11 +45,13 @@ export default function Page() {
         role: data.role
       });
 
+      // Keep loading state until navigation actually starts
       router.replace('/');
+      // Delay clearing loading state to prevent flash during navigation
+      setTimeout(() => setLoading(false), 150);
     } catch (e: any) {
       setError(e?.message || 'Login failed');
-    } finally {
-      setLoading(false);
+      setLoading(false); // Only clear loading on error
     }
   };
 

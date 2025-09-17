@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { base64ImageData, mimeType, prompt, additionalImages } = await req.json();
+    const { base64ImageData, mimeType, prompt, additionalImages, aspectRatio } = await req.json();
     if (!base64ImageData || !mimeType || !prompt) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Edit the image
-    const result = await editImage(base64ImageData, mimeType, prompt, additionalImages);
+    const result = await editImage(base64ImageData, mimeType, prompt, additionalImages, aspectRatio);
 
     // Create generation record in database
     await prisma.generation.create({

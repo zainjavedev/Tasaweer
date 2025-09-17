@@ -11,7 +11,8 @@ function client() {
 
 export async function generateImage(
   prompt: string,
-  additionalImages?: { data: string; mimeType: string }[]
+  additionalImages?: { data: string; mimeType: string }[],
+  aspectRatio?: string
 ) {
   if (process.env.GEMINI_FAKE === '1') {
     // 1x1 transparent PNG
@@ -31,10 +32,23 @@ export async function generateImage(
   }
   parts.push({ text: prompt });
 
+  const config: any = { responseModalities: [Modality.IMAGE, Modality.TEXT] };
+
+  // Add aspect ratio if provided
+  if (aspectRatio) {
+    // Parse aspect ratio (e.g., "16:9" -> 16/9 = 1.777...)
+    const [widthRatio, heightRatio] = aspectRatio.split(':').map(Number);
+    if (widthRatio && heightRatio) {
+      const ratio = widthRatio / heightRatio;
+      // Gemini supports aspectRatio parameter in some versions
+      config.aspectRatio = ratio;
+    }
+  }
+
   const response: GenerateContentResponse = await ai.models.generateContent({
     model: MODEL_NAME,
     contents: { parts },
-    config: { responseModalities: [Modality.IMAGE, Modality.TEXT] },
+    config,
   });
 
   let imageUrl = '';
@@ -56,7 +70,8 @@ export async function editImage(
   base64ImageData: string,
   mimeType: string,
   prompt: string,
-  additionalImages?: { data: string; mimeType: string }[]
+  additionalImages?: { data: string; mimeType: string }[],
+  aspectRatio?: string
 ) {
   if (process.env.GEMINI_FAKE === '1') {
     // Echo back a tiny PNG to simulate edited output
@@ -76,10 +91,23 @@ export async function editImage(
   }
   parts.push({ text: prompt });
 
+  const config: any = { responseModalities: [Modality.IMAGE, Modality.TEXT] };
+
+  // Add aspect ratio if provided
+  if (aspectRatio) {
+    // Parse aspect ratio (e.g., "16:9" -> 16/9 = 1.777...)
+    const [widthRatio, heightRatio] = aspectRatio.split(':').map(Number);
+    if (widthRatio && heightRatio) {
+      const ratio = widthRatio / heightRatio;
+      // Gemini supports aspectRatio parameter in some versions
+      config.aspectRatio = ratio;
+    }
+  }
+
   const response: GenerateContentResponse = await ai.models.generateContent({
     model: MODEL_NAME,
     contents: { parts },
-    config: { responseModalities: [Modality.IMAGE, Modality.TEXT] },
+    config,
   });
 
   let imageUrl = '';

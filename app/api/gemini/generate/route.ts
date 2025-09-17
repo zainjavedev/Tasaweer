@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { prompt, additionalImages } = await req.json();
+    const { prompt, additionalImages, aspectRatio } = await req.json();
     if (!prompt || typeof prompt !== 'string') {
       return NextResponse.json({ error: 'Missing prompt' }, { status: 400 });
     }
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate the image
-    const result = await generateImage(prompt, additionalImages);
+    const result = await generateImage(prompt, additionalImages, aspectRatio);
 
     // Create generation record in database
     await prisma.generation.create({

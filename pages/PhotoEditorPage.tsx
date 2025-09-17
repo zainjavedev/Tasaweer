@@ -3,6 +3,7 @@ import { CameraIcon, UploadIcon, MagicWandIcon, SwapIcon } from '../components/I
 import { editImageWithNanoBanana } from '../services/geminiService';
 import EtaTimer from '../components/EtaTimer';
 import { addUserImage } from '../utils/userImages';
+import { AspectRatioSelector, AspectRatio } from '@/components/AspectRatioSelector';
 import { compressImageFile } from '@/utils/image';
 import { useUser } from '@/utils/useUser';
 import Lightbox from '@/components/Lightbox';
@@ -20,10 +21,45 @@ const PhotoEditorPage: React.FC = () => {
   const [showEditButtons, setShowEditButtons] = useState(true);
   const [refImages, setRefImages] = useState<File[]>([]);
   const [refPreviews, setRefPreviews] = useState<string[]>([]);
+  const [aspectRatio, setAspectRatio] = useState<string>('16:9'); // Default to Landscape
   const maxRefImages = 3;
   const searchParams = useSearchParams();
   const loadedFromQueryRef = useRef(false);
   const { refreshUserData } = useUser();
+
+  // Preset prompts for common tasks
+  const PRESET_PROMPTS = [
+    {
+      id: 'restore',
+      label: 'Image Restoration',
+      prompt: 'Restore and enhance this old or damaged photo. Fix scratches, discoloration, and creases. Improve colors and detail while preserving the original character.'
+    },
+    {
+      id: 'clean_bg',
+      label: 'Clean Background',
+      prompt: 'Remove distracting elements from the background. Focus only on the main subject and create a clean, simple background.'
+    },
+    {
+      id: 'remove_bg',
+      label: 'Remove Background',
+      prompt: 'Remove the background completely and replace it with a transparent background. Keep only the main subject with no background at all.'
+    },
+    {
+      id: 'enhance',
+      label: 'Enhance Quality',
+      prompt: 'Enhance image quality, sharpness, and brightness. Fix lighting issues, reduce noise, and improve overall clarity and detail.'
+    },
+    {
+      id: 'portrait',
+      label: 'Portrait Retouch',
+      prompt: 'Retouch the portrait. Smooth skin imperfections, enhance eyes and facial features, fix hair, and improve overall appearance naturally.'
+    },
+    {
+      id: 'fix_lighting',
+      label: 'Fix Lighting',
+      prompt: 'Correct the lighting in this photo. Balance exposure, fix shadows and highlights, improve brightness and contrast naturally.'
+    }
+  ];
 
   // Camera capture functionality
   const [showCamera, setShowCamera] = useState(false);
@@ -97,7 +133,7 @@ const PhotoEditorPage: React.FC = () => {
         }));
         additionalImages = pairs;
       }
-      const result = await editImageWithNanoBanana(base64, mimeType, prompt.trim(), additionalImages);
+      const result = await editImageWithNanoBanana(base64, mimeType, prompt.trim(), additionalImages, aspectRatio);
       setResults((arr) => [result.imageUrl, ...arr]);
       try {
         addUserImage({ kind: 'edit', prompt: prompt.trim(), original: originalPreview || undefined, generated: result.imageUrl });
@@ -167,6 +203,7 @@ const PhotoEditorPage: React.FC = () => {
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.style.display = 'block';
         await videoRef.current.play();
       }
 
@@ -191,9 +228,22 @@ const PhotoEditorPage: React.FC = () => {
     } finally {
       setCamLoading(false);
     }
-  }, [facing]);
+  }, [facing, showCamera]);
 
-  const flipCamera = () => setFacing((f) => (f === 'user' ? 'environment' : 'user'));
+  const flipCamera = useCallback(() => {
+    const newFacing = facing === 'user' ? 'environment' : 'user';
+    setFacing(newFacing);
+
+    // Clear selected device to allow flipping
+    setSelectedDeviceId(null);
+
+    // Force restart camera with new facing mode - debounce to ensure state is updated
+    setTimeout(() => {
+      if (showCamera) {
+        startStream().catch(() => {});
+      }
+    }, 100);
+  }, [facing, startStream, showCamera]);
 
   // When facing changes and no explicit deviceId chosen, try to restart with facing constraint
   useEffect(() => {
@@ -203,6 +253,8 @@ const PhotoEditorPage: React.FC = () => {
       return () => clearTimeout(t);
     }
   }, [facing, showCamera]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => () => stopStream(), []);
 
   const capturePhoto = useCallback(() => {
     const video = videoRef.current;
@@ -264,7 +316,14 @@ const PhotoEditorPage: React.FC = () => {
           {originalPreview ? (
             <img src={originalPreview} alt="Original" className="w-full h-full object-contain" />
           ) : showCamera ? (
-            <video ref={videoRef} playsInline autoPlay muted className="w-full h-full object-cover" />
+            <video
+              ref={videoRef}
+              playsInline
+              autoPlay
+              muted
+              className="w-full h-full object-cover absolute inset-0 z-10"
+              style={{ transform: 'none', display: 'block' }}
+            />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-400">
               {camError ? (
@@ -326,31 +385,26 @@ const PhotoEditorPage: React.FC = () => {
 
         {/* Image controls */}
         <div className="flex justify-center gap-2 flex-wrap">
-          <label className="px-3 py-2 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 inline-flex items-center gap-2 cursor-pointer text-sm">
-            <UploadIcon className="w-4 h-4" />
-            Upload
+          <label className="w-12 h-12 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center cursor-pointer" title="Upload Image">
+            <UploadIcon className="w-5 h-5 text-black" />
             <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && handleImageUpload(e.target.files[0])} />
           </label>
 
           {showCamera ? (
             <button
-              onMouseDown={() => {
-                closeCamera();
-              }}
-              onClick={() => {
-                closeCamera();
-              }}
-              className="px-3 py-2 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 inline-flex items-center gap-2 text-sm"
+              onClick={closeCamera}
+              className="w-12 h-12 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center text-lg"
+              title="Close Camera"
             >
-              Cancel
+              ✕
             </button>
           ) : (
             <button
               onClick={() => startStream()}
-              className="px-3 py-2 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 inline-flex items-center gap-2 text-sm"
+              className="w-12 h-12 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center"
+              title="Open Camera"
             >
-              <CameraIcon className="w-4 h-4" />
-              Capture
+              <CameraIcon className="w-5 h-5 text-black" />
             </button>
           )}
 
@@ -376,10 +430,10 @@ const PhotoEditorPage: React.FC = () => {
             <button
               onClick={flipCamera}
               disabled={camLoading}
-              className="px-3 py-2 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 inline-flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-12 h-12 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Flip Camera"
             >
-              <SwapIcon className="w-4 h-4" />
-              Flip
+              <SwapIcon className="w-5 h-5 text-black" />
             </button>
           )}
         </div>
@@ -433,6 +487,23 @@ const PhotoEditorPage: React.FC = () => {
         </div>
       )}
 
+      {/* Preset Chips */}
+      <div className="space-y-3">
+        <div className="text-sm font-semibold text-black">Quick Tasks</div>
+        <div className="flex flex-wrap gap-2">
+          {PRESET_PROMPTS.map((preset) => (
+            <button
+              key={preset.id}
+              onClick={() => setPrompt(preset.prompt)}
+              className="px-3 py-2 rounded-full border-2 border-black bg-white/60 text-black font-medium text-sm hover:bg-black/10 hover:scale-105 transition-all duration-200"
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-black/70">Click a chip to quickly set a common task, or describe your own edit below.</p>
+      </div>
+
       <div className="space-y-2">
         <label className="block text-sm font-medium text-black">Describe the edit</label>
 
@@ -444,6 +515,11 @@ const PhotoEditorPage: React.FC = () => {
           className="w-full p-3 bg-white/40 border border-gray-300 rounded-md shadow-sm focus:ring-black/30 focus:border-black text-gray-900"
         />
       </div>
+
+      <AspectRatioSelector
+        selectedRatio={aspectRatio}
+        onSelect={(ratio: AspectRatio) => setAspectRatio(ratio.value)}
+      />
 
       <div className="flex justify-center gap-3 pt-1">
         <button

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { CameraIcon, SparklesIcon, SwapIcon } from '../components/Icon';
+import { CameraIcon, SparklesIcon, SwapIcon, UploadIcon } from '../components/Icon';
 import { addUserImage } from '../utils/userImages';
+import { AspectRatioSelector, AspectRatio } from '@/components/AspectRatioSelector';
 import { editImageWithNanoBanana } from '../services/geminiService';
 import EtaTimer from '../components/EtaTimer';
 import { authorizedFetch } from '@/utils/authClient';
@@ -36,6 +37,7 @@ const TryApparelPage: React.FC = () => {
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [iterLoading, setIterLoading] = useState(false); // initial try-on
   const [iterError, setIterError] = useState<string | null>(null);
+  const [aspectRatio, setAspectRatio] = useState<string>('9:16'); // Default to Portrait for apparel
   const [customColor, setCustomColor] = useState('');
   const [colorLoading, setColorLoading] = useState<string | null>(null); // which color button is generating
 
@@ -99,15 +101,22 @@ const TryApparelPage: React.FC = () => {
 
   useEffect(() => () => stopStream(), []);
 
-  const flipCamera = () => setFacing((f) => (f === 'user' ? 'environment' : 'user'));
+  const flipCamera = useCallback(() => {
+    const newFacing = facing === 'user' ? 'environment' : 'user';
+    setFacing(newFacing);
 
-  // When facing changes and no explicit deviceId chosen, try to restart with facing constraint
+    // Clear selected device to allow flipping
+    setSelectedDeviceId(null);
+
+    // Force restart camera with new facing mode
+    setTimeout(() => startStream().catch(() => {}), 100);
+  }, [facing, startStream]);
+
+  // When facing changes, always restart with facing constraint
   useEffect(() => {
-    if (!selectedDeviceId) {
-      // Debounce a bit to avoid double calls when mounting
-      const t = setTimeout(() => startStream().catch(() => {}), 50);
-      return () => clearTimeout(t);
-    }
+    // Small delay to ensure state updates are complete
+    const t = setTimeout(() => startStream().catch(() => {}), 50);
+    return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [facing]);
 
@@ -234,7 +243,7 @@ const TryApparelPage: React.FC = () => {
       ].join(' ');
       const result = await editImageWithNanoBanana(base64User, userMime, prompt, [
         { data: base64Apparel, mimeType: apparelMime }
-      ]);
+      ], aspectRatio);
       setResults((arr) => [result.imageUrl, ...arr]);
       try { addUserImage({ kind: 'replace', prompt, original: userImage, generated: result.imageUrl, meta: { apparelSource: 'custom' } }); } catch {}
     } catch (e) {
@@ -253,7 +262,7 @@ const TryApparelPage: React.FC = () => {
       const base64 = dataURLToBase64(base);
       const mime = (base.split(';')[0].split(':')[1]) || 'image/webp';
       const prompt = `Change the color of the apparel being worn to ${color}. Keep everything else (person, background, pose, lighting) unchanged.`;
-      const result = await editImageWithNanoBanana(base64, mime, prompt);
+      const result = await editImageWithNanoBanana(base64, mime, prompt, undefined, aspectRatio);
       setResults((arr) => [result.imageUrl, ...arr]);
       try { addUserImage({ kind: 'replace', prompt, original: userImage || undefined, generated: result.imageUrl, meta: { variant: 'color', color } }); } catch {}
     } catch (e) {
@@ -317,8 +326,8 @@ const TryApparelPage: React.FC = () => {
         </aside>
 
         {/* Main content: User photo and Apparel picker */}
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* User photo */}
+        <div className="space-y-6">
+          {/* User photo - Full Width */}
           <div className="space-y-3">
             <div className="text-sm font-semibold text-black">Your Photo</div>
             <div className="text-xs text-black">Tip: For best results, center yourself in the camera frame.</div>
@@ -338,9 +347,9 @@ const TryApparelPage: React.FC = () => {
                   )}
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  <button onClick={() => startStream()} className="px-4 py-2 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 inline-flex items-center gap-2"><CameraIcon className="w-5 h-5 text-black" /> Open Camera</button>
-                  <button onClick={captureUser} disabled={camLoading || !!camError} className="btn-shine px-4 py-2 rounded-lg bg-black text-white font-bold hover:bg-gray-800 disabled:bg-gray-400 transition-colors duration-200 inline-flex items-center gap-2"><CameraIcon className="w-5 h-5" /> <span aria-hidden className="shine"></span> Capture</button>
-                  <button onClick={flipCamera} disabled={camLoading || !!camError} className="px-4 py-2 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 inline-flex items-center gap-2"><SwapIcon className="w-5 h-5 text-black" /> Flip</button>
+                  <button onClick={() => startStream()} className="w-12 h-12 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center" title="Open Camera"><CameraIcon className="w-5 h-5 text-black" /></button>
+                  <button onClick={captureUser} disabled={camLoading || !!camError} className="w-12 h-12 btn-shine rounded-lg bg-black text-white font-bold hover:bg-gray-800 disabled:bg-gray-400 transition-colors duration-200 flex items-center justify-center" title="Capture"><CameraIcon className="w-5 h-5" /><span aria-hidden className="shine"></span></button>
+                  <button onClick={flipCamera} disabled={camLoading || !!camError} className="w-12 h-12 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center" title="Flip Camera"><SwapIcon className="w-5 h-5 text-black" /></button>
                   {videoDevices.length > 1 && (
                     <select
                       className="px-3 py-2 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 text-sm"
@@ -358,8 +367,8 @@ const TryApparelPage: React.FC = () => {
                       ))}
                     </select>
                   )}
-                  <label className="px-4 py-2 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 inline-flex items-center gap-2 cursor-pointer">
-                    Upload Photo
+                  <label className="w-12 h-12 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center cursor-pointer" title="Upload Photo">
+                    <UploadIcon className="w-5 h-5 text-black" />
                     <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && onUserUpload(e.target.files[0])} />
                   </label>
                 </div>
@@ -377,7 +386,7 @@ const TryApparelPage: React.FC = () => {
             )}
           </div>
 
-          {/* Apparel picker (upload only) */}
+          {/* Apparel picker - Full Width */}
           <div className="space-y-3">
             <div className="text-sm font-semibold text-black">Apparel</div>
             <div className="w-full bg-white rounded-xl overflow-hidden border-2 border-black min-h-[160px] flex items-center justify-center p-3">
@@ -388,8 +397,8 @@ const TryApparelPage: React.FC = () => {
               )}
             </div>
             <div className="flex flex-wrap gap-3">
-              <label className="px-4 py-2 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 inline-flex items-center gap-2 cursor-pointer">
-                Upload Apparel
+              <label className="w-12 h-12 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center cursor-pointer" title="Upload Apparel">
+                <UploadIcon className="w-5 h-5 text-black" />
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && onApparelUpload(e.target.files[0])} />
               </label>
               {apparelImage && (
@@ -397,13 +406,25 @@ const TryApparelPage: React.FC = () => {
               )}
             </div>
           </div>
+
+          {/* Try On Button - Full Width */}
+          <div className="mt-6">
+            <button
+              onClick={tryOn}
+              disabled={!userImage || !apparelImage || iterLoading}
+              className="w-full btn-shine px-6 py-3 rounded-lg bg-black text-white font-bold hover:bg-gray-800 disabled:bg-gray-400 transition-colors duration-200 text-lg"
+            >
+              {iterLoading ? 'Generating…' : (<>Try On<span aria-hidden className="shine"></span></>)}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Actions */}
-      <div className="flex flex-wrap gap-3 justify-center">
-        <button onClick={tryOn} disabled={!userImage || !apparelImage || iterLoading} className="btn-shine px-4 py-2 rounded-lg bg-black text-white font-bold hover:bg-gray-800 disabled:bg-gray-400 transition-colors duration-200">{iterLoading ? 'Generating…' : (<>Try On<span aria-hidden className="shine"></span></>)}</button>
-      </div>
+      <AspectRatioSelector
+        selectedRatio={aspectRatio}
+        onSelect={(ratio: AspectRatio) => setAspectRatio(ratio.value)}
+      />
       {iterLoading && (
         <div className="max-w-md mx-auto"><EtaTimer seconds={18} label="Usually ~15–25s for first render" /></div>
       )}

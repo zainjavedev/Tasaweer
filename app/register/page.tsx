@@ -22,10 +22,15 @@ export default function Page() {
       const res = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, username, password }) });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Registration failed');
+      // Keep loading state until navigation actually starts
       router.replace(`/verify?email=${encodeURIComponent(email)}`);
+      // Delay clearing loading state to prevent flash during navigation
+      setTimeout(() => setLoading(false), 150);
       return;
-    } catch (e: any) { setError(e?.message || 'Failed'); }
-    finally { setLoading(false); }
+    } catch (e: any) {
+      setError(e?.message || 'Failed');
+      setLoading(false); // Only clear loading on error
+    }
   };
 
   return (

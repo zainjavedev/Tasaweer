@@ -54,11 +54,13 @@ function VerifyForm() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Invalid code');
       setStatus('ok'); setMessage('Email verified! You may now sign in.');
-      setTimeout(() => router.replace('/login'), 1000);
+      // Keep loading state until navigation actually starts
+      router.replace('/login');
+      // Delay clearing loading state to prevent flash during navigation
+      setTimeout(() => setLoading(false), 150);
     } catch (err: any) {
       setStatus('error'); setMessage(err?.message || 'Verification failed');
-    } finally {
-      setLoading(false);
+      setLoading(false); // Only clear loading on error
     }
   };
 

@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { AtSign, KeyRound, BarChart3, User } from 'lucide-react';
 import { Fredoka } from 'next/font/google';
-import { useRouter } from 'next/navigation';
 import { useUser } from '@/utils/useUser';
+import AuthGate from '@/components/AuthGate';
 
 const fredoka = Fredoka({ subsets: ['latin'], weight: ['400','500','600','700'] });
 
-export default function ProfilePage() {
+function ProfilePage() {
   const [email, setEmail] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -17,18 +17,17 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  const { user, refreshUserData } = useUser();
+  const { user } = useUser();
 
   useEffect(() => {
-    if (!user) {
-      router.push('/login');
-      return;
+    if (user?.email) {
+      setEmail(user.email);
+    } else {
+      // In a real app, you'd fetch the user's email from the server
+      // For now, we'll use a placeholder email
+      setEmail('user@example.com'); // This should come from the user data
     }
-    // In a real app, you'd fetch the user's email from the server
-    // For now, we'll use a placeholder email
-    setEmail('user@example.com'); // This should come from the user data
-  }, [user, router]);
+  }, [user]);
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +72,7 @@ export default function ProfilePage() {
   };
 
   if (!user) {
-    return <div>Loading...</div>;
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
   return (
@@ -260,5 +259,15 @@ export default function ProfilePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <AuthGate>
+      <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+        <ProfilePage />
+      </Suspense>
+    </AuthGate>
   );
 }
