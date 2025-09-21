@@ -144,16 +144,16 @@ export default function AdminPage() {
   }
 
   return (
-    <div className={`${fredoka.className} min-h-screen bg-gray-50 p-4`}>
+    <div className={`${fredoka.className} min-h-screen bg-gray-50 px-3 py-4 sm:px-6`}>
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
+        <div className="mb-8 space-y-4">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Shield className="w-8 h-8 text-black" />
             <h1 className="text-3xl font-medium text-black">Admin Dashboard</h1>
           </div>
 
           {/* Search */}
-          <div className="relative max-w-md">
+          <div className="relative w-full max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-black/60" />
             <input
               type="text"
@@ -184,7 +184,7 @@ export default function AdminPage() {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white/40 backdrop-blur-xl rounded-[12px] border-2 border-white/30 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] p-6">
             <div className="flex items-center justify-between">
               <div>

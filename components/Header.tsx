@@ -101,8 +101,8 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="relative bg-white/40 backdrop-blur-xl border-b-2 border-white/30 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] px-6 py-4 md:px-8 lg:px-12 flex justify-between items-center z-[10000]">
-      <Link href="/" className={`btn-shine text-4xl md:text-5xl font-medium tracking-wide text-black ${fredoka.className}`}>
+    <header className="relative bg-white/40 backdrop-blur-xl border-b-2 border-white/30 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] px-4 sm:px-6 md:px-8 lg:px-12 py-3 sm:py-4 flex justify-between items-center gap-3 z-[10000]">
+      <Link href="/" className={`btn-shine text-3xl sm:text-4xl md:text-5xl font-medium tracking-wide text-black ${fredoka.className}`}>
         Tasaweers
         <span aria-hidden className="shine"></span>
       </Link>

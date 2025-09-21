@@ -94,17 +94,17 @@ const ObjectReplacementPage: React.FC = () => {
   }, [editedResult]);
 
   return (
-    <SurfaceCard className="max-w-4xl mx-auto overflow-hidden p-8 space-y-8">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-black">Object Replacement</h2>
-        <p className="text-black/70 mt-1">Describe what to replace and with what. Optionally attach a sample for guidance.</p>
+    <SurfaceCard className="max-w-4xl mx-auto overflow-hidden p-6 sm:p-8 space-y-6 sm:space-y-8">
+      <div className="text-center space-y-1">
+        <h2 className="text-2xl sm:text-3xl font-bold text-black">Object Replacement</h2>
+        <p className="text-black/70">Describe what to replace and with what. Optionally attach a sample for guidance.</p>
       </div>
 
       <ImageUploader onImageUpload={handleImageUpload} preview={originalPreview} />
       <div className="text-center text-xs text-black/60">or</div>
       <CaptureWidget onCapture={handleCapture} />
 
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid gap-4 md:grid-cols-2">
         <div>
           <label className="block text-sm font-medium text-black">What to replace</label>
           <div className="relative mt-1">
@@ -153,11 +153,11 @@ const ObjectReplacementPage: React.FC = () => {
         </div>
       </div>
 
-      <div>
+      <div className="space-y-2">
         <label className="block text-sm font-medium text-black">Optional sample image</label>
-        <div className="mt-1 flex items-center gap-4">
+        <div className="mt-1 flex flex-col gap-3 sm:flex-row sm:items-center">
           <input type="file" accept="image/*" onChange={(e) => handleSampleUpload(e.target.files?.[0] || null)} />
-          {samplePreview && <img src={samplePreview} alt="sample" className="h-16 w-auto rounded border border-white/50" />}
+          {samplePreview && <img src={samplePreview} alt="sample" className="h-20 w-auto rounded border border-white/50" />}
         </div>
       </div>
 

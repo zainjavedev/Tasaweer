@@ -29,7 +29,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, pre
     <div className="w-full">
       <label 
         htmlFor="image-upload" 
-        className={`relative block w-full h-80 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 flex justify-center items-center cursor-pointer hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors duration-300 ${preview ? 'bg-cover bg-center' : 'bg-gray-50 dark:bg-gray-700'}`}
+        className={`relative block w-full h-64 sm:h-80 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 flex justify-center items-center cursor-pointer hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors duration-300 ${preview ? 'bg-cover bg-center' : 'bg-gray-50 dark:bg-gray-700'}`}
         style={{ backgroundImage: preview ? `url(${preview})` : 'none' }}
         onDragOver={handleDragOver}
         onDrop={handleDrop}

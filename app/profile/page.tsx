@@ -76,13 +76,13 @@ function ProfilePage() {
   }
 
   return (
-    <div className={`${fredoka.className} relative w-full min-h-screen bg-gray-50`}>
-      <div className="max-w-4xl mx-auto p-4 py-8">
+    <div className={`${fredoka.className} relative w-full min-h-screen bg-gray-50 px-3`}>
+      <div className="max-w-4xl mx-auto py-8 px-0 sm:px-2">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Profile Information */}
           <div className="lg:col-span-1">
             <div className="bg-white/40 backdrop-blur-xl rounded-[12px] border-2 border-white/30 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] p-6">
-              <div className="flex items-center gap-3 mb-6">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-6">
                 <User className="w-6 h-6 text-black" />
                 <h2 className="text-xl font-medium text-black">Profile Information</h2>
               </div>
@@ -122,7 +122,7 @@ function ProfilePage() {
           {/* Usage Statistics */}
           <div className="lg:col-span-1">
             <div className="bg-white/40 backdrop-blur-xl rounded-[12px] border-2 border-white/30 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] p-6">
-              <div className="flex items-center gap-3 mb-6">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-6">
                 <BarChart3 className="w-6 h-6 text-black" />
                 <h2 className="text-xl font-medium text-black">Usage Statistics</h2>
               </div>
@@ -158,7 +158,7 @@ function ProfilePage() {
           {/* Password Reset */}
           <div className="lg:col-span-1">
             <div className="bg-white/40 backdrop-blur-xl rounded-[12px] border-2 border-white/30 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] p-6">
-              <div className="flex items-center gap-3 mb-6">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-6">
                 <KeyRound className="w-6 h-6 text-black" />
                 <h2 className="text-xl font-medium text-black">Reset Password</h2>
               </div>

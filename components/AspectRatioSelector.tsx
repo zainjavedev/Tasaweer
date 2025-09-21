@@ -61,8 +61,8 @@ export function AspectRatioSelector({ selectedRatio, onSelect }: AspectRatioSele
   return (
     <div className="space-y-1.5">
       <label htmlFor={selectId} className="text-sm font-medium text-black">Aspect ratio</label>
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative flex-1 min-w-0">
           <select
             id={selectId}
             value={selectedRatio}
@@ -82,7 +82,7 @@ export function AspectRatioSelector({ selectedRatio, onSelect }: AspectRatioSele
           </span>
         </div>
         <div className="flex items-center gap-2 text-xs text-black/60">
-          <span>Preview</span>
+          <span className="whitespace-nowrap">Preview</span>
           <div className="rounded border border-black/30 bg-black/10 transition-all duration-300 ease-in-out" style={previewStyle} />
         </div>
       </div>

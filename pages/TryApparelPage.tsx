@@ -46,6 +46,7 @@ const TryApparelPage: React.FC = () => {
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [colorLoading, setColorLoading] = useState<string | null>(null); // which color button is generating
   const [refImages, setRefImages] = useState<string[]>([]);
+  const [isWideForCarousel, setIsWideForCarousel] = useState(false);
   const latestResult = results[0] ?? null;
   const previousResults = results.slice(1);
 
@@ -56,7 +57,17 @@ const TryApparelPage: React.FC = () => {
       streamRef.current = null;
     }
     if (!opts.preserveActive && videoRef.current) {
-      videoRef.current.srcObject = null;
+      const mediaEl = videoRef.current as HTMLVideoElement & { srcObject?: MediaStream | null };
+      if (typeof mediaEl.srcObject !== 'undefined') {
+        mediaEl.srcObject = null;
+      }
+      mediaEl.removeAttribute('src');
+      try {
+        mediaEl.pause();
+      } catch {}
+      try {
+        mediaEl.load();
+      } catch {}
     }
     if (!opts.preserveActive) {
       setCameraActive(false);
@@ -73,49 +84,105 @@ const TryApparelPage: React.FC = () => {
       if (!isSecure && !isLocalhost) {
         throw new DOMException('Camera access requires HTTPS or localhost', 'SecurityError');
       }
-      if (!navigator.mediaDevices?.getUserMedia) throw new Error('Camera API not available');
-      const constraints: MediaStreamConstraints = { video: {}, audio: false };
-      if (opts?.deviceId) {
-        (constraints.video as MediaTrackConstraints).deviceId = { exact: opts.deviceId };
-      } else {
-        (constraints.video as MediaTrackConstraints).facingMode = { ideal: facing } as any;
+
+      const navAny = navigator as any;
+      const modernGetUserMedia: typeof navigator.mediaDevices.getUserMedia | undefined = navigator.mediaDevices?.getUserMedia?.bind(navigator.mediaDevices);
+      const legacyGetUserMedia: ((constraints: MediaStreamConstraints, success: (stream: MediaStream) => void, error: (err: unknown) => void) => void) | undefined =
+        navAny?.webkitGetUserMedia || navAny?.mozGetUserMedia || navAny?.getUserMedia;
+
+      if (!modernGetUserMedia && !legacyGetUserMedia) {
+        throw new Error('Camera API not available');
       }
-      let stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+      const baseConstraints: MediaStreamConstraints = { video: {}, audio: false };
+      if (opts?.deviceId) {
+        (baseConstraints.video as MediaTrackConstraints).deviceId = { exact: opts.deviceId };
+      } else {
+        (baseConstraints.video as MediaTrackConstraints).facingMode = { ideal: facing } as any;
+      }
+
+      const attempts: MediaStreamConstraints[] = [baseConstraints];
+      if (!opts?.deviceId) {
+        attempts.push({ video: { facingMode: facing }, audio: false });
+        attempts.push({ video: true, audio: false });
+      }
+
+      let stream: MediaStream | null = null;
+      let lastError: unknown;
+      for (const candidate of attempts) {
+        try {
+          stream = modernGetUserMedia
+            ? await modernGetUserMedia(candidate)
+            : await new Promise<MediaStream>((resolve, reject) => legacyGetUserMedia!(candidate, resolve, reject));
+          if (stream) break;
+        } catch (err) {
+          lastError = err;
+        }
+      }
+
+      if (!stream) {
+        throw lastError || new Error('Unable to start the camera');
+      }
+
       streamRef.current = stream;
       const videoEl = videoRef.current;
       if (videoEl) {
-        videoEl.srcObject = stream;
-        videoEl.defaultMuted = true;
-        videoEl.muted = true;
-        videoEl.playsInline = true;
-        videoEl.setAttribute('autoplay', 'true');
-        videoEl.setAttribute('muted', '');
+        const mediaEl = videoEl as HTMLVideoElement & { srcObject?: MediaStream };
+        if (typeof mediaEl.srcObject !== 'undefined') {
+          mediaEl.srcObject = stream;
+        } else if (typeof window !== 'undefined') {
+          mediaEl.src = window.URL.createObjectURL(stream as any);
+        }
+        mediaEl.defaultMuted = true;
+        mediaEl.muted = true;
+        mediaEl.playsInline = true;
+        mediaEl.setAttribute('autoplay', 'true');
+        mediaEl.setAttribute('muted', '');
+        mediaEl.setAttribute('playsinline', 'true');
+        mediaEl.setAttribute('webkit-playsinline', 'true');
+        mediaEl.removeAttribute('controls');
         try {
-          await videoEl.play();
+          await mediaEl.play();
         } catch (err) {
           console.warn('Camera preview play interrupted', err);
         }
       }
       setCameraActive(true);
+      setCamError(null);
 
-      // Populate device list after permission is granted
-      try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const vids = devices.filter((d) => d.kind === 'videoinput');
-        setVideoDevices(vids);
-        // Auto-select deviceId matching facing if present, else keep current
-        if (!opts?.deviceId && vids.length > 0) {
-          const preferBack = vids.find((d) => /back|rear/i.test(d.label));
-          const preferFront = vids.find((d) => /front|user/i.test(d.label));
-          const preferred = facing === 'environment' ? (preferBack || preferFront || vids[0]) : (preferFront || preferBack || vids[0]);
-          setSelectedDeviceId(preferred.deviceId);
-        } else if (opts?.deviceId) {
-          setSelectedDeviceId(opts.deviceId);
+      if (navigator.mediaDevices?.enumerateDevices) {
+        try {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const vids = devices.filter((d) => d.kind === 'videoinput');
+          setVideoDevices(vids);
+          if (!opts?.deviceId && vids.length > 0) {
+            const preferBack = vids.find((d) => /back|rear/i.test(d.label));
+            const preferFront = vids.find((d) => /front|user/i.test(d.label));
+            const preferred = facing === 'environment' ? (preferBack || preferFront || vids[0]) : (preferFront || preferBack || vids[0]);
+            if (preferred) {
+              setSelectedDeviceId(preferred.deviceId || '');
+            }
+          } else if (opts?.deviceId) {
+            setSelectedDeviceId(opts.deviceId);
+          }
+        } catch (err) {
+          console.warn('Failed to enumerate camera devices', err);
         }
-      } catch {}
+      }
     } catch (e) {
-      const err = e as any;
-      setCamError(err?.message || 'Failed to open camera');
+      const err = e as DOMException & { message?: string };
+      let friendly = 'Failed to open camera';
+      if (err?.name === 'NotAllowedError') {
+        friendly = 'Camera access was denied. Please allow camera permissions in your browser settings.';
+      } else if (err?.name === 'NotFoundError' || err?.name === 'OverconstrainedError') {
+        friendly = 'No compatible camera was found. Try unplugging other apps or switching devices.';
+      } else if (err?.name === 'SecurityError') {
+        friendly = err.message || 'Camera access requires a secure (HTTPS) connection.';
+      } else if (err?.message) {
+        friendly = err.message;
+      }
+      console.error('Unable to start camera', err);
+      setCamError(friendly);
       setCameraActive(false);
     } finally {
       setCamLoading(false);
@@ -124,8 +191,21 @@ const TryApparelPage: React.FC = () => {
 
   useEffect(() => () => stopStream(), []);
 
-  const maxCarouselIndex = Math.max(suggestions.length - 3, 0);
-  const showCarousel = suggestions.length > 3;
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const update = () => setIsWideForCarousel(window.innerWidth >= 768);
+    update();
+    window.addEventListener('resize', update);
+    window.addEventListener('orientationchange', update);
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('orientationchange', update);
+    };
+  }, []);
+
+  const itemsPerView = isWideForCarousel ? 3 : 2;
+  const maxCarouselIndex = Math.max(suggestions.length - itemsPerView, 0);
+  const showCarousel = isWideForCarousel && suggestions.length > itemsPerView;
 
   useEffect(() => {
     if (!showCarousel) {
@@ -136,20 +216,27 @@ const TryApparelPage: React.FC = () => {
       setCarouselIndex((idx) => (idx >= maxCarouselIndex ? 0 : idx + 1));
     }, 6000);
     return () => clearInterval(id);
-  }, [maxCarouselIndex, showCarousel]);
+  }, [itemsPerView, maxCarouselIndex, showCarousel]);
 
   useEffect(() => {
     setCarouselIndex((idx) => Math.min(idx, maxCarouselIndex));
-  }, [maxCarouselIndex]);
+  }, [itemsPerView, maxCarouselIndex]);
 
   useEffect(() => {
     if (!showCarousel) return;
     const container = carouselRef.current;
     if (!container || !suggestions.length) return;
-    const totalWidth = container.scrollWidth;
-    const perCard = totalWidth / suggestions.length;
-    container.scrollTo({ left: perCard * carouselIndex, behavior: 'smooth' });
-  }, [carouselIndex, showCarousel, suggestions.length]);
+    const firstCard = container.querySelector('button');
+    if (!firstCard) return;
+    const cardRect = firstCard.getBoundingClientRect();
+    let step = cardRect.width;
+    if (typeof window !== 'undefined') {
+      const gap = parseFloat(getComputedStyle(container).columnGap || '0');
+      step += gap;
+    }
+    if (!Number.isFinite(step) || step <= 0) return;
+    container.scrollTo({ left: step * carouselIndex, behavior: 'smooth' });
+  }, [carouselIndex, showCarousel, suggestions.length, itemsPerView]);
 
   const flipCamera = useCallback(() => {
     const newFacing = facing === 'user' ? 'environment' : 'user';
@@ -414,9 +501,9 @@ const TryApparelPage: React.FC = () => {
   }, [maxCarouselIndex, showCarousel]);
 
   return (
-    <SurfaceCard className="max-w-5xl mx-auto overflow-hidden p-6 md:p-8 space-y-8">
+    <SurfaceCard className="max-w-5xl mx-auto overflow-hidden p-6 sm:p-8 space-y-6 sm:space-y-8">
       <div className="text-center space-y-1">
-        <h2 className="text-2xl font-bold text-black inline-flex items-center gap-2">
+        <h2 className="text-2xl sm:text-3xl font-bold text-black inline-flex items-center gap-2 justify-center">
           <CameraIcon className="w-6 h-6 text-black" /> Try Apparel
         </h2>
         <p className="text-black/70">Capture or upload your photo, pick an apparel, and try it on instantly.</p>
@@ -427,7 +514,7 @@ const TryApparelPage: React.FC = () => {
           <section className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-[minmax(0,1.35fr)_minmax(0,0.65fr)]">
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-sm font-semibold text-black">Your photo</span>
                   {userImage && !cameraActive && (
                     <div className="flex items-center gap-2 text-xs">
@@ -448,7 +535,7 @@ const TryApparelPage: React.FC = () => {
                     </div>
                   )}
                 </div>
-                <div className="relative h-64 w-full overflow-hidden rounded-2xl border border-black/12 bg-white/80">
+                <div className="relative h-56 sm:h-64 w-full overflow-hidden rounded-2xl border border-black/12 bg-white/80">
                   <video
                     ref={videoRef}
                     playsInline
@@ -547,7 +634,7 @@ const TryApparelPage: React.FC = () => {
 
               <div className="space-y-3 sm:ml-auto sm:max-w-[13rem]">
                 <div className="text-sm font-semibold text-black">Apparel</div>
-                <div className="relative h-44 w-full overflow-hidden rounded-2xl border border-black/12 bg-white/85 flex items-center justify-center p-4">
+                <div className="relative h-40 sm:h-44 w-full overflow-hidden rounded-2xl border border-black/12 bg-white/85 flex items-center justify-center p-4">
                   {apparelImage ? (
                     <img loading="lazy" src={apparelImage} alt="Apparel" className="h-full w-full object-contain" />
                   ) : (
@@ -571,7 +658,7 @@ const TryApparelPage: React.FC = () => {
           </section>
 
           <section className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-sm font-semibold text-black">Reference images (optional)</span>
               <span className="text-xs text-black/60">{refImages.length}/{MAX_REF_IMAGES}</span>
             </div>
@@ -654,7 +741,7 @@ const TryApparelPage: React.FC = () => {
 
         <div className="space-y-6 lg:sticky lg:top-6">
           <section className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-sm font-semibold text-black">Latest render</span>
               {latestResult && <span className="text-xs text-black/50">Just generated</span>}
             </div>
@@ -743,63 +830,72 @@ const TryApparelPage: React.FC = () => {
             )}
           </section>
 
-          <section className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-black">Apparel library</span>
-              {!suggLoading && suggestions.length > 0 && (
-                <span className="text-xs text-black/50">{showCarousel ? 'Auto-scroll enabled' : 'Tap to load'}</span>
-              )}
-            </div>
-            {suggLoading && <div className="text-sm text-black">Loading…</div>}
-            {!suggLoading && suggError && <div className="text-xs text-black">{suggError}</div>}
-            {!suggLoading && !suggError && suggestions.length > 0 && (
-              <div className="flex items-center gap-3">
-                {showCarousel && (
-                  <button
-                    type="button"
-                    onClick={handlePrevSuggestion}
-                    className="flex h-8 w-8 items-center justify-center rounded-full border border-black/20 bg-white text-black hover:bg-black hover:text-white transition-colors"
-                    aria-label="Previous apparel"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                      <path fillRule="evenodd" d="M12.78 4.22a.75.75 0 010 1.06L8.56 9.5l4.22 4.22a.75.75 0 11-1.06 1.06l-4.75-4.75a.75.75 0 010-1.06l4.75-4.75a.75.75 0 011.06 0z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                )}
-                <div
-                  ref={carouselRef}
-                  className={`flex flex-1 gap-3 ${showCarousel ? 'overflow-hidden scroll-smooth' : 'flex-wrap'}`}
-                >
-                  {suggestions.map((item, idx) => (
-                    <button
-                      key={`${item.src}-${idx}`}
-                      type="button"
-                      onClick={() => pickSuggestion(item.src)}
-                      className={`group relative overflow-hidden rounded-lg border border-black/15 bg-white shadow-sm transition-all duration-300 ease-in-out hover:shadow ${showCarousel ? 'flex-shrink-0 basis-full sm:basis-1/2 lg:basis-1/3' : 'flex-1'}`}
-                    >
-                      <img loading="lazy" src={item.src} alt={item.label || 'Apparel'} className="h-24 w-full object-cover" />
-                      <div className="p-2 text-xs text-black truncate group-hover:underline">{item.label || 'Apparel'}</div>
-                    </button>
-                  ))}
-                </div>
-                {showCarousel && (
-                  <button
-                    type="button"
-                    onClick={handleNextSuggestion}
-                    className="flex h-8 w-8 items-center justify-center rounded-full border border-black/20 bg-white text-black hover:bg-black hover:text-white transition-colors"
-                    aria-label="Next apparel"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                      <path fillRule="evenodd" d="M7.22 4.22a.75.75 0 011.06 0l4.75 4.75a.75.75 0 010 1.06l-4.75 4.75a.75.75 0 11-1.06-1.06L11.44 10 7.22 5.78a.75.75 0 010-1.06z" clipRule="evenodd" />
-                    </svg>
-                  </button>
+          {isWideForCarousel ? (
+            <section className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-sm font-semibold text-black">Apparel library</span>
+                {!suggLoading && suggestions.length > 0 && (
+                  <span className="text-xs text-black/50">{showCarousel ? 'Auto-scroll enabled' : 'Tap to load'}</span>
                 )}
               </div>
-            )}
-            {!suggLoading && !suggError && suggestions.length === 0 && (
-              <div className="text-xs text-black/60">Add images under <code>public/apparels</code> to build your library.</div>
-            )}
-          </section>
+              {suggLoading && <div className="text-sm text-black">Loading…</div>}
+              {!suggLoading && suggError && <div className="text-xs text-black">{suggError}</div>}
+              {!suggLoading && !suggError && suggestions.length > 0 && (
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  {showCarousel && (
+                    <button
+                      type="button"
+                      onClick={handlePrevSuggestion}
+                      className="flex h-8 w-8 items-center justify-center rounded-full border border-black/20 bg-white text-black hover:bg-black hover:text-white transition-colors"
+                      aria-label="Previous apparel"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                        <path fillRule="evenodd" d="M12.78 4.22a.75.75 0 010 1.06L8.56 9.5l4.22 4.22a.75.75 0 11-1.06 1.06l-4.75-4.75a.75.75 0 010-1.06l4.75-4.75a.75.75 0 011.06 0z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  )}
+                  <div
+                    ref={carouselRef}
+                    className={`flex flex-1 gap-3 ${showCarousel ? 'overflow-x-auto scroll-smooth pb-2 snap-x snap-mandatory' : 'flex-wrap'}`}
+                  >
+                    {suggestions.map((item, idx) => (
+                      <button
+                        key={`${item.src}-${idx}`}
+                        type="button"
+                        onClick={() => pickSuggestion(item.src)}
+                        className={`group relative overflow-hidden rounded-lg border border-black/15 bg-white shadow-sm transition-all duration-300 ease-in-out hover:shadow ${showCarousel ? 'flex-shrink-0 snap-center sm:basis-1/2 lg:basis-1/3 xl:basis-1/4' : 'flex-1 min-w-[140px]'}`}
+                      >
+                        <img loading="lazy" src={item.src} alt={item.label || 'Apparel'} className="h-24 w-full object-cover" />
+                        <div className="p-2 text-xs text-black truncate group-hover:underline">{item.label || 'Apparel'}</div>
+                      </button>
+                    ))}
+                  </div>
+                  {showCarousel && (
+                    <button
+                      type="button"
+                      onClick={handleNextSuggestion}
+                      className="flex h-8 w-8 items-center justify-center rounded-full border border-black/20 bg-white text-black hover:bg-black hover:text-white transition-colors"
+                      aria-label="Next apparel"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                        <path fillRule="evenodd" d="M7.22 4.22a.75.75 0 011.06 0l4.75 4.75a.75.75 0 010 1.06l-4.75 4.75a.75.75 0 11-1.06-1.06L11.44 10 7.22 5.78a.75.75 0 010-1.06z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              )}
+              {!suggLoading && !suggError && suggestions.length === 0 && (
+                <div className="text-xs text-black/60">Add images under <code>public/apparels</code> to build your library.</div>
+              )}
+            </section>
+          ) : (
+            <section className="space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-sm font-semibold text-black">Apparel library</span>
+              </div>
+              <div className="text-xs text-black/60">Browse the apparel library on a larger screen. You can still upload your own apparel above.</div>
+            </section>
+          )}
 
           {previousResults.length > 0 && (
             <section className="space-y-2">

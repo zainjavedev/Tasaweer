@@ -84,18 +84,18 @@ const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
   return (
     <div className={`max-w-7xl mx-auto ${inter.className}`}>
       {/* Hero */}
-      <section className="relative overflow-hidden bg-white/40 backdrop-blur-xl rounded-3xl p-8 md:p-14 border-2 border-white/30 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)]">
+      <section className="relative overflow-hidden bg-white/40 backdrop-blur-xl rounded-3xl p-6 sm:p-8 lg:p-14 border-2 border-white/30 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)]">
         <div className="hero-floating">
           <span className="absolute -top-10 -left-10 w-56 h-56 rounded-full bg-black/10 blur-3xl animate-float" />
           <span className="absolute bottom-0 -right-10 w-72 h-72 rounded-full bg-black/5 blur-3xl animate-float-slow" />
           <span className="absolute top-1/3 left-1/2 w-24 h-24 rounded-2xl bg-white/10 blur-xl animate-blob" />
         </div>
-        <div className="grid md:grid-cols-2 gap-8 items-center">
+        <div className="grid gap-8 md:grid-cols-2 md:gap-10 items-center">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/30 text-black text-xs font-semibold backdrop-blur-sm border border-white/20">
               <SparklesIcon className="w-4 h-4" /> AI visual editing
             </div>
-            <h2 className="mt-4 text-5xl lg:text-7xl font-black leading-[0.95] text-black">Create stunning visuals with AI</h2>
+            <h2 className="mt-4 text-4xl sm:text-5xl lg:text-7xl font-black leading-[0.95] text-black">Create stunning visuals with AI</h2>
 
             {/* User Limits Display */}
             {isAuthenticated && userLimits && (
@@ -162,7 +162,7 @@ const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
       </section>
 
       {/* Quick features */}
-      <section className="mt-12 grid gap-4 md:grid-cols-3" data-reveal>
+      <section className="mt-12 grid gap-4 sm:grid-cols-2 md:grid-cols-3" data-reveal>
         <div className="bg-white/40 backdrop-blur-xl rounded-2xl border-2 border-white/30 p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:scale-105 transition-all duration-200">
           <div className="text-lg font-semibold text-black">Image Restoration</div>
           <p className="mt-2 text-sm text-black">Fix damage, denoise, and color-correct — add optional notes.</p>

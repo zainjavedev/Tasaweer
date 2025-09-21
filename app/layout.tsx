@@ -74,7 +74,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         />
         {!hideChrome && <Header />}
         {/* {!hideChrome && <NavigationNext />} */}
-        <main className={`container mx-auto px-4 py-8 ${hideChrome ? 'min-h-screen flex items-center justify-center' : ''}`}>{children}</main>
+        <main
+          className={`container mx-auto px-4 py-6 sm:py-8 lg:py-12 ${hideChrome ? 'min-h-screen flex items-center justify-center' : ''}`}
+        >
+          {children}
+        </main>
         {!hideChrome && (
           <footer className="border-t border-black/10 bg-white/70 py-6 text-center text-sm text-black/70">
             <p className="font-semibold text-black">Built with love.</p>

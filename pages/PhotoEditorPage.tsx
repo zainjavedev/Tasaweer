@@ -312,16 +312,16 @@ const PhotoEditorPage: React.FC = () => {
   const previousResults = results.slice(1);
 
   return (
-    <SurfaceCard className="max-w-5xl mx-auto overflow-hidden p-6 md:p-8 space-y-8">
+    <SurfaceCard className="max-w-5xl mx-auto overflow-hidden p-6 sm:p-8 space-y-6 sm:space-y-8">
       <div className="text-center space-y-1">
-        <h2 className="text-2xl font-bold text-black">Photo Editor</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-black">Photo Editor</h2>
         <p className="text-black/70">Upload a photo and describe the changes you want.</p>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
         <div className="space-y-6">
           <section className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-sm font-semibold text-black">Your photo</span>
               {originalPreview && !showCamera && (
                 <button
@@ -439,11 +439,11 @@ const PhotoEditorPage: React.FC = () => {
           </section>
 
           <section className="space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-sm font-semibold text-black">Reference images (optional)</span>
               <span className="text-xs text-black/70">{refImages.length}/{maxRefImages}</span>
             </div>
-            <div className="grid gap-3 grid-cols-3 sm:grid-cols-6">
+            <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-6">
               {refPreviews.map((p, idx) => (
                 <div key={idx} className="relative h-20 overflow-hidden rounded-lg border border-black/12 bg-white">
                   <img src={p} alt={`ref ${idx + 1}`} className="w-full h-full object-cover" />

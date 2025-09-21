@@ -29,14 +29,14 @@ const MyImagesPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden p-6 md:p-8 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden p-6 sm:p-8 space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">My Images</h2>
           <p className="text-gray-600 dark:text-gray-400">Your generated results are saved on this device.</p>
         </div>
         {items.length > 0 && (
-          <button onClick={onClear} className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700">Clear all</button>
+          <button onClick={onClear} className="self-start sm:self-auto px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700">Clear all</button>
         )}
       </div>
 
@@ -79,4 +79,3 @@ const MyImagesPage: React.FC = () => {
 };
 
 export default MyImagesPage;
-

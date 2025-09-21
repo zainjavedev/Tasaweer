@@ -123,13 +123,13 @@ const TextToImagePage: React.FC = () => {
   const previousResults = results.slice(1);
 
   return (
-    <SurfaceCard className="max-w-5xl mx-auto overflow-hidden p-6 md:p-8 space-y-8">
+    <SurfaceCard className="max-w-5xl mx-auto overflow-hidden p-6 sm:p-8 space-y-6 sm:space-y-8">
       <div className="text-center space-y-1">
-        <h2 className="text-2xl font-bold text-black">Text → Image</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-black">Text → Image</h2>
         <p className="text-black/70">Describe the scene and generate unique renders.</p>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-8">
         <div className="space-y-6">
           <section className="space-y-2">
             <label htmlFor="t2i" className="block text-sm font-medium text-black">Prompt</label>
@@ -187,11 +187,11 @@ const TextToImagePage: React.FC = () => {
           )}
 
           <section className="space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="block text-sm font-medium text-black">Reference images (optional)</span>
               <span className="text-xs text-black/60">{refImages.length}/{maxRefImages}</span>
             </div>
-            <div className="grid gap-3 grid-cols-3 sm:grid-cols-6">
+            <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-6">
               {refPreviews.map((p, idx) => (
                 <div key={idx} className="relative h-20 rounded overflow-hidden border-2 border-black bg-white">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -240,7 +240,7 @@ const TextToImagePage: React.FC = () => {
 
         <div className="space-y-6 lg:sticky lg:top-6">
           <section className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-sm font-semibold text-black">Latest image</span>
               {latestResult && <span className="text-xs text-black/50">Newest result</span>}
             </div>
