@@ -414,7 +414,7 @@ const TryApparelPage: React.FC = () => {
   }, [maxCarouselIndex, showCarousel]);
 
   return (
-    <SurfaceCard className="max-w-6xl mx-auto overflow-hidden p-6 md:p-8 space-y-8">
+    <SurfaceCard className="max-w-5xl mx-auto overflow-hidden p-6 md:p-8 space-y-8">
       <div className="text-center space-y-1">
         <h2 className="text-2xl font-bold text-black inline-flex items-center gap-2">
           <CameraIcon className="w-6 h-6 text-black" /> Try Apparel

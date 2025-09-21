@@ -27,7 +27,7 @@ export const EtaTimer: React.FC<EtaTimerProps> = ({ seconds, label }) => {
 
   return (
     <div className="w-full max-w-md mx-auto text-center space-y-2">
-      <div className="text-xs text-black">
+      <div className="text-xs text-gray-600 dark:text-gray-300">
         {label || `Estimated ${seconds}s · ~${remaining}s remaining`}
       </div>
       <div className="h-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -41,3 +41,4 @@ export const EtaTimer: React.FC<EtaTimerProps> = ({ seconds, label }) => {
 };
 
 export default EtaTimer;
+
