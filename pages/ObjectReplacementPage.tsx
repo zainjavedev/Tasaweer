@@ -94,7 +94,7 @@ const ObjectReplacementPage: React.FC = () => {
   }, [editedResult]);
 
   return (
-    <SurfaceCard className="max-w-4xl mx-auto overflow-hidden p-8 space-y-8">
+    <SurfaceCard className="max-w-5xl mx-auto overflow-hidden p-8 space-y-8">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-black">Object Replacement</h2>
         <p className="text-black/70 mt-1">Describe what to replace and with what. Optionally attach a sample for guidance.</p>

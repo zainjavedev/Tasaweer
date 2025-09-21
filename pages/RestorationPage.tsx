@@ -82,7 +82,7 @@ const RestorationPage: React.FC = () => {
   }, [editedResult]);
 
   return (
-    <SurfaceCard className="max-w-4xl mx-auto overflow-hidden p-8 space-y-8">
+    <SurfaceCard className="max-w-5xl mx-auto overflow-hidden p-8 space-y-8">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-black">Image Restoration</h2>
         <p className="text-black/70 mt-1">Repair damage, denoise, sharpen, and color-correct while keeping it natural.</p>

@@ -312,7 +312,7 @@ const PhotoEditorPage: React.FC = () => {
   const previousResults = results.slice(1);
 
   return (
-    <SurfaceCard className="max-w-5xl mx-auto overflow-hidden p-6 md:p-8 space-y-8">
+    <SurfaceCard className="max-w-6xl mx-auto overflow-hidden p-6 md:p-8 space-y-8">
       <div className="text-center space-y-1">
         <h2 className="text-2xl font-bold text-black">Photo Editor</h2>
         <p className="text-black/70">Upload a photo and describe the changes you want.</p>
