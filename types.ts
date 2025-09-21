@@ -1,6 +1,13 @@
 import React from 'react';
 
-export type Page = 'home' | 'text2image' | 'try-apparel' | 'photo-editor';
+export type Page =
+  | 'home'
+  | 'text2image'
+  | 'try-apparel'
+  | 'photo-editor'
+  | 'restoration'
+  | 'replace'
+  | 'bulk-edit';
 
 export interface PromptTemplate {
   label: string;

@@ -4,7 +4,7 @@
 
 # Tasaweers
 
-AI visual editor focused on real estate photos — clean up rooms, remove clutter, replace objects, and generate on‑brand visuals faster. Built with Next.js and powered by the Gemini API, with optional private cloud storage using Supabase and client‑side encryption.
+AI visual editor for lifestyle and marketing photos — clean up scenes, remove clutter, replace objects, and generate on‑brand visuals faster. Built with Next.js and powered by the Gemini API, with optional private cloud storage using Supabase and client‑side encryption.
 
 ## Features
 
@@ -87,7 +87,7 @@ When running tests without `GEMINI_FAKE=1`, you must set `GEMINI_API_KEY`. If `A
 
 ---
 
-Questions or want to tailor the workflow to your brokerage/brand? Open an issue or start a discussion.
+Questions or want to tailor the workflow to your team or brand? Open an issue or start a discussion.
 
 ## Optional Samples
 

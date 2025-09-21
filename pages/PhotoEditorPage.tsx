@@ -3,12 +3,13 @@ import { CameraIcon, UploadIcon, MagicWandIcon, SwapIcon } from '../components/I
 import { editImageWithNanoBanana } from '../services/geminiService';
 import EtaTimer from '../components/EtaTimer';
 import { addUserImage } from '../utils/userImages';
-import { AspectRatioSelector, AspectRatio } from '@/components/AspectRatioSelector';
+import { AspectRatioSelector } from '@/components/AspectRatioSelector';
 import { compressImageFile } from '@/utils/image';
 import { useUser } from '@/utils/useUser';
 import Lightbox from '@/components/Lightbox';
 import { photoEditingSamples } from '@/lib/samples';
 import { useSearchParams } from 'next/navigation';
+import SurfaceCard from '@/components/SurfaceCard';
 
 const PhotoEditorPage: React.FC = () => {
   const [originalImage, setOriginalImage] = useState<File | null>(null);
@@ -203,8 +204,12 @@ const PhotoEditorPage: React.FC = () => {
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.style.display = 'block';
-        await videoRef.current.play();
+        try {
+          await videoRef.current.play();
+        } catch (err) {
+          // Ignore play interruptions that happen when the stream stops while starting
+          console.warn('Camera preview play interrupted', err);
+        }
       }
 
       // Populate device list after permission is granted
@@ -303,297 +308,363 @@ const PhotoEditorPage: React.FC = () => {
     }
   }, [searchParams]);
 
+  const latestResult = results[0] ?? null;
+  const previousResults = results.slice(1);
+
   return (
-    <div className="max-w-4xl mx-auto bg-white/40 backdrop-blur-xl rounded-2xl border-2 border-white/30 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] overflow-hidden p-6 md:p-8 space-y-6">
+    <SurfaceCard className="max-w-5xl mx-auto overflow-hidden p-6 md:p-8 space-y-8">
       <div className="text-center space-y-1">
         <h2 className="text-2xl font-bold text-black">Photo Editor</h2>
-        <p className="text-black">Upload a photo and describe the changes you want.</p>
+        <p className="text-black/70">Upload a photo and describe the changes you want.</p>
       </div>
 
-      {/* Image Canvas */}
-      <div className="space-y-4">
-        <div className="aspect-video w-full max-w-md mx-auto bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-300 relative">
-          {originalPreview ? (
-            <img src={originalPreview} alt="Original" className="w-full h-full object-contain" />
-          ) : showCamera ? (
-            <video
-              ref={videoRef}
-              playsInline
-              autoPlay
-              muted
-              className="w-full h-full object-cover absolute inset-0 z-10"
-              style={{ transform: 'none', display: 'block' }}
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400">
-              {camError ? (
-                <div className="text-center">
-                  <CameraIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">{camError}</p>
-                </div>
-              ) : (
-                <div className="text-center">
-                  <UploadIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Upload or capture a photo</p>
-                </div>
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <div className="space-y-6">
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-black">Your photo</span>
+              {originalPreview && !showCamera && (
+                <button
+                  onClick={() => {
+                    setOriginalImage(null);
+                    setOriginalPreview(null);
+                  }}
+                  className="text-xs font-semibold text-black/70 hover:text-black"
+                >
+                  Remove
+                </button>
               )}
             </div>
-          )}
-
-          {/* Camera overlay controls */}
-          {showCamera && !camError && (
-            <>
-              <div className="absolute inset-0 pointer-events-none" />
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-                <button
-                  onClick={capturePhoto}
-                  disabled={camLoading}
-                  className="w-16 h-16 rounded-full bg-white border-4 border-black flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <CameraIcon className="w-8 h-8 text-black" />
-                </button>
-              </div>
-            </>
-          )}
-
-          {/* Image overlay controls */}
-          {originalPreview && !showCamera && (
-            <button
-              onClick={() => {
-                setOriginalImage(null);
-                setOriginalPreview(null);
-              }}
-              className="absolute top-2 right-2 bg-white/90 rounded-full p-2 border hover:bg-white"
-              title="Remove image"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-black">
-                <path fillRule="evenodd" d="M6.225 4.811a.75.75 0 011.06 0L12 9.525l4.715-4.714a.75.75 0 111.06 1.06L13.06 10.586l4.715 4.714a.75.75 0 11-1.06 1.06L12 11.646l-4.715 4.714a.75.75 0 11-1.06-1.06l4.714-4.715-4.714-4.715a.75.75 0 010-1.06z" clipRule="evenodd"/>
-              </svg>
-            </button>
-          )}
-
-          {/* Loading overlay */}
-          {(camLoading || isLoading) && (
-            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-              <div className="text-white text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
-                <p className="text-sm">{camLoading ? 'Opening camera...' : 'Processing...'}</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Image controls */}
-        <div className="flex justify-center gap-2 flex-wrap">
-          <label className="w-12 h-12 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center cursor-pointer" title="Upload Image">
-            <UploadIcon className="w-5 h-5 text-black" />
-            <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && handleImageUpload(e.target.files[0])} />
-          </label>
-
-          {showCamera ? (
-            <button
-              onClick={closeCamera}
-              className="w-12 h-12 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center text-lg"
-              title="Close Camera"
-            >
-              ✕
-            </button>
-          ) : (
-            <button
-              onClick={() => startStream()}
-              className="w-12 h-12 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center"
-              title="Open Camera"
-            >
-              <CameraIcon className="w-5 h-5 text-black" />
-            </button>
-          )}
-
-          {showCamera && videoDevices.length > 1 && (
-            <select
-              className="px-3 py-2 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 text-sm"
-              value={selectedDeviceId || ''}
-              onChange={(e) => {
-                const id = e.target.value;
-                setSelectedDeviceId(id);
-                startStream({ deviceId: id });
-              }}
-            >
-              {videoDevices.map((d, idx) => (
-                <option key={d.deviceId || idx} value={d.deviceId}>
-                  {d.label || `Camera ${idx + 1}`}
-                </option>
-              ))}
-            </select>
-          )}
-
-          {showCamera && (
-            <button
-              onClick={flipCamera}
-              disabled={camLoading}
-              className="w-12 h-12 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Flip Camera"
-            >
-              <SwapIcon className="w-5 h-5 text-black" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Optional reference images */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <label className="block text-sm font-medium text-black">Reference images (optional)</label>
-          <span className="text-xs text-black">{refImages.length}/{maxRefImages}</span>
-        </div>
-        <div className="grid gap-3 grid-cols-3 sm:grid-cols-6">
-          {refPreviews.map((p, idx) => (
-            <div key={idx} className="relative h-20 rounded overflow-hidden border bg-white">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p} alt={`ref ${idx + 1}`} className="w-full h-full object-cover" />
-              <button type="button" onClick={() => removeRefAt(idx)} className="absolute top-1 right-1 bg-white/90 rounded-full p-1 border" title="Remove">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-black"><path fillRule="evenodd" d="M6.225 4.811a.75.75 0 011.06 0L12 9.525l4.715-4.714a.75.75 0 111.06 1.06L13.06 10.586l4.715 4.714a.75.75 0 11-1.06 1.06L12 11.646l-4.715 4.714a.75.75 0 11-1.06-1.06l4.714-4.715-4.714-4.715a.75.75 0 010-1.06z" clipRule="evenodd"/></svg>
-              </button>
-            </div>
-          ))}
-          {refImages.length < maxRefImages && (
-            <label className="flex items-center justify-center h-20 rounded-lg border-2 border-dashed border-gray-400 text-xs text-black cursor-pointer hover:border-black">
-              Add
-              <input type="file" accept="image/*" multiple className="sr-only" onChange={(e) => e.target.files && addRefFiles(e.target.files)} />
-            </label>
-          )}
-        </div>
-        <p className="text-xs text-black/60">These images guide the style/composition of the edit.</p>
-      </div>
-
-      {photoEditingSamples.length > 0 && (
-        <div className="space-y-2">
-          <div className="text-sm font-semibold text-black">Try a sample image (optional)</div>
-          <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 lg:grid-cols-6">
-            {photoEditingSamples.map((url, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => setOriginalFromUrl(url)}
-                className="group relative rounded-lg overflow-hidden border bg-white hover:shadow focus:outline-none focus:ring-2 focus:ring-black/30"
-                title="Use this sample image"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={url} alt={`Sample ${idx + 1}`} className="w-full h-24 object-cover" />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-              </button>
-            ))}
-          </div>
-          <p className="text-xs text-black/60">Selecting a sample simply fills the input image. You can still upload your own.</p>
-        </div>
-      )}
-
-      {/* Preset Chips */}
-      <div className="space-y-3">
-        <div className="text-sm font-semibold text-black">Quick Tasks</div>
-        <div className="flex flex-wrap gap-2">
-          {PRESET_PROMPTS.map((preset) => (
-            <button
-              key={preset.id}
-              onClick={() => setPrompt(preset.prompt)}
-              className="px-3 py-2 rounded-full border-2 border-black bg-white/60 text-black font-medium text-sm hover:bg-black/10 hover:scale-105 transition-all duration-200"
-            >
-              {preset.label}
-            </button>
-          ))}
-        </div>
-        <p className="text-xs text-black/70">Click a chip to quickly set a common task, or describe your own edit below.</p>
-      </div>
-
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-black">Describe the edit</label>
-
-        <textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          rows={3}
-          placeholder="e.g., Remove blemishes and brighten the photo"
-          className="w-full p-3 bg-white/40 border border-gray-300 rounded-md shadow-sm focus:ring-black/30 focus:border-black text-gray-900"
-        />
-      </div>
-
-      <AspectRatioSelector
-        selectedRatio={aspectRatio}
-        onSelect={(ratio: AspectRatio) => setAspectRatio(ratio.value)}
-      />
-
-      <div className="flex justify-center gap-3 pt-1">
-        <button
-          onClick={() => setPrompt('')}
-          disabled={!prompt.trim()}
-          className="px-4 py-2 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Clear
-        </button>
-        <button
-          onClick={handleSubmit}
-          disabled={!originalImage || isLoading}
-          className={`px-6 py-3 rounded-lg bg-black text-white font-bold hover:bg-gray-800 transition-all duration-200 inline-flex items-center gap-3 ${!originalImage || isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-          <MagicWandIcon className="w-5 h-5" />
-          {isLoading ? 'Editing…' : 'Apply Edits'}
-        </button>
-      </div>
-
-      {error && <div className="text-center text-red-600 bg-red-50/80 p-3 rounded-md">{error}</div>}
-      {isLoading && <div className="max-w-md mx-auto"><EtaTimer seconds={14} label="Usually 10–20s" /></div>}
-
-      {results.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="text-sm font-semibold text-black">Results (latest first)</div>
-            <label className="text-xs flex items-center gap-2 text-black">
-              <input type="checkbox" checked={showEditButtons} onChange={(e) => setShowEditButtons(e.target.checked)} /> Show "Edit" buttons
-            </label>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {results.map((url, idx) => (
-              <div key={idx} className="relative bg-white/40 rounded-xl overflow-hidden border-2 border-white/30">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img onClick={() => setLightbox(url)} loading="lazy" src={url} alt={`Edited ${idx + 1}`} className="cursor-zoom-in w-full h-auto object-contain max-h-80" />
-                <div className="absolute top-2 right-2 flex gap-2">
-                  <button
-                    onClick={() => download(url, `photo-edit-${idx + 1}.png`)}
-                    className="p-2 rounded-full bg-white/90 border shadow"
-                    aria-label="Download"
-                    title="Download"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-black">
-                      <path fillRule="evenodd" d="M12 3.75a.75.75 0 01.75.75v8.19l2.47-2.47a.75.75 0 111.06 1.06l-3.75 3.75a.75.75 0 01-1.06 0L7.72 11.28a.75.75 0 111.06-1.06l2.47 2.47V4.5A.75.75 0 0112 3.75z" clipRule="evenodd" />
-                      <path d="M3.75 15a.75.75 0 01.75-.75h15a.75.75 0 01.75.75v3A2.25 2.25 0 0118 20.25H6A2.25 2.25 0 013.75 18v-3z" />
-                    </svg>
-                  </button>
-                  {showEditButtons && (
+            <div className="relative aspect-square w-full max-w-sm mx-auto overflow-hidden rounded-2xl border border-black/12 bg-white/85 flex items-center justify-center">
+              {showCamera ? (
+                <video
+                  ref={videoRef}
+                  playsInline
+                  autoPlay
+                  muted
+                  className="w-full h-full object-cover"
+                />
+              ) : originalPreview ? (
+                <img src={originalPreview} alt="Original" className="w-full h-full object-contain" />
+              ) : (
+                <div className="px-4 text-center text-sm text-black/60">
+                  {camError ? (
                     <>
-                      <button
-                        onClick={() => setOriginalFromUrl(url)}
-                        className="px-3 py-1.5 rounded bg-white/90 border shadow text-xs font-semibold text-black"
-                        title="Use as source image"
-                      >
-                        Source
-                      </button>
-                      <button
-                        onClick={() => addRefFromUrl(url)}
-                        className="px-3 py-1.5 rounded bg-white/90 border shadow text-xs font-semibold text-black"
-                        title="Use as reference image"
-                      >
-                        Ref
-                      </button>
+                      <CameraIcon className="mx-auto mb-2 h-7 w-7 opacity-60" />
+                      <p>{camError}</p>
+                    </>
+                  ) : (
+                    <>
+                      <UploadIcon className="mx-auto mb-2 h-7 w-7 opacity-60" />
+                      <p>Upload or capture a photo to get started.</p>
                     </>
                   )}
                 </div>
+              )}
+
+              {showCamera && !camError && (
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2">
+                  <button
+                    onClick={capturePhoto}
+                    disabled={camLoading}
+                    className="flex h-12 w-12 items-center justify-center rounded-full border border-black/20 bg-white text-black shadow-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    title="Capture photo"
+                  >
+                    <CameraIcon className="h-6 w-6" />
+                  </button>
+                </div>
+              )}
+
+              {(camLoading || isLoading) && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/35 backdrop-blur-sm">
+                  <div className="space-y-1 text-center text-xs text-white">
+                    <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-white/60 border-b-transparent" />
+                    <p>{camLoading ? 'Opening camera…' : 'Processing…'}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="flex h-10 items-center justify-center rounded-lg border border-black/20 bg-white px-3 text-xs font-semibold text-black transition-colors duration-200 hover:bg-gray-50 cursor-pointer" title="Upload image">
+                <UploadIcon className="mr-2 h-4 w-4" /> Upload
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && handleImageUpload(e.target.files[0])} />
+              </label>
+
+              <button
+                onClick={() => {
+                  if (showCamera) {
+                    closeCamera();
+                  } else {
+                    setShowCamera(true);
+                    setCamError(null);
+                    startStream().catch(() => {});
+                  }
+                }}
+                className="h-10 rounded-lg border border-black/20 bg-white px-3 text-xs font-semibold text-black transition-colors duration-200 hover:bg-gray-50"
+              >
+                {showCamera ? 'Close camera' : 'Open camera'}
+              </button>
+
+              {showCamera && (
+                <>
+                  <button
+                    onClick={flipCamera}
+                    disabled={camLoading}
+                    className="flex h-10 w-10 items-center justify-center rounded-lg border border-black/20 bg-white text-black transition-colors duration-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Flip camera"
+                  >
+                    <SwapIcon className="w-5 h-5" />
+                  </button>
+                  {videoDevices.length > 1 && (
+                    <select
+                      className="h-10 rounded-lg border border-black/20 bg-white px-2 text-xs text-black transition-colors duration-200 hover:bg-gray-50"
+                      value={selectedDeviceId || ''}
+                      onChange={(e) => {
+                        const id = e.target.value;
+                        setSelectedDeviceId(id);
+                        startStream({ deviceId: id }).catch(() => {});
+                      }}
+                    >
+                      {videoDevices.map((d, idx) => (
+                        <option key={d.deviceId || idx} value={d.deviceId}>
+                          {d.label || `Camera ${idx + 1}`}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </>
+              )}
+            </div>
+          </section>
+
+          <section className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-black">Reference images (optional)</span>
+              <span className="text-xs text-black/70">{refImages.length}/{maxRefImages}</span>
+            </div>
+            <div className="grid gap-3 grid-cols-3 sm:grid-cols-6">
+              {refPreviews.map((p, idx) => (
+                <div key={idx} className="relative h-20 overflow-hidden rounded-lg border border-black/12 bg-white">
+                  <img src={p} alt={`ref ${idx + 1}`} className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeRefAt(idx)}
+                    className="absolute top-1 right-1 bg-white/90 rounded-full p-1 border"
+                    title="Remove"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-black"><path fillRule="evenodd" d="M6.225 4.811a.75.75 0 011.06 0L12 9.525l4.715-4.714a.75.75 0 111.06 1.06L13.06 10.586l4.715 4.714a.75.75 0 11-1.06 1.06L12 11.646l-4.715 4.714a.75.75 0 11-1.06-1.06l4.714-4.715-4.714-4.715a.75.75 0 010-1.06z" clipRule="evenodd"/></svg>
+                  </button>
+                </div>
+              ))}
+              {refImages.length < maxRefImages && (
+                <label className="flex items-center justify-center h-20 rounded-lg border-2 border-dashed border-black/30 text-xs text-black cursor-pointer hover:border-black">
+                  Add
+                  <input type="file" accept="image/*" multiple className="sr-only" onChange={(e) => e.target.files && addRefFiles(e.target.files)} />
+                </label>
+              )}
+            </div>
+            <p className="text-xs text-black/60">Reference images guide the style or composition of the edit.</p>
+          </section>
+
+          {photoEditingSamples.length > 0 && (
+            <section className="space-y-2">
+              <div className="text-sm font-semibold text-black">Try a sample image</div>
+              <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 lg:grid-cols-6">
+                {photoEditingSamples.map((url, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setOriginalFromUrl(url)}
+                    className="group relative overflow-hidden rounded-lg border border-black/12 bg-white transition-all duration-200 hover:shadow focus:outline-none focus:ring-2 focus:ring-black/20"
+                    title="Use this sample image"
+                  >
+                    <img src={url} alt={`Sample ${idx + 1}`} className="h-20 w-full object-cover" />
+                    <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+                  </button>
+                ))}
               </div>
-            ))}
-          </div>
+              <p className="text-xs text-black/60">Selecting a sample fills the input image—you can still upload your own.</p>
+            </section>
+          )}
+
+          <section className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-sm font-semibold text-black">Describe the edit</span>
+              {PRESET_PROMPTS.length > 0 && (
+                <div className="flex flex-wrap gap-1 text-xs text-black/70">
+                  {PRESET_PROMPTS.map((preset) => (
+                    <button
+                      key={preset.id}
+                      onClick={() => setPrompt(preset.prompt)}
+                      className="rounded-full border border-black/20 bg-white px-2.5 py-1 font-semibold transition-colors duration-200 hover:bg-black hover:text-white"
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="relative">
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                rows={4}
+                placeholder="e.g., Remove blemishes and brighten the photo"
+                className="w-full rounded-md border border-black/12 bg-white/80 p-3 pr-10 text-sm text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-black/20"
+              />
+              {prompt && (
+                <button
+                  type="button"
+                  onClick={() => setPrompt('')}
+                  className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full border border-black/20 bg-white text-black/60 transition hover:text-black"
+                  aria-label="Clear edit description"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+                    <path fillRule="evenodd" d="M6.225 4.811a.75.75 0 011.06 0L12 9.525l4.715-4.714a.75.75 0 111.06 1.06L13.06 10.586l4.715 4.714a.75.75 0 11-1.06 1.06L12 11.646l-4.715 4.714a.75.75 0 11-1.06-1.06l4.714-4.715-4.714-4.715a.75.75 0 010-1.06z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </section>
+
+          <AspectRatioSelector selectedRatio={aspectRatio} onSelect={setAspectRatio} />
+
+          <section className="space-y-2">
+            <button
+              onClick={handleSubmit}
+              disabled={isLoading || !originalImage || !prompt.trim()}
+              className="btn-shine flex w-full items-center justify-center gap-2 rounded-lg bg-black px-6 py-3 text-white font-bold transition-colors duration-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-400"
+            >
+              {isLoading ? 'Generating…' : (
+                <>
+                  <MagicWandIcon className="h-5 w-5" />
+                  Generate edit
+                </>
+              )}
+              <span aria-hidden className="shine"></span>
+            </button>
+
+            {error && (
+              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">{error}</div>
+            )}
+
+            {isLoading && (
+              <div className="space-y-1 text-xs text-black/70">
+                <EtaTimer seconds={14} label="Usually 10–20s" />
+                <p className="text-center">AI is editing your photo…</p>
+              </div>
+            )}
+          </section>
         </div>
-      )}
+
+        <div className="space-y-6 lg:sticky lg:top-6">
+          <section className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-sm font-semibold text-black">Latest render</span>
+              {latestResult && (
+                <label className="inline-flex items-center gap-2 text-xs text-black/60">
+                  <input type="checkbox" checked={showEditButtons} onChange={(e) => setShowEditButtons(e.target.checked)} />
+                  Show extra actions
+                </label>
+              )}
+            </div>
+            <div className="relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-2xl border border-black/12 bg-white/85">
+              {latestResult ? (
+                <button type="button" onClick={() => setLightbox(latestResult)} className="h-full w-full">
+                  <img src={latestResult} alt="Latest result" className="h-full w-full object-contain" />
+                </button>
+              ) : (
+                <div className="px-6 text-center text-sm text-black/60">Generate an edit to preview it here.</div>
+              )}
+              {isLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/35 backdrop-blur-sm">
+                  <div className="space-y-1 text-center text-xs text-white">
+                    <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-white/60 border-b-transparent" />
+                    <p>Processing…</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            {latestResult && (
+              <div className="flex flex-wrap gap-2 text-sm text-black/70">
+                <button
+                  onClick={() => download(latestResult, 'photo-edit-latest.png')}
+                  className="rounded-lg border border-black bg-black px-3 py-2 font-semibold text-white transition-colors hover:bg-gray-800"
+                >
+                  Download PNG
+                </button>
+                {showEditButtons && (
+                  <>
+                    <button
+                      onClick={() => setOriginalFromUrl(latestResult)}
+                      className="rounded-lg border border-black px-3 py-2 font-semibold text-black transition-colors hover:bg-black hover:text-white"
+                    >
+                      Use as source
+                    </button>
+                    <button
+                      onClick={() => addRefFromUrl(latestResult)}
+                      className="rounded-lg border border-black px-3 py-2 font-semibold text-black transition-colors hover:bg-black hover:text-white"
+                    >
+                      Add as reference
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </section>
+
+          {previousResults.length > 0 && (
+            <section className="space-y-2">
+              <div className="text-sm font-semibold text-black">History</div>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {previousResults.map((url, idx) => (
+                  <div key={`${url}-${idx}`} className="relative overflow-hidden rounded-xl border border-black/12 bg-white/80">
+                    <img
+                      src={url}
+                      alt={`Result ${idx + 2}`}
+                      className="h-32 w-full cursor-zoom-in object-contain"
+                      onClick={() => setLightbox(url)}
+                    />
+                    <div className="absolute top-2 right-2 flex gap-2">
+                      <button
+                        onClick={() => download(url, `photo-edit-${idx + 2}.png`)}
+                        className="rounded-full border border-black/20 bg-white p-2 shadow-sm transition hover:scale-105"
+                        aria-label="Download"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5 text-black">
+                          <path fillRule="evenodd" d="M12 3.75a.75.75 0 01.75.75v8.19l2.47-2.47a.75.75 0 111.06 1.06l-3.75 3.75a.75.75 0 01-1.06 0L7.72 11.28a.75.75 0 111.06-1.06l2.47 2.47V4.5A.75.75 0 0112 3.75z" clipRule="evenodd" />
+                          <path d="M3.75 15a.75.75 0 01.75-.75h15a.75.75 0 01.75.75v3A2.25 2.25 0 0118 20.25H6A2.25 2.25 0 013.75 18v-3z" />
+                        </svg>
+                      </button>
+                      {showEditButtons && (
+                        <>
+                          <button
+                            onClick={() => setOriginalFromUrl(url)}
+                            className="rounded border border-black/20 bg-white px-2 py-1 text-[11px] font-semibold text-black transition hover:bg-black hover:text-white"
+                          >
+                            Source
+                          </button>
+                          <button
+                            onClick={() => addRefFromUrl(url)}
+                            className="rounded border border-black/20 bg-white px-2 py-1 text-[11px] font-semibold text-black transition hover:bg-black hover:text-white"
+                          >
+                            Ref
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+
+      </div>
 
       <Lightbox url={lightbox} onClose={() => setLightbox(null)} />
-    </div>
+    </SurfaceCard>
   );
 };
 

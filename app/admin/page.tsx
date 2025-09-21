@@ -160,8 +160,20 @@ export default function AdminPage() {
               placeholder="Search users by username or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-10 pl-10 pr-4 rounded-[8px] border border-gray-300 bg-white/40 placeholder:text-black/50 focus:outline-none focus:border-black text-gray-900"
+              className="w-full h-10 rounded-[8px] border border-gray-300 bg-white/40 pl-10 pr-12 text-gray-900 placeholder:text-black/50 focus:border-black focus:outline-none"
             />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-black/50 transition hover:text-black"
+                aria-label="Clear search"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+                  <path fillRule="evenodd" d="M6.225 4.811a.75.75 0 011.06 0L12 9.525l4.715-4.714a.75.75 0 111.06 1.06L13.06 10.586l4.715 4.714a.75.75 0 11-1.06 1.06L12 11.646l-4.715 4.714a.75.75 0 11-1.06-1.06l4.714-4.715-4.714-4.715a.75.75 0 010-1.06z" clipRule="evenodd" />
+                </svg>
+              </button>
+            )}
           </div>
         </div>
 
@@ -308,13 +320,27 @@ export default function AdminPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-2 text-black">New Password</label>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full h-10 px-3 rounded-[8px] border border-gray-300 bg-white/40 placeholder:text-black/50 focus:outline-none focus:border-black text-gray-900"
-                    placeholder="Enter new password"
-                  />
+                  <div className="relative">
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full h-10 rounded-[8px] border border-gray-300 bg-white/40 px-3 pr-12 text-gray-900 placeholder:text-black/50 focus:border-black focus:outline-none"
+                      placeholder="Enter new password"
+                    />
+                    {newPassword && (
+                      <button
+                        type="button"
+                        onClick={() => setNewPassword('')}
+                        className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-black/50 transition hover:text-black"
+                        aria-label="Clear new password"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+                          <path fillRule="evenodd" d="M6.225 4.811a.75.75 0 011.06 0L12 9.525l4.715-4.714a.75.75 0 111.06 1.06L13.06 10.586l4.715 4.714a.75.75 0 11-1.06 1.06L12 11.646l-4.715 4.714a.75.75 0 11-1.06-1.06l4.714-4.715-4.714-4.715a.75.75 0 010-1.06z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {resetError && (

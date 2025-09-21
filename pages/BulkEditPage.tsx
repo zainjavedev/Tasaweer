@@ -3,6 +3,7 @@ import { editImageWithNanoBanana } from '@/services/geminiService';
 import EtaTimer from '@/components/EtaTimer';
 import { compressImageFile } from '@/utils/image';
 import { createZip, dataUrlToUint8 } from '@/utils/zip';
+import SurfaceCard from '@/components/SurfaceCard';
 
 type Task = {
   file: File;
@@ -77,57 +78,94 @@ const BulkEditPage: React.FC = () => {
   }, [completed]);
 
   return (
-    <div className="max-w-5xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden p-6 md:p-8 space-y-6">
+    <SurfaceCard className="max-w-5xl mx-auto overflow-hidden p-6 md:p-8 space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Bulk Edit</h2>
-          <p className="text-gray-600 dark:text-gray-400">Upload multiple images, enter one command, get all results.</p>
+          <h2 className="text-2xl font-bold text-black">Bulk Edit</h2>
+          <p className="text-black/70">Upload multiple images, enter one command, get all results.</p>
         </div>
         {completed.length > 0 && (
-          <button onClick={downloadZip} className="px-4 py-2 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700">Download ZIP</button>
+          <button onClick={downloadZip} className="px-4 py-2 rounded-lg bg-black text-white font-semibold hover:bg-gray-800 transition-colors duration-200">Download ZIP</button>
         )}
       </div>
 
       <div className="space-y-3">
-        <label className="block text-sm font-medium">Upload images</label>
+        <label className="block text-sm font-medium text-black">Upload images</label>
         <input type="file" accept="image/*" multiple onChange={(e) => onFiles(e.target.files)} />
       </div>
 
       <div className="space-y-2">
-        <label className="block text-sm font-medium">Command</label>
-        <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={3} className="w-full p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md" />
+        <label className="block text-sm font-medium text-black">Command</label>
+        <div className="relative">
+          <textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            rows={3}
+            className="w-full rounded-md border border-white/60 bg-white/70 p-3 pr-10 text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-black/20"
+          />
+          {prompt && (
+            <button
+              type="button"
+              onClick={() => setPrompt('')}
+              className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full border border-black/20 bg-white text-black/60 transition hover:text-black"
+              aria-label="Clear command"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+                <path fillRule="evenodd" d="M6.225 4.811a.75.75 0 011.06 0L12 9.525l4.715-4.714a.75.75 0 111.06 1.06L13.06 10.586l4.715 4.714a.75.75 0 11-1.06 1.06L12 11.646l-4.715 4.714a.75.75 0 11-1.06-1.06l4.714-4.715-4.714-4.715a.75.75 0 010-1.06z" clipRule="evenodd" />
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center justify-center gap-3">
-        <button onClick={start} disabled={running || tasks.length === 0 || !prompt.trim()} className="px-6 py-3 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700 disabled:bg-purple-300">{running ? 'Processing…' : 'Start'}</button>
-        {running && <div className="max-w-xs"><EtaTimer seconds={tasks.length * 12} label="Batch ETA varies by count" /></div>}
+        <button
+          onClick={start}
+          disabled={running || tasks.length === 0 || !prompt.trim()}
+          className="btn-shine px-6 py-3 rounded-lg bg-black text-white font-semibold hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
+        >
+          {running ? 'Processing…' : 'Start'}
+          <span aria-hidden className="shine"></span>
+        </button>
+        {running && (
+          <div className="max-w-xs">
+            <EtaTimer seconds={tasks.length * 12} label="Batch ETA varies by count" />
+          </div>
+        )}
       </div>
 
-      {error && <div className="text-center text-red-600 bg-red-50 dark:bg-red-900/30 p-3 rounded">{error}</div>}
+      {error && <div className="text-center text-sm text-red-600 bg-red-50/80 border border-red-200 p-3 rounded">{error}</div>}
 
       {tasks.length > 0 && (
         <div className="space-y-2">
-          <div className="text-sm text-gray-700 dark:text-gray-300">Progress: {progress}/{tasks.length}</div>
+          <div className="text-sm text-black/80">Progress: {progress}/{tasks.length}</div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {tasks.map((t, idx) => (
-              <div key={idx} className="rounded-xl overflow-hidden border bg-gray-50 dark:bg-gray-900 relative">
+              <div key={idx} className="rounded-xl overflow-hidden border border-white/40 bg-white/50 relative">
                 <div className="aspect-[4/3] w-full flex items-center justify-center">
                   {t.url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={t.url} alt={t.name} className="w-full h-full object-contain" />
                   ) : (
-                    <div className="text-sm text-gray-500">{t.status === 'pending' ? 'Waiting' : t.status === 'processing' ? 'Processing…' : t.status === 'error' ? 'Failed' : ''}</div>
+                    <div className="text-sm text-black/60">
+                      {t.status === 'pending'
+                        ? 'Waiting'
+                        : t.status === 'processing'
+                        ? 'Processing…'
+                        : t.status === 'error'
+                        ? 'Failed'
+                        : ''}
+                    </div>
                   )}
                 </div>
-                <div className="p-2 text-xs text-gray-600 dark:text-gray-300 truncate">{t.name}</div>
+                <div className="p-2 text-xs text-black/70 truncate">{t.name}</div>
               </div>
             ))}
           </div>
         </div>
       )}
-    </div>
+    </SurfaceCard>
   );
 };
 
 export default BulkEditPage;
-

@@ -1,23 +1,27 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { CameraIcon, SparklesIcon, SwapIcon, UploadIcon } from '../components/Icon';
+import { CameraIcon, SwapIcon, UploadIcon, ChevronDownIcon } from '../components/Icon';
 import { addUserImage } from '../utils/userImages';
-import { AspectRatioSelector, AspectRatio } from '@/components/AspectRatioSelector';
+import { AspectRatioSelector } from '@/components/AspectRatioSelector';
 import { editImageWithNanoBanana } from '../services/geminiService';
 import EtaTimer from '../components/EtaTimer';
 import { authorizedFetch } from '@/utils/authClient';
 import { compressImageFile, dataURLToBase64 } from '@/utils/image';
 import Lightbox from '@/components/Lightbox';
+import SurfaceCard from '@/components/SurfaceCard';
 
 type ColorOption = string;
 
 const COLOR_OPTIONS: ColorOption[] = ['Red', 'Blue', 'Black', 'White', 'Green', 'Beige', 'Navy', 'Denim', 'Pastel Pink', 'Grey'];
+const MAX_REF_IMAGES = 3;
 
 const TryApparelPage: React.FC = () => {
   // User capture/upload
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const carouselRef = useRef<HTMLDivElement | null>(null);
   const [camLoading, setCamLoading] = useState(false);
   const [camError, setCamError] = useState<string | null>(null);
+  const [cameraActive, setCameraActive] = useState(false);
   const [facing, setFacing] = useState<'user' | 'environment'>('user');
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
@@ -29,8 +33,6 @@ const TryApparelPage: React.FC = () => {
   const [suggestions, setSuggestions] = useState<ApparelSuggestion[]>([]);
   const [suggLoading, setSuggLoading] = useState(true);
   const [suggError, setSuggError] = useState<string | null>(null);
-  // Mobile UI: collapse suggestions to save space
-  const [mobileSuggOpen, setMobileSuggOpen] = useState(false);
 
   // Results / iteration
   const [results, setResults] = useState<string[]>([]); // newest first
@@ -39,16 +41,25 @@ const TryApparelPage: React.FC = () => {
   const [iterError, setIterError] = useState<string | null>(null);
   const [aspectRatio, setAspectRatio] = useState<string>('9:16'); // Default to Portrait for apparel
   const [customColor, setCustomColor] = useState('');
+  const [stylePrompt, setStylePrompt] = useState('');
+  const [instructionsOpen, setInstructionsOpen] = useState(false);
+  const [carouselIndex, setCarouselIndex] = useState(0);
   const [colorLoading, setColorLoading] = useState<string | null>(null); // which color button is generating
+  const [refImages, setRefImages] = useState<string[]>([]);
+  const latestResult = results[0] ?? null;
+  const previousResults = results.slice(1);
 
-  const stopStream = () => {
+  const stopStream = (opts: { preserveActive?: boolean } = {}) => {
     const s = streamRef.current;
     if (s) {
       s.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     }
-    if (videoRef.current) {
+    if (!opts.preserveActive && videoRef.current) {
       videoRef.current.srcObject = null;
+    }
+    if (!opts.preserveActive) {
+      setCameraActive(false);
     }
   };
 
@@ -71,10 +82,21 @@ const TryApparelPage: React.FC = () => {
       }
       let stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+      const videoEl = videoRef.current;
+      if (videoEl) {
+        videoEl.srcObject = stream;
+        videoEl.defaultMuted = true;
+        videoEl.muted = true;
+        videoEl.playsInline = true;
+        videoEl.setAttribute('autoplay', 'true');
+        videoEl.setAttribute('muted', '');
+        try {
+          await videoEl.play();
+        } catch (err) {
+          console.warn('Camera preview play interrupted', err);
+        }
       }
+      setCameraActive(true);
 
       // Populate device list after permission is granted
       try {
@@ -94,6 +116,7 @@ const TryApparelPage: React.FC = () => {
     } catch (e) {
       const err = e as any;
       setCamError(err?.message || 'Failed to open camera');
+      setCameraActive(false);
     } finally {
       setCamLoading(false);
     }
@@ -101,24 +124,53 @@ const TryApparelPage: React.FC = () => {
 
   useEffect(() => () => stopStream(), []);
 
+  const maxCarouselIndex = Math.max(suggestions.length - 3, 0);
+  const showCarousel = suggestions.length > 3;
+
+  useEffect(() => {
+    if (!showCarousel) {
+      setCarouselIndex(0);
+      return undefined;
+    }
+    const id = setInterval(() => {
+      setCarouselIndex((idx) => (idx >= maxCarouselIndex ? 0 : idx + 1));
+    }, 6000);
+    return () => clearInterval(id);
+  }, [maxCarouselIndex, showCarousel]);
+
+  useEffect(() => {
+    setCarouselIndex((idx) => Math.min(idx, maxCarouselIndex));
+  }, [maxCarouselIndex]);
+
+  useEffect(() => {
+    if (!showCarousel) return;
+    const container = carouselRef.current;
+    if (!container || !suggestions.length) return;
+    const totalWidth = container.scrollWidth;
+    const perCard = totalWidth / suggestions.length;
+    container.scrollTo({ left: perCard * carouselIndex, behavior: 'smooth' });
+  }, [carouselIndex, showCarousel, suggestions.length]);
+
   const flipCamera = useCallback(() => {
     const newFacing = facing === 'user' ? 'environment' : 'user';
     setFacing(newFacing);
 
     // Clear selected device to allow flipping
     setSelectedDeviceId(null);
-
-    // Force restart camera with new facing mode
-    setTimeout(() => startStream().catch(() => {}), 100);
-  }, [facing, startStream]);
-
-  // When facing changes, always restart with facing constraint
-  useEffect(() => {
-    // Small delay to ensure state updates are complete
-    const t = setTimeout(() => startStream().catch(() => {}), 50);
-    return () => clearTimeout(t);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [facing]);
+
+  const prevFacing = useRef(facing);
+
+  // Restart the stream when the facing changes while the camera is active
+  useEffect(() => {
+    if (!cameraActive) {
+      prevFacing.current = facing;
+      return;
+    }
+    if (prevFacing.current === facing) return;
+    prevFacing.current = facing;
+    startStream().catch(() => {});
+  }, [cameraActive, facing, startStream]);
 
   const captureUser = () => {
     const video = videoRef.current;
@@ -179,6 +231,65 @@ const TryApparelPage: React.FC = () => {
     });
   };
 
+  const setOriginalFromUrl = async (url: string) => {
+    try {
+      const dataUrl = await fetchUrlAsDataUrl(url);
+      setUserImage(dataUrl);
+      stopStream();
+      setCamError(null);
+    } catch {
+      alert('Failed to load image as source');
+    }
+  };
+
+  const addRefFromUrl = async (url: string) => {
+    if (refImages.length >= MAX_REF_IMAGES) {
+      alert('Reference image limit reached.');
+      return;
+    }
+    try {
+      const dataUrl = await fetchUrlAsDataUrl(url);
+      setRefImages((prev) => {
+        if (prev.length >= MAX_REF_IMAGES) return prev;
+        if (prev.includes(dataUrl)) return prev;
+        return [...prev, dataUrl];
+      });
+    } catch {
+      alert('Failed to add reference');
+    }
+  };
+
+  const addRefFiles = async (files: FileList) => {
+    if (!files?.length) return;
+    const available = Math.max(0, MAX_REF_IMAGES - refImages.length);
+    if (available <= 0) {
+      alert('Reference image limit reached.');
+      return;
+    }
+    const queue = Array.from(files).slice(0, available);
+    try {
+      const uploads = await Promise.all(queue.map(async (file) => {
+        const { dataUrl } = await compressImageFile(file, { maxDim: 1600, type: 'image/webp', quality: 0.85 });
+        return dataUrl;
+      }));
+      setRefImages((prev) => {
+        const next = [...prev];
+        uploads.forEach((url) => {
+          if (next.length < MAX_REF_IMAGES && !next.includes(url)) {
+            next.push(url);
+          }
+        });
+        return next;
+      });
+    } catch {
+      alert('Failed to add reference image.');
+    }
+  };
+
+  const removeRefAt = (idx: number) => {
+    setRefImages((prev) => prev.filter((_, i) => i !== idx));
+  };
+
   const pickSuggestion = async (src: string) => {
     try {
       const dataUrl = await fetchUrlAsDataUrl(src);
@@ -235,15 +346,26 @@ const TryApparelPage: React.FC = () => {
       const base64Apparel = dataURLToBase64(apparelImage);
       const userMime = (userImage.split(';')[0].split(':')[1]) || 'image/webp';
       const apparelMime = (apparelImage.split(';')[0].split(':')[1]) || 'image/webp';
-      const prompt = [
+      const extra = stylePrompt.trim();
+      const promptParts = [
         'Place the apparel from the reference image onto the person in the base photo.',
         'Fit it realistically to the body, preserve the person’s face and hair, maintain proportions,',
         'add natural folds and shadows, and match lighting. Keep the background unchanged.',
         'Do not distort facial features. Make it look like a real try-on.'
-      ].join(' ');
-      const result = await editImageWithNanoBanana(base64User, userMime, prompt, [
-        { data: base64Apparel, mimeType: apparelMime }
-      ], aspectRatio);
+      ];
+      if (extra) {
+        promptParts.push(`Additional instructions: ${extra}.`);
+      }
+      const prompt = promptParts.join(' ');
+      const referenceAttachments = refImages.map((ref) => ({
+        data: dataURLToBase64(ref),
+        mimeType: (ref.split(';')[0].split(':')[1]) || 'image/webp'
+      }));
+      const attachments = [
+        { data: base64Apparel, mimeType: apparelMime },
+        ...referenceAttachments
+      ];
+      const result = await editImageWithNanoBanana(base64User, userMime, prompt, attachments, aspectRatio);
       setResults((arr) => [result.imageUrl, ...arr]);
       try { addUserImage({ kind: 'replace', prompt, original: userImage, generated: result.imageUrl, meta: { apparelSource: 'custom' } }); } catch {}
     } catch (e) {
@@ -251,10 +373,10 @@ const TryApparelPage: React.FC = () => {
     } finally {
       setIterLoading(false);
     }
-  }, [userImage, apparelImage]);
+  }, [userImage, apparelImage, stylePrompt, aspectRatio, refImages]);
 
   const recolor = useCallback(async (color: string) => {
-    const base = results[0] || userImage;
+    const base = latestResult || userImage;
     if (!base) return;
     setIterError(null);
     setColorLoading(color);
@@ -270,94 +392,147 @@ const TryApparelPage: React.FC = () => {
     } finally {
       setColorLoading(null);
     }
-  }, [results, userImage]);
+  }, [latestResult, userImage, aspectRatio]);
 
   const download = useCallback(() => {
-    const url = results[0] || userImage;
+    const url = latestResult || userImage;
     if (!url) return;
     const a = document.createElement('a');
     a.href = url;
     a.download = 'try-apparel.png';
     a.click();
-  }, [results, userImage]);
+  }, [latestResult, userImage]);
+
+  const handlePrevSuggestion = useCallback(() => {
+    if (!showCarousel) return;
+    setCarouselIndex((idx) => (idx <= 0 ? maxCarouselIndex : idx - 1));
+  }, [maxCarouselIndex, showCarousel]);
+
+  const handleNextSuggestion = useCallback(() => {
+    if (!showCarousel) return;
+    setCarouselIndex((idx) => (idx >= maxCarouselIndex ? 0 : idx + 1));
+  }, [maxCarouselIndex, showCarousel]);
 
   return (
-    <div className="max-w-5xl mx-auto bg-white/40 backdrop-blur-xl rounded-2xl border-2 border-white/30 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] overflow-hidden p-6 md:p-8 space-y-8">
-      <div className="text-center">
+    <SurfaceCard className="max-w-5xl mx-auto overflow-hidden p-6 md:p-8 space-y-8">
+      <div className="text-center space-y-1">
         <h2 className="text-2xl font-bold text-black inline-flex items-center gap-2">
           <CameraIcon className="w-6 h-6 text-black" /> Try Apparel
         </h2>
-        <p className="text-black mt-1">Capture or upload your photo, pick an apparel, and see it on you. Then tweak the color.</p>
+        <p className="text-black/70">Capture or upload your photo, pick an apparel, and try it on instantly.</p>
       </div>
 
-      {/* Layout: Sidebar suggestions + main content */}
-      <div className="grid gap-6 md:grid-cols-[240px_1fr]">
-        {/* Sidebar suggestions (collapsible on mobile) */}
-        <aside className="block">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-sm font-semibold text-black">Apparel Suggestions</div>
-            <button
-              type="button"
-              onClick={() => setMobileSuggOpen((v) => !v)}
-              className="md:hidden text-xs px-2 py-1 rounded border-2 border-black bg-white text-black hover:bg-gray-50 transition-colors duration-200"
-              aria-expanded={mobileSuggOpen}
-              aria-controls="apparel-suggestions-list"
-            >
-              {mobileSuggOpen ? 'Hide' : 'Show'}
-            </button>
-          </div>
-          <div
-            id="apparel-suggestions-list"
-            className={`${mobileSuggOpen ? 'block' : 'hidden'} md:block h-[70vh] overflow-y-auto pr-1 space-y-2`}
-          >
-            {suggLoading && <div className="text-sm text-black">Loading…</div>}
-            {suggError && <div className="text-xs text-black">{suggError}</div>}
-            {suggestions.map((s, idx) => (
-              <div key={idx} className="border-2 border-black rounded-lg overflow-hidden bg-white">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img loading="lazy" src={s.src} alt={s.label || 'Apparel'} className="w-full h-24 object-contain bg-white" />
-                <div className="p-2 flex items-center justify-between gap-2">
-                  <div className="text-xs text-black truncate">{s.label || 'Apparel'}</div>
-                  <button onClick={() => pickSuggestion(s.src)} className="btn-shine text-xs px-2 py-1 rounded bg-black text-white hover:bg-gray-800 transition-colors duration-200"><span aria-hidden className="shine"></span>Insert</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </aside>
-
-        {/* Main content: User photo and Apparel picker */}
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
         <div className="space-y-6">
-          {/* User photo - Full Width */}
-          <div className="space-y-3">
-            <div className="text-sm font-semibold text-black">Your Photo</div>
-            <div className="text-xs text-black">Tip: For best results, center yourself in the camera frame.</div>
-            {!userImage ? (
+          <section className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-[minmax(0,1.35fr)_minmax(0,0.65fr)]">
               <div className="space-y-3">
-                <div className="aspect-video w-full bg-black rounded-xl overflow-hidden border-2 border-white relative">
-                  <video ref={videoRef} playsInline autoPlay muted className="w-full h-full object-cover" />
-                  {camLoading && (
-                    <div className="absolute inset-0 flex items-center justify-center text-white">
-                      <SparklesIcon className="w-5 h-5 mr-2" /> Opening camera…
-                    </div>
-                  )}
-                  {camError && (
-                    <div className="absolute inset-0 p-4 text-white bg-black/80 flex items-center justify-center text-center">
-                      {camError}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-black">Your photo</span>
+                  {userImage && !cameraActive && (
+                    <div className="flex items-center gap-2 text-xs">
+                      <button
+                        onClick={() => { setUserImage(null); setResults([]); }}
+                        className="font-semibold text-black/60 hover:text-black"
+                      >
+                        Replace
+                      </button>
+                      {results.length > 0 && (
+                        <button
+                          onClick={() => setResults([])}
+                          className="font-semibold text-black/60 hover:text-black"
+                        >
+                          Clear results
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
-                <div className="flex flex-wrap gap-3">
-                  <button onClick={() => startStream()} className="w-12 h-12 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center" title="Open Camera"><CameraIcon className="w-5 h-5 text-black" /></button>
-                  <button onClick={captureUser} disabled={camLoading || !!camError} className="w-12 h-12 btn-shine rounded-lg bg-black text-white font-bold hover:bg-gray-800 disabled:bg-gray-400 transition-colors duration-200 flex items-center justify-center" title="Capture"><CameraIcon className="w-5 h-5" /><span aria-hidden className="shine"></span></button>
-                  <button onClick={flipCamera} disabled={camLoading || !!camError} className="w-12 h-12 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center" title="Flip Camera"><SwapIcon className="w-5 h-5 text-black" /></button>
-                  {videoDevices.length > 1 && (
+                <div className="relative h-64 w-full overflow-hidden rounded-2xl border border-black/12 bg-white/80">
+                  <video
+                    ref={videoRef}
+                    playsInline
+                    autoPlay
+                    muted
+                    className={`h-full w-full bg-black object-contain transition-opacity duration-200 ${cameraActive ? 'opacity-100' : 'opacity-0'}`}
+                  />
+                  {!cameraActive && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      {userImage ? (
+                        <img src={userImage} alt="Your photo" className="h-full w-full object-contain" />
+                      ) : (
+                        <div className="px-4 text-center text-sm text-black/60">
+                          {camError ? (
+                            <>
+                              <CameraIcon className="mx-auto mb-2 h-7 w-7 opacity-60" />
+                              <p>{camError}</p>
+                            </>
+                          ) : (
+                            <>
+                              <UploadIcon className="mx-auto mb-2 h-7 w-7 opacity-60" />
+                              <p>Upload a portrait or open the camera to capture one.</p>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {cameraActive && !camError && (
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2">
+                      <button
+                        onClick={captureUser}
+                        disabled={camLoading}
+                        className="flex h-12 w-12 items-center justify-center rounded-full border border-black/20 bg-white text-black shadow-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        title="Capture photo"
+                      >
+                        <CameraIcon className="h-6 w-6" />
+                      </button>
+                    </div>
+                  )}
+                  {camLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                      <div className="space-y-1 text-center text-xs text-white">
+                        <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-white/60 border-b-transparent" />
+                        <p>Opening camera…</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="flex h-10 w-10 items-center justify-center rounded-lg border border-black/20 bg-white text-black transition-colors duration-200 hover:bg-gray-50 cursor-pointer" title="Upload image">
+                    <UploadIcon className="h-4 w-4" />
+                    <span className="sr-only">Upload image</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && onUserUpload(e.target.files[0])} />
+                  </label>
+                  <button
+                    onClick={() => {
+                      if (cameraActive) {
+                        stopStream();
+                      } else {
+                        setCamError(null);
+                        startStream().catch(() => {});
+                      }
+                    }}
+                    className="h-10 rounded-lg border border-black/20 bg-white px-3 text-xs font-semibold text-black transition-colors duration-200 hover:bg-gray-50"
+                  >
+                    {cameraActive ? 'Close camera' : 'Open camera'}
+                  </button>
+                  <button
+                    onClick={flipCamera}
+                    disabled={camLoading || !cameraActive}
+                    className="flex h-10 w-10 items-center justify-center rounded-lg border border-black/20 bg-white text-black transition-colors duration-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    title="Flip camera"
+                  >
+                    <SwapIcon className="h-5 w-5" />
+                  </button>
+                  {cameraActive && videoDevices.length > 1 && (
                     <select
-                      className="px-3 py-2 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 text-sm"
+                      className="h-10 rounded-lg border border-black/20 bg-white px-2 text-xs text-black transition-colors duration-200 hover:bg-gray-50"
                       value={selectedDeviceId || ''}
                       onChange={(e) => {
                         const id = e.target.value;
                         setSelectedDeviceId(id);
-                        startStream({ deviceId: id });
+                        startStream({ deviceId: id }).catch(() => {});
                       }}
                     >
                       {videoDevices.map((d, idx) => (
@@ -367,119 +542,314 @@ const TryApparelPage: React.FC = () => {
                       ))}
                     </select>
                   )}
-                  <label className="w-12 h-12 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center cursor-pointer" title="Upload Photo">
-                    <UploadIcon className="w-5 h-5 text-black" />
-                    <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && onUserUpload(e.target.files[0])} />
-                  </label>
                 </div>
               </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="w-full bg-white rounded-xl overflow-hidden border-2 border-black">
-                  <img loading="lazy" src={userImage} alt="Your photo" className="w-full h-auto object-contain" />
+
+              <div className="space-y-3 sm:ml-auto sm:max-w-[13rem]">
+                <div className="text-sm font-semibold text-black">Apparel</div>
+                <div className="relative h-44 w-full overflow-hidden rounded-2xl border border-black/12 bg-white/85 flex items-center justify-center p-4">
+                  {apparelImage ? (
+                    <img loading="lazy" src={apparelImage} alt="Apparel" className="h-full w-full object-contain" />
+                  ) : (
+                    <div className="px-4 text-center text-sm text-black/60">Upload an apparel or select from the library.</div>
+                  )}
                 </div>
-                <div className="flex gap-3">
-                  <button onClick={() => { setUserImage(null); setResults([]); }} className="px-4 py-2 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200">Replace Photo</button>
-                  <button onClick={() => { setResults([]); }} className="px-4 py-2 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200">Clear Results</button>
+                <div className="flex flex-wrap gap-2">
+                  <label className="flex h-10 w-10 items-center justify-center rounded-lg border border-black/20 bg-white text-black transition-colors duration-200 hover:bg-gray-50 cursor-pointer" title="Upload apparel">
+                    <UploadIcon className="h-4 w-4" />
+                    <span className="sr-only">Upload apparel</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && onApparelUpload(e.target.files[0])} />
+                  </label>
+                  {apparelImage && (
+                    <button onClick={extractApparel} className="h-10 rounded-lg border border-black/20 bg-white px-3 text-xs font-semibold text-black transition-colors duration-200 hover:bg-gray-50">
+                      Extract apparel
+                    </button>
+                  )}
                 </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-black">Reference images (optional)</span>
+              <span className="text-xs text-black/60">{refImages.length}/{MAX_REF_IMAGES}</span>
+            </div>
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+              {refImages.map((src, idx) => (
+                <div key={`${src}-${idx}`} className="relative h-24 overflow-hidden rounded-xl border border-black/12 bg-white">
+                  <img src={src} alt={`Reference ${idx + 1}`} className="h-full w-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeRefAt(idx)}
+                    className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full border border-black/20 bg-white/90 text-black/70 transition hover:text-black"
+                    title="Remove reference"
+                    aria-label="Remove reference"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5"><path fillRule="evenodd" d="M6.225 4.811a.75.75 0 0 1 1.06 0L12 9.525l4.715-4.714a.75.75 0 1 1 1.06 1.06L13.06 10.586l4.715 4.714a.75.75 0 1 1-1.06 1.06L12 11.646l-4.715 4.714a.75.75 0 1 1-1.06-1.06l4.714-4.715-4.714-4.715a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" /></svg>
+                  </button>
+                </div>
+              ))}
+              {refImages.length < MAX_REF_IMAGES && (
+                <label className="flex h-24 items-center justify-center rounded-xl border-2 border-dashed border-black/20 bg-white/60 text-xs font-semibold text-black cursor-pointer transition hover:border-black/40">
+                  Add reference
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="sr-only"
+                    onChange={(e) => {
+                      if (e.target.files) {
+                        addRefFiles(e.target.files);
+                        e.target.value = '';
+                      }
+                    }}
+                  />
+                </label>
+              )}
+            </div>
+            <p className="text-xs text-black/60">References help guide fit, lighting, or styling of the apparel.</p>
+          </section>
+
+          <section className="space-y-3">
+            <button
+              type="button"
+              onClick={() => setInstructionsOpen((open) => !open)}
+              className="flex w-full items-center justify-between rounded-md border border-black/12 bg-white/70 px-3 py-2 text-sm font-semibold text-black transition-colors duration-200 hover:bg-white"
+              aria-expanded={instructionsOpen}
+              aria-controls="additional-instructions"
+            >
+              <span>Additional instructions (optional)</span>
+              <ChevronDownIcon className={`h-4 w-4 transition-transform ${instructionsOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {instructionsOpen && (
+              <div id="additional-instructions" className="space-y-2 rounded-md border border-black/12 bg-white/80 p-3">
+                <textarea
+                  value={stylePrompt}
+                  onChange={(e) => setStylePrompt(e.target.value)}
+                  rows={3}
+                  placeholder="Add styling notes such as “roll the sleeves” or “match the shoes”."
+                  className="w-full rounded-md border border-black/12 bg-white/90 p-3 text-sm text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-black/15"
+                />
+                <p className="text-xs text-black/60">These notes refine how the apparel is applied on your photo.</p>
               </div>
             )}
-          </div>
+          </section>
 
-          {/* Apparel picker - Full Width */}
-          <div className="space-y-3">
-            <div className="text-sm font-semibold text-black">Apparel</div>
-            <div className="w-full bg-white rounded-xl overflow-hidden border-2 border-black min-h-[160px] flex items-center justify-center p-3">
-              {apparelImage ? (
-                <img loading="lazy" src={apparelImage} alt="Apparel" className="max-h-64 object-contain" />
-              ) : (
-                <div className="text-black text-sm">Upload an apparel image</div>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <label className="w-12 h-12 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center cursor-pointer" title="Upload Apparel">
-                <UploadIcon className="w-5 h-5 text-black" />
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && onApparelUpload(e.target.files[0])} />
-              </label>
-              {apparelImage && (
-                <button onClick={extractApparel} className="px-4 py-2 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200">Extract Apparel</button>
-              )}
-            </div>
-          </div>
+          <AspectRatioSelector selectedRatio={aspectRatio} onSelect={setAspectRatio} />
 
-          {/* Try On Button - Full Width */}
-          <div className="mt-6">
+          <section className="space-y-3">
             <button
               onClick={tryOn}
               disabled={!userImage || !apparelImage || iterLoading}
-              className="w-full btn-shine px-6 py-3 rounded-lg bg-black text-white font-bold hover:bg-gray-800 disabled:bg-gray-400 transition-colors duration-200 text-lg"
+              className="btn-shine flex w-full items-center justify-center gap-2 rounded-lg bg-black px-6 py-3 text-white font-bold transition-colors duration-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-400"
             >
-              {iterLoading ? 'Generating…' : (<>Try On<span aria-hidden className="shine"></span></>)}
+              {iterLoading ? 'Generating…' : (<>Try on<span aria-hidden className="shine"></span></>)}
             </button>
-          </div>
+            {iterLoading && <div className="text-xs text-black/70"><EtaTimer seconds={18} label="Usually ~15–25s" /></div>}
+            {iterError && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">{iterError}</div>}
+          </section>
+
         </div>
-      </div>
 
-      {/* Actions */}
-      <AspectRatioSelector
-        selectedRatio={aspectRatio}
-        onSelect={(ratio: AspectRatio) => setAspectRatio(ratio.value)}
-      />
-      {iterLoading && (
-        <div className="max-w-md mx-auto"><EtaTimer seconds={18} label="Usually ~15–25s for first render" /></div>
-      )}
-      {iterError && <div className="text-center text-white bg-black p-3 rounded-lg border-2 border-white">{iterError}</div>}
-
-      {/* Result and color tweaks */}
-      {(userImage || results.length > 0) && (
-        <div className="space-y-6">
-          {/* Color tweak controls with per-button loading and ETA */}
-          <div className="space-y-2">
-            <div className="text-sm font-semibold text-black">Change apparel color</div>
-            <div className="flex flex-wrap gap-1.5 items-center">
-              {COLOR_OPTIONS.map((c) => (
-                <button key={c} onClick={() => recolor(c)} disabled={!!colorLoading} className={`btn-shine px-3 py-1.5 rounded-full border-2 text-sm border-black bg-white text-black hover:bg-gray-50 transition-colors duration-200 ${colorLoading === c ? 'bg-black text-white' : ''}`}>
-                  {colorLoading === c ? 'Generating…' : (<>{c}<span aria-hidden className="shine"></span></>)}
-                </button>
-              ))}
-              <div className="flex gap-2 items-center">
-                <input value={customColor} onChange={(e) => setCustomColor(e.target.value)} placeholder="Custom color / style" className="p-2 rounded-md border-2 border-black bg-white text-black" />
-                <button onClick={() => customColor.trim() && recolor(customColor.trim())} disabled={!customColor.trim() || !!colorLoading} className="px-3 py-2 rounded-lg bg-white border-2 border-black font-semibold text-black hover:bg-gray-50 transition-colors duration-200">Apply</button>
-              </div>
+        <div className="space-y-6 lg:sticky lg:top-6">
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-black">Latest render</span>
+              {latestResult && <span className="text-xs text-black/50">Just generated</span>}
             </div>
-            {colorLoading && (
-              <div className="max-w-md mx-auto"><EtaTimer seconds={12} label="Color change ~8–15s" /></div>
+            <div className="relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-2xl border border-black/12 bg-white/85">
+              {latestResult ? (
+                <button type="button" onClick={() => setLightbox(latestResult)} className="h-full w-full">
+                  <img loading="lazy" src={latestResult} alt="Latest try-on" className="h-full w-full object-contain" />
+                </button>
+              ) : (
+                <div className="px-6 text-center text-sm text-black/60">Generate a try-on to preview it here.</div>
+              )}
+              {iterLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/35 backdrop-blur-sm">
+                  <div className="space-y-1 text-center text-xs text-white">
+                    <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-white/60 border-b-transparent" />
+                    <p>Generating…</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            {latestResult && (
+              <div className="space-y-3 text-sm text-black/70">
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={download} className="rounded-lg border border-black bg-black px-3 py-2 font-semibold text-white transition-colors hover:bg-gray-800">Download PNG</button>
+                  <button
+                    onClick={() => { if (latestResult) void setOriginalFromUrl(latestResult); }}
+                    className="rounded-lg border border-black px-3 py-2 font-semibold text-black transition-colors hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={!latestResult}
+                  >
+                    Use as source
+                  </button>
+                  <button
+                    onClick={() => { if (latestResult) void addRefFromUrl(latestResult); }}
+                    disabled={!latestResult || refImages.length >= MAX_REF_IMAGES}
+                    className="rounded-lg border border-black px-3 py-2 font-semibold text-black transition-colors hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Add as reference
+                  </button>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-xs font-semibold text-black">Quick recolor</div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {COLOR_OPTIONS.map((c) => (
+                      <button
+                        key={c}
+                        onClick={() => recolor(c)}
+                        disabled={!!colorLoading || !latestResult}
+                        className={`btn-shine rounded-full border border-black/20 bg-white px-3 py-1.5 text-xs font-semibold text-black transition-colors duration-200 ${colorLoading === c ? 'bg-black text-white' : ''} ${!latestResult ? 'opacity-40 cursor-not-allowed' : ''}`}
+                      >
+                        {colorLoading === c ? 'Working…' : (<>{c}<span aria-hidden className="shine"></span></>)}
+                      </button>
+                    ))}
+                    <div className="flex items-center gap-2">
+                      <div className="relative">
+                        <input
+                          value={customColor}
+                          onChange={(e) => setCustomColor(e.target.value)}
+                          placeholder="Custom color/style"
+                          className="rounded-md border border-black/20 bg-white px-3 py-2 pr-10 text-xs text-black"
+                        />
+                        {customColor && (
+                          <button
+                            type="button"
+                            onClick={() => setCustomColor('')}
+                            className="absolute right-2 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full border border-black/20 bg-white text-black/60 transition hover:text-black"
+                            aria-label="Clear custom color"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5">
+                              <path fillRule="evenodd" d="M6.225 4.811a.75.75 0 011.06 0L12 9.525l4.715-4.714a.75.75 0 111.06 1.06L13.06 10.586l4.715 4.714a.75.75 0 11-1.06 1.06L12 11.646l-4.715 4.714a.75.75 0 11-1.06-1.06l4.714-4.715-4.714-4.715a.75.75 0 010-1.06z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => customColor.trim() && recolor(customColor.trim())}
+                        disabled={!customColor.trim() || !!colorLoading || !latestResult}
+                        className="rounded-lg border border-black/20 bg-white px-3 py-2 text-xs font-semibold text-black transition-colors duration-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                  </div>
+                  {colorLoading && <div className="text-xs text-black/60"><EtaTimer seconds={12} label="Color tweak ~8–15s" /></div>}
+                </div>
+              </div>
             )}
-          </div>
+          </section>
 
-          {/* Results grid, newest first, smaller width */}
-          {results.length > 0 && (
-            <div className="space-y-2">
-              <div className="text-sm font-semibold text-black">Results (latest first)</div>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {results.map((url, idx) => (
-                  <div key={idx} className="relative bg-white rounded-xl overflow-hidden border-2 border-black">
-                    <img onClick={() => setLightbox(url)} loading="lazy" src={url} alt={`Result ${idx + 1}`} className="cursor-zoom-in w-full h-auto object-contain max-h-72" />
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-black">Apparel library</span>
+              {!suggLoading && suggestions.length > 0 && (
+                <span className="text-xs text-black/50">{showCarousel ? 'Auto-scroll enabled' : 'Tap to load'}</span>
+              )}
+            </div>
+            {suggLoading && <div className="text-sm text-black">Loading…</div>}
+            {!suggLoading && suggError && <div className="text-xs text-black">{suggError}</div>}
+            {!suggLoading && !suggError && suggestions.length > 0 && (
+              <div className="flex items-center gap-3">
+                {showCarousel && (
+                  <button
+                    type="button"
+                    onClick={handlePrevSuggestion}
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-black/20 bg-white text-black hover:bg-black hover:text-white transition-colors"
+                    aria-label="Previous apparel"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                      <path fillRule="evenodd" d="M12.78 4.22a.75.75 0 010 1.06L8.56 9.5l4.22 4.22a.75.75 0 11-1.06 1.06l-4.75-4.75a.75.75 0 010-1.06l4.75-4.75a.75.75 0 011.06 0z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                )}
+                <div
+                  ref={carouselRef}
+                  className={`flex flex-1 gap-3 ${showCarousel ? 'overflow-hidden scroll-smooth' : 'flex-wrap'}`}
+                >
+                  {suggestions.map((item, idx) => (
                     <button
-                      onClick={() => { const a = document.createElement('a'); a.href = url; a.download = `try-apparel-${idx + 1}.png`; a.click(); }}
-                      className="absolute top-2 right-2 p-2 rounded-full bg-white border-2 border-black shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:scale-110 transition-all duration-200"
-                      aria-label="Download"
-                      title="Download"
+                      key={`${item.src}-${idx}`}
+                      type="button"
+                      onClick={() => pickSuggestion(item.src)}
+                      className={`group relative overflow-hidden rounded-lg border border-black/15 bg-white shadow-sm transition-all duration-300 ease-in-out hover:shadow ${showCarousel ? 'flex-shrink-0 basis-full sm:basis-1/2 lg:basis-1/3' : 'flex-1'}`}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-black">
-                        <path fillRule="evenodd" d="M12 3.75a.75.75 0 01.75.75v8.19l2.47-2.47a.75.75 0 111.06 1.06l-3.75 3.75a.75.75 0 01-1.06 0L7.72 11.28a.75.75 0 111.06-1.06l2.47 2.47V4.5A.75.75 0 0112 3.75z" clipRule="evenodd" />
-                        <path d="M3.75 15a.75.75 0 01.75-.75h15a.75.75 0 01.75.75v3A2.25 2.25 0 0118 20.25H6A2.25 2.25 0 013.75 18v-3z" />
-                      </svg>
+                      <img loading="lazy" src={item.src} alt={item.label || 'Apparel'} className="h-24 w-full object-cover" />
+                      <div className="p-2 text-xs text-black truncate group-hover:underline">{item.label || 'Apparel'}</div>
                     </button>
+                  ))}
+                </div>
+                {showCarousel && (
+                  <button
+                    type="button"
+                    onClick={handleNextSuggestion}
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-black/20 bg-white text-black hover:bg-black hover:text-white transition-colors"
+                    aria-label="Next apparel"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                      <path fillRule="evenodd" d="M7.22 4.22a.75.75 0 011.06 0l4.75 4.75a.75.75 0 010 1.06l-4.75 4.75a.75.75 0 11-1.06-1.06L11.44 10 7.22 5.78a.75.75 0 010-1.06z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            )}
+            {!suggLoading && !suggError && suggestions.length === 0 && (
+              <div className="text-xs text-black/60">Add images under <code>public/apparels</code> to build your library.</div>
+            )}
+          </section>
+
+          {previousResults.length > 0 && (
+            <section className="space-y-2">
+              <div className="text-sm font-semibold text-black">History</div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {previousResults.map((url, idx) => (
+                  <div key={`${url}-${idx}`} className="relative overflow-hidden rounded-xl border border-black/12 bg-white/80">
+                    <img
+                      onClick={() => setLightbox(url)}
+                      loading="lazy"
+                      src={url}
+                      alt={`Result ${idx + 2}`}
+                      className="h-36 w-full cursor-zoom-in object-contain"
+                    />
+                    <div className="absolute top-2 right-2 flex gap-2">
+                      <button
+                        onClick={() => { const a = document.createElement('a'); a.href = url; a.download = `try-apparel-${idx + 2}.png`; a.click(); }}
+                        className="rounded-full border border-black/20 bg-white p-2 shadow-sm transition hover:scale-105"
+                        aria-label="Download"
+                        title="Download"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5 text-black">
+                          <path fillRule="evenodd" d="M12 3.75a.75.75 0 01.75.75v8.19l2.47-2.47a.75.75 0 111.06 1.06l-3.75 3.75a.75.75 0 01-1.06 0L7.72 11.28a.75.75 0 111.06-1.06l2.47 2.47V4.5A.75.75 0 0112 3.75z" clipRule="evenodd" />
+                          <path d="M3.75 15a.75.75 0 01.75-.75h15a.75.75 0 01.75.75v3A2.25 2.25 0 0118 20.25H6A2.25 2.25 0 013.75 18v-3z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => { void setOriginalFromUrl(url); }}
+                        className="rounded border border-black/20 bg-white px-2 py-1 text-[11px] font-semibold text-black transition hover:bg-black hover:text-white"
+                      >
+                        Source
+                      </button>
+                      <button
+                        onClick={() => { void addRefFromUrl(url); }}
+                        disabled={refImages.length >= MAX_REF_IMAGES}
+                        className="rounded border border-black/20 bg-white px-2 py-1 text-[11px] font-semibold text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Ref
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
           )}
         </div>
-      )}
+      </div>
+
       <Lightbox url={lightbox} onClose={() => setLightbox(null)} />
-    </div>
+    </SurfaceCard>
   );
 };
 

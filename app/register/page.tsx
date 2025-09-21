@@ -58,7 +58,7 @@ export default function Page() {
                     <AtSign className="w-5 h-5 flex-none" strokeWidth={1.8} aria-hidden="true" />
                   </span>
                   <input type="email" required
-                    className="w-full h-11 pl-10 pr-3 rounded-[10px] border border-gray-300 bg-white/40 placeholder:text-black/50 focus:outline-none focus:border-black text-gray-900"
+                    className="w-full h-11 rounded-[10px] border border-gray-300 bg-white/40 pl-10 pr-3 text-gray-900 placeholder:text-black/50 focus:border-black focus:outline-none"
                     placeholder="you@example.com"
                     value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
@@ -71,7 +71,7 @@ export default function Page() {
                     <UserRound className="w-5 h-5 flex-none" strokeWidth={1.8} aria-hidden="true" />
                   </span>
                   <input required
-                    className="w-full h-11 pl-10 pr-3 rounded-[10px] border border-gray-300 bg-white/40 placeholder:text-black/50 focus:outline-none focus:border-black text-gray-900"
+                    className="w-full h-11 rounded-[10px] border border-gray-300 bg-white/40 pl-10 pr-3 text-gray-900 placeholder:text-black/50 focus:border-black focus:outline-none"
                     placeholder="yourname"
                     value={username} onChange={(e) => setUsername(e.target.value)} />
                 </div>
@@ -84,7 +84,7 @@ export default function Page() {
                     <KeyRound className="w-5 h-5 flex-none" strokeWidth={1.8} aria-hidden="true" />
                   </span>
                   <input type="password" required
-                    className="w-full h-11 pl-10 pr-3 rounded-[10px] border border-gray-300 bg-white/40 placeholder:text-black/50 focus:outline-none focus:border-black text-gray-900"
+                    className="w-full h-11 rounded-[10px] border border-gray-300 bg-white/40 pl-10 pr-3 text-gray-900 placeholder:text-black/50 focus:border-black focus:outline-none"
                     placeholder="Create a password"
                     value={password} onChange={(e) => setPassword(e.target.value)} />
                 </div>

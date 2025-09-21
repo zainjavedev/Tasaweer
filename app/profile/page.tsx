@@ -111,7 +111,7 @@ function ProfilePage() {
                     <input
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full h-10 pl-10 pr-3 rounded-[8px] border border-gray-300 bg-white/40 placeholder:text-black/50 focus:outline-none focus:border-black text-gray-900"
+                      className="w-full h-10 rounded-[8px] border border-gray-300 bg-white/40 pl-10 pr-3 text-gray-900 placeholder:text-black/50 focus:border-black focus:outline-none"
                     />
                   </div>
                 </div>
@@ -174,16 +174,18 @@ function ProfilePage() {
                       type={showPasswords.current ? 'text' : 'password'}
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="w-full h-10 pl-10 pr-10 rounded-[8px] border border-gray-300 bg-white/40 placeholder:text-black/50 focus:outline-none focus:border-black text-gray-900"
+                      className="w-full h-10 rounded-[8px] border border-gray-300 bg-white/40 pl-10 pr-24 text-gray-900 placeholder:text-black/50 focus:border-black focus:outline-none"
                       placeholder="Enter current password"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPasswords(p => ({...p, current: !p.current}))}
-                      className="absolute inset-y-0 right-2 text-black/60 hover:text-black"
-                    >
-                      {showPasswords.current ? 'Hide' : 'Show'}
-                    </button>
+                    <div className="absolute inset-y-0 right-2 flex items-center">
+                      <button
+                        type="button"
+                        onClick={() => setShowPasswords(p => ({ ...p, current: !p.current }))}
+                        className="rounded-md px-2 py-1 text-sm text-black/60 transition hover:text-black"
+                      >
+                        {showPasswords.current ? 'Hide' : 'Show'}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -197,16 +199,18 @@ function ProfilePage() {
                       type={showPasswords.new ? 'text' : 'password'}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full h-10 pl-10 pr-10 rounded-[8px] border border-gray-300 bg-white/40 placeholder:text-black/50 focus:outline-none focus:border-black text-gray-900"
+                      className="w-full h-10 rounded-[8px] border border-gray-300 bg-white/40 pl-10 pr-24 text-gray-900 placeholder:text-black/50 focus:border-black focus:outline-none"
                       placeholder="Enter new password"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPasswords(p => ({...p, new: !p.new}))}
-                      className="absolute inset-y-0 right-2 text-black/60 hover:text-black"
-                    >
-                      {showPasswords.new ? 'Hide' : 'Show'}
-                    </button>
+                    <div className="absolute inset-y-0 right-2 flex items-center">
+                      <button
+                        type="button"
+                        onClick={() => setShowPasswords(p => ({ ...p, new: !p.new }))}
+                        className="rounded-md px-2 py-1 text-sm text-black/60 transition hover:text-black"
+                      >
+                        {showPasswords.new ? 'Hide' : 'Show'}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -220,16 +224,18 @@ function ProfilePage() {
                       type={showPasswords.confirm ? 'text' : 'password'}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full h-10 pl-10 pr-10 rounded-[8px] border border-gray-300 bg-white/40 placeholder:text-black/50 focus:outline-none focus:border-black text-gray-900"
+                      className="w-full h-10 rounded-[8px] border border-gray-300 bg-white/40 pl-10 pr-24 text-gray-900 placeholder:text-black/50 focus:border-black focus:outline-none"
                       placeholder="Confirm new password"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPasswords(p => ({...p, confirm: !p.confirm}))}
-                      className="absolute inset-y-0 right-2 text-black/60 hover:text-black"
-                    >
-                      {showPasswords.confirm ? 'Hide' : 'Show'}
-                    </button>
+                    <div className="absolute inset-y-0 right-2 flex items-center">
+                      <button
+                        type="button"
+                        onClick={() => setShowPasswords(p => ({ ...p, confirm: !p.confirm }))}
+                        className="rounded-md px-2 py-1 text-sm text-black/60 transition hover:text-black"
+                      >
+                        {showPasswords.confirm ? 'Hide' : 'Show'}
+                      </button>
+                    </div>
                   </div>
                 </div>
 

@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     if (exists) return NextResponse.json({ error: 'Email or username already in use' }, { status: 400 });
     const passwordHash = await hashPassword(password);
     // Get default image limit from environment variables
-    const defaultImageLimit = Number(process.env.DEFAULT_USER_IMAGE_LIMIT) || 50;
+    const defaultImageLimit = Number(process.env.DEFAULT_USER_IMAGE_LIMIT) || 20;
 
     // Generate a 6-digit numeric code
     const code = Math.floor(100000 + Math.random() * 900000).toString();

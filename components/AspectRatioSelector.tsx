@@ -1,108 +1,90 @@
 'use client';
 
-import React from 'react';
+import React, { useId, useMemo } from 'react';
 
-export interface AspectRatio {
+export interface AspectRatioOption {
   label: string;
   value: string; // Width:Height format
   display: string;
-  icon: JSX.Element;
 }
 
-const ASPECT_RATIOS: AspectRatio[] = [
+const ASPECT_RATIOS: AspectRatioOption[] = [
   {
     label: 'Square',
     value: '1:1',
     display: '1:1',
-    icon: (
-      <div className="w-8 h-8 border-2 border-black bg-white m-1">
-        <div className="w-full h-full bg-black/10"></div>
-      </div>
-    ),
   },
   {
     label: 'Landscape',
     value: '16:9',
     display: '16:9',
-    icon: (
-      <div className="w-10 h-6 border-2 border-black bg-white m-1">
-        <div className="w-full h-full bg-black/10"></div>
-      </div>
-    ),
   },
   {
     label: 'Portrait',
     value: '9:16',
     display: '9:16',
-    icon: (
-      <div className="w-6 h-10 border-2 border-black bg-white m-1">
-        <div className="w-full h-full bg-black/10"></div>
-      </div>
-    ),
   },
   {
     label: 'Wide',
     value: '2:1',
     display: '2:1',
-    icon: (
-      <div className="w-12 h-6 border-2 border-black bg-white m-0.5">
-        <div className="w-full h-full bg-black/10"></div>
-      </div>
-    ),
   },
   {
     label: 'Tall',
     value: '1:2',
     display: '1:2',
-    icon: (
-      <div className="w-6 h-12 border-2 border-black bg-white m-0.5">
-        <div className="w-full h-full bg-black/10"></div>
-      </div>
-    ),
   },
   {
     label: 'Wide Landscape',
     value: '21:9',
     display: '21:9',
-    icon: (
-      <div className="w-14 h-6 border-2 border-black bg-white m-1">
-        <div className="w-full h-full bg-black/10"></div>
-      </div>
-    ),
   },
 ];
 
 interface AspectRatioSelectorProps {
   selectedRatio: string;
-  onSelect: (ratio: AspectRatio) => void;
+  onSelect: (ratioValue: string) => void;
 }
 
 export function AspectRatioSelector({ selectedRatio, onSelect }: AspectRatioSelectorProps) {
+  const selectId = useId();
+  const previewStyle = useMemo(() => {
+    const [w, h] = selectedRatio.split(':').map(Number);
+    const width = 44;
+    if (!w || !h) {
+      return { width, height: width } as React.CSSProperties;
+    }
+    const height = Math.min(32, Math.max(14, Math.round((h / w) * width)));
+    return { width, height } as React.CSSProperties;
+  }, [selectedRatio]);
+
   return (
-    <div className="space-y-2">
-      <div className="text-sm font-medium text-black">Aspect ratio</div>
-      <div className="flex flex-wrap gap-3">
-        {ASPECT_RATIOS.map((ratio) => (
-          <button
-            key={ratio.value}
-            onClick={() => onSelect(ratio)}
-            className={`flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-colors ${
-              selectedRatio === ratio.value
-                ? 'border-black bg-black/10'
-                : 'border-gray-300 bg-white hover:border-black'
-            }`}
+    <div className="space-y-1.5">
+      <label htmlFor={selectId} className="text-sm font-medium text-black">Aspect ratio</label>
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <select
+            id={selectId}
+            value={selectedRatio}
+            onChange={(e) => onSelect(e.target.value)}
+            className="w-full appearance-none rounded border border-black/20 bg-white px-3 py-1.5 pr-8 text-sm text-black focus:border-black/40 focus:outline-none focus:ring-2 focus:ring-black/15"
           >
-            {ratio.icon}
-            <div className={`text-xs font-medium ${
-              selectedRatio === ratio.value ? 'text-black' : 'text-black/70'
-            }`}>
-              {ratio.display}
-            </div>
-          </button>
-        ))}
-      </div>
-      <div className="text-xs text-black/60">
-        Select the aspect ratio for your generated image. Hover over each option to see the visual preview.
+            {ASPECT_RATIOS.map((ratio) => (
+              <option key={ratio.value} value={ratio.value}>
+                {`${ratio.label} (${ratio.display})`}
+              </option>
+            ))}
+          </select>
+          <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-black/50">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+              <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.584l3.71-3.354a.75.75 0 111.04 1.08l-4.23 3.823a.75.75 0 01-1.04 0L5.21 8.31a.75.75 0 01.02-1.1z" clipRule="evenodd" />
+            </svg>
+          </span>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-black/60">
+          <span>Preview</span>
+          <div className="rounded border border-black/30 bg-black/10 transition-all duration-300 ease-in-out" style={previewStyle} />
+        </div>
       </div>
     </div>
   );

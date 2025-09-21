@@ -85,7 +85,7 @@ export default function Page() {
               <input
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                className="w-full h-11 pl-10 pr-3 rounded-[10px] border border-gray-300 bg-white/40 placeholder:text-black/50 focus:outline-none focus:border-black text-gray-900"
+                className="w-full h-11 rounded-[10px] border border-gray-300 bg-white/40 pl-10 pr-3 text-gray-900 placeholder:text-black/50 focus:border-black focus:outline-none"
                 placeholder="you@example.com or yourname"
                 autoComplete="username"
               />
@@ -101,31 +101,33 @@ export default function Page() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full h-11 pl-10 pr-10 rounded-[10px] border border-gray-300 bg-white/40 placeholder:text-black/50 focus:outline-none focus:border-black text-gray-900"
+                className="w-full h-11 rounded-[10px] border border-gray-300 bg-white/40 pl-10 pr-16 text-gray-900 placeholder:text-black/50 focus:border-black focus:outline-none"
                 placeholder="Enter your password"
                 autoComplete="current-password"
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute inset-y-0 right-2 my-auto inline-flex items-center justify-center p-1.5 rounded-md text-black/60 hover:text-black focus:outline-none"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-                title={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5">
-                    <path d="M3 3l18 18" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M10.58 10.58a3 3 0 004.24 4.24" />
-                    <path d="M16.681 16.681C15.23 17.505 13.66 18 12 18 7 18 3.27 14.94 2 12c.51-1.12 1.35-2.29 2.46-3.33" strokeLinecap="round"/>
-                    <path d="M9.88 5.51C10.56 5.34 11.27 5.25 12 5.25 17 5.25 20.73 8.31 22 11.25c-.42.92-1.03 1.85-1.79 2.69" strokeLinecap="round"/>
-                  </svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5">
-                    <path d="M2 12s3.5-6.75 10-6.75S22 12 22 12s-3.5 6.75-10 6.75S2 12 2 12z" />
-                    <circle cx="12" cy="12" r="3.25" />
-                  </svg>
-                )}
-              </button>
+              <div className="absolute inset-y-0 right-2 my-auto flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="inline-flex items-center justify-center rounded-md p-1.5 text-black/60 hover:text-black focus:outline-none"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
+                      <path d="M3 3l18 18" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M10.58 10.58a3 3 0 004.24 4.24" />
+                      <path d="M16.681 16.681C15.23 17.505 13.66 18 12 18 7 18 3.27 14.94 2 12c.51-1.12 1.35-2.29 2.46-3.33" strokeLinecap="round"/>
+                      <path d="M9.88 5.51C10.56 5.34 11.27 5.25 12 5.25 17 5.25 20.73 8.31 22 11.25c-.42.92-1.03 1.85-1.79 2.69" strokeLinecap="round"/>
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
+                      <path d="M2 12s3.5-6.75 10-6.75S22 12 22 12s-3.5 6.75-10 6.75S2 12 2 12z" />
+                      <circle cx="12" cy="12" r="3.25" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 

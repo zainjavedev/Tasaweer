@@ -1,71 +1,86 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { UsersIcon, StarIcon, MenuIcon, XIcon, SparklesIcon, SwapIcon, MagicWandIcon, BoxIcon, ShieldIcon } from './Icon';
+import { usePathname, useRouter } from 'next/navigation';
+import {
+  UsersIcon,
+  StarIcon,
+  MenuIcon,
+  XIcon,
+  SparklesIcon,
+  SwapIcon,
+  MagicWandIcon,
+  BoxIcon,
+  ShieldIcon,
+} from './Icon';
 import { Fredoka } from 'next/font/google';
-import { getToken, clearToken, getUsernameFromToken } from '@/utils/authClient';
+import { clearToken } from '@/utils/authClient';
 import { useUser } from '@/utils/useUser';
 
-const fredoka = Fredoka({ subsets: ['latin'], weight: ['400','500','600','700'] });
+const fredoka = Fredoka({ subsets: ['latin'], weight: ['400', '500', '600', '700'] });
+
+interface NavEntry {
+  href: string;
+  label: string;
+  Icon: typeof SparklesIcon;
+}
 
 export const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [isNavigating, setIsNavigating] = useState(false);
   const { user, refreshUserData } = useUser();
   const router = useRouter();
-  const navigationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pathname = usePathname();
 
-  // Prefetch important pages to reduce perceived latency
   useEffect(() => {
     try {
-      // @ts-ignore app router router has prefetch
-      router.prefetch?.('/login');
-      router.prefetch?.('/');
-      router.prefetch?.('/text2image');
-      router.prefetch?.('/try-apparel');
-      router.prefetch?.('/photo-editor');
-      router.prefetch?.('/profile');
-      router.prefetch?.('/signup');
+      const paths = [
+        '/',
+        '/login',
+        '/signup',
+        '/text2image',
+        '/try-apparel',
+        '/photo-editor',
+        '/profile',
+        '/admin',
+      ];
+      paths.forEach((path) => router.prefetch?.(path));
     } catch {}
   }, [router]);
 
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-  const closeMenu = () => setIsMenuOpen(false);
+  const navItems: NavEntry[] = [
+    { href: '/text2image', label: 'Text → Image', Icon: SparklesIcon },
+    { href: '/try-apparel', label: 'Try Apparel', Icon: SwapIcon },
+    { href: '/photo-editor', label: 'Photo Editor', Icon: MagicWandIcon },
+  ];
 
-  // Instant navigation with visual feedback
-  const navigateInstantly = (path: string) => {
-    if (isNavigating) return;
+  const authenticatedLinks: NavEntry[] = [
+    { href: '/profile', label: 'Profile', Icon: UsersIcon },
+    ...(user?.role === 'ADMIN' ? [{ href: '/admin', label: 'Admin', Icon: ShieldIcon }] : []),
+  ];
 
-    setIsNavigating(true);
-    setIsMenuOpen(false); // Close mobile menu
+  const guestLinks: NavEntry[] = [
+    { href: '/login', label: 'Login', Icon: UsersIcon },
+    { href: '/signup', label: 'Sign Up', Icon: StarIcon },
+  ];
 
-    // Clear any existing timeout
-    if (navigationTimeoutRef.current) {
-      clearTimeout(navigationTimeoutRef.current);
-    }
-
-    // Start navigation immediately but with fallback delay
-    router.push(path);
-
-    // Reset navigation state after short delay to prevent UI freeze
-    navigationTimeoutRef.current = setTimeout(() => {
-      setIsNavigating(false);
-    }, 100);
+  const linkClasses = (href: string) => {
+    const isActive = pathname === href;
+    return `relative text-sm flex items-center gap-2 transition-colors duration-200 ${
+      isActive
+        ? 'text-black after:absolute after:-bottom-1 after:left-0 after:h-0.5 after:w-full after:bg-black'
+        : 'text-black/70 hover:text-black'
+    }`;
   };
 
-  const isAuthenticated = !!user;
-  const username = user?.username;
+  const closeMenu = () => setIsMenuOpen(false);
+  const requestLogout = () => {
+    setShowLogoutConfirm(true);
+    closeMenu();
+  };
 
-  const handleLogout = () => {
-    if (isNavigating) return;
-
-    // Set navigation state to prevent double-clicks
-    setIsNavigating(true);
-
-    // Clear tokens and storage immediately
+  const performLogout = () => {
     try {
       clearToken();
       if (typeof window !== 'undefined') {
@@ -78,13 +93,10 @@ export const Header: React.FC = () => {
       }
     } catch {}
 
-    // Navigate after clearing data
     router.replace('/login');
-
-    // Refresh user data and reset navigation state after short delay
+    setShowLogoutConfirm(false);
     setTimeout(() => {
       refreshUserData();
-      setIsNavigating(false);
     }, 100);
   };
 
@@ -94,244 +106,132 @@ export const Header: React.FC = () => {
         Tasaweers
         <span aria-hidden className="shine"></span>
       </Link>
-      {/* Desktop Navigation */}
+
       <nav className="hidden md:block">
-        <ul className="flex gap-6 text-black font-semibold">
-          <li className="flex items-center gap-2 hover:scale-105 transition-all duration-200">
-            <SparklesIcon className="w-4 h-4 text-black" />
-            <button
-              onClick={() => navigateInstantly('/text2image')}
-              disabled={isNavigating}
-              className="hover:text-black transition duration-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Text → Image
-            </button>
-          </li>
-          <li className="flex items-center gap-2 hover:scale-105 transition-all duration-200">
-            <SwapIcon className="w-4 h-4 text-black" />
-            <button
-              onClick={() => navigateInstantly('/try-apparel')}
-              disabled={isNavigating}
-              className="hover:text-black transition duration-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Try Apparel
-            </button>
-          </li>
-          <li className="flex items-center gap-2 hover:scale-105 transition-all duration-200">
-            <MagicWandIcon className="w-4 h-4 text-black" />
-            <button
-              onClick={() => navigateInstantly('/photo-editor')}
-              disabled={isNavigating}
-              className="hover:text-black transition duration-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Photo Editor
-            </button>
-          </li>
-          {isAuthenticated ? (
+        <ul className="flex items-center gap-6 text-black font-semibold">
+          {navItems.map(({ href, label, Icon }) => (
+            <li key={href}>
+              <Link href={href} className={linkClasses(href)}>
+                <Icon className="w-4 h-4" />
+                {label}
+              </Link>
+            </li>
+          ))}
+          {user ? (
             <>
-              <li className="flex items-center gap-2 hover:scale-105 transition-all duration-200">
-                <UsersIcon className="w-4 h-4 text-black" />
-                <span className="text-sm font-medium text-black">
-                  Hi, {username || 'User'}!
-                </span>
+              <li className="flex items-center gap-2 text-sm text-black">
+                <UsersIcon className="w-4 h-4" />
+                Hi, {user.username || 'User'}!
               </li>
-              <li className="flex items-center gap-2">
-                <BoxIcon className="w-4 h-4 text-black" />
-                <span className="text-sm font-medium text-black">
-                  {user?.imageCount || 0}/{user?.imageLimit ?? '∞'}
-                </span>
+              <li className="flex items-center gap-2 text-sm text-black">
+                <BoxIcon className="w-4 h-4" />
+                {user.imageCount || 0}/{user.imageLimit ?? '∞'}
               </li>
-              <li className="flex items-center gap-2 hover:scale-105 transition-all duration-200">
-                <UsersIcon className="w-4 h-4 text-black" />
-                <button
-                  onClick={() => navigateInstantly('/profile')}
-                  disabled={isNavigating}
-                  className="hover:text-black transition duration-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Profile
-                </button>
-              </li>
-              {user?.role === 'ADMIN' && (
-                <li className="flex items-center gap-2 hover:scale-105 transition-all duration-200">
-                  <ShieldIcon className="w-4 h-4 text-black" />
-                  <button
-                    onClick={() => navigateInstantly('/admin')}
-                    disabled={isNavigating}
-                    className="hover:text-black transition duration-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Admin
-                  </button>
+              {authenticatedLinks.map(({ href, label, Icon }) => (
+                <li key={href}>
+                  <Link href={href} className={linkClasses(href)}>
+                    <Icon className="w-4 h-4" />
+                    {label}
+                  </Link>
                 </li>
-              )}
-              <li className="flex items-center gap-2 hover:scale-105 transition-all duration-200">
-                <StarIcon className="w-4 h-4 text-black" />
+              ))}
+              <li>
                 <button
-                  onClick={handleLogout}
-                  disabled={isNavigating}
-                  className="hover:text-black transition duration-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={requestLogout}
+                  className="text-sm text-black/70 hover:text-black transition-colors duration-200 flex items-center gap-2"
                 >
-                  Logout
+                  <StarIcon className="w-4 h-4" /> Logout
                 </button>
               </li>
             </>
           ) : (
-            <>
-              <li className="flex items-center gap-2 hover:scale-105 transition-all duration-200">
-                <UsersIcon className="w-4 h-4 text-black" />
-                <button
-                  onClick={() => navigateInstantly('/login')}
-                  disabled={isNavigating}
-                  className="hover:text-black transition duration-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Login
-                </button>
+            guestLinks.map(({ href, label, Icon }) => (
+              <li key={href}>
+                <Link href={href} className={linkClasses(href)}>
+                  <Icon className="w-4 h-4" />
+                  {label}
+                </Link>
               </li>
-              <li className="flex items-center gap-2 hover:scale-105 transition-all duration-200">
-                <StarIcon className="w-4 h-4 text-black" />
-                <button
-                  onClick={() => navigateInstantly('/signup')}
-                  disabled={isNavigating}
-                  className="hover:text-black transition duration-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Sign Up
-                </button>
-              </li>
-            </>
+            ))
           )}
         </ul>
       </nav>
 
-      {/* Mobile Menu Button */}
       <button
-        onClick={toggleMenu}
+        onClick={() => setIsMenuOpen((v) => !v)}
         className="md:hidden p-2 rounded-lg hover:bg-black/10 transition-colors duration-200"
         aria-label="Toggle mobile menu"
       >
-        {isMenuOpen ? (
-          <XIcon className="w-6 h-6 text-black" />
-        ) : (
-          <MenuIcon className="w-6 h-6 text-black" />
-        )}
+        {isMenuOpen ? <XIcon className="w-6 h-6 text-black" /> : <MenuIcon className="w-6 h-6 text-black" />}
       </button>
 
-      {/* Mobile Navigation */}
       {isMenuOpen && (
         <div className="absolute top-full left-0 right-0 bg-white border-2 border-gray-200 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] md:hidden max-h-96 overflow-y-auto z-[99999]">
           <nav className="px-6 py-4">
             <ul className="space-y-3 text-black font-semibold">
-              <li className="flex items-center gap-2 hover:bg-black/10 rounded-lg p-2 transition duration-200">
-                <SparklesIcon className="w-5 h-5 text-black flex-shrink-0" />
-                <button
-                  onClick={() => navigateInstantly('/text2image')}
-                  disabled={isNavigating}
-                  className="hover:text-black transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Text → Image
-                </button>
-              </li>
-              <li className="flex items-center gap-2 hover:bg-black/10 rounded-lg p-2 transition duration-200">
-                <SwapIcon className="w-5 h-5 text-black flex-shrink-0" />
-                <button
-                  onClick={() => navigateInstantly('/try-apparel')}
-                  disabled={isNavigating}
-                  className="hover:text-black transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Try Apparel
-                </button>
-              </li>
-              <li className="flex items-center gap-2 hover:bg-black/10 rounded-lg p-2 transition duration-200">
-                <MagicWandIcon className="w-5 h-5 text-black flex-shrink-0" />
-                <button
-                  onClick={() => navigateInstantly('/photo-editor')}
-                  disabled={isNavigating}
-                  className="hover:text-black transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Photo Editor
-                </button>
-              </li>
-              {isAuthenticated ? (
+              {navItems.map(({ href, label, Icon }) => (
+                <li key={href} className="flex items-center gap-2 rounded-lg p-2 hover:bg-black/10 transition duration-200">
+                  <Icon className="w-5 h-5 text-black flex-shrink-0" />
+                  <Link
+                    href={href}
+                    className="flex-1 text-left text-sm text-black/80 hover:text-black"
+                    onClick={closeMenu}
+                  >
+                    {label}
+                  </Link>
+                </li>
+              ))}
+              {user ? (
                 <>
-                  <li className="flex items-center gap-2 rounded-lg p-2 transition duration-200">
+                  <li className="flex items-center gap-2 rounded-lg p-2 text-sm text-black">
                     <UsersIcon className="w-5 h-5 text-black flex-shrink-0" />
-                    <span className="text-sm font-medium text-black">
-                      Hi, {username || 'User'}!
-                    </span>
+                    Hi, {user.username || 'User'}!
                   </li>
-                  <li className="flex items-center gap-2 rounded-lg p-2 transition duration-200">
+                  <li className="flex items-center gap-2 rounded-lg p-2 text-sm text-black">
                     <BoxIcon className="w-5 h-5 text-black flex-shrink-0" />
-                    <span className="text-sm font-medium text-black">
-                      Images: {user?.imageCount || 0}/{user?.imageLimit ?? '∞'}
-                    </span>
+                    Images: {user.imageCount || 0}/{user.imageLimit ?? '∞'}
                   </li>
-                  <li className="flex items-center gap-2 hover:bg-black/10 rounded-lg p-2 transition duration-200">
-                    <UsersIcon className="w-5 h-5 text-black flex-shrink-0" />
-                    <button
-                      onClick={() => navigateInstantly('/profile')}
-                      disabled={isNavigating}
-                      className="hover:text-black transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Profile
-                    </button>
-                  </li>
-                  {user?.role === 'ADMIN' && (
-                    <li className="flex items-center gap-2 hover:bg-black/10 rounded-lg p-2 transition duration-200">
-                      <ShieldIcon className="w-5 h-5 text-black flex-shrink-0" />
-                      <button
-                        onClick={() => navigateInstantly('/admin')}
-                        disabled={isNavigating}
-                        className="hover:text-black transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  {authenticatedLinks.map(({ href, label, Icon }) => (
+                    <li key={href} className="flex items-center gap-2 rounded-lg p-2 hover:bg-black/10 transition duration-200">
+                      <Icon className="w-5 h-5 text-black flex-shrink-0" />
+                      <Link
+                        href={href}
+                        className="flex-1 text-left text-sm text-black/80 hover:text-black"
+                        onClick={closeMenu}
                       >
-                        Admin
-                      </button>
+                        {label}
+                      </Link>
                     </li>
-                  )}
-                  <li className="flex items-center gap-2 hover:bg-black/10 rounded-lg p-2 transition duration-200">
+                  ))}
+                  <li className="flex items-center gap-2 rounded-lg p-2 hover:bg-black/10 transition duration-200">
                     <StarIcon className="w-5 h-5 text-black flex-shrink-0" />
                     <button
-                      onMouseDown={() => {
-                        setShowLogoutConfirm(true);
-                        closeMenu();
-                      }}
-                      onClick={() => {
-                        setShowLogoutConfirm(true);
-                        closeMenu();
-                      }}
-                      className="hover:text-black transition duration-300"
+                      onClick={requestLogout}
+                      className="flex-1 text-left text-sm text-black/80 hover:text-black"
                     >
                       Logout
                     </button>
                   </li>
                 </>
               ) : (
-                <>
-                  <li className="flex items-center gap-2 hover:bg-black/10 rounded-lg p-2 transition duration-200">
-                    <UsersIcon className="w-5 h-5 text-black flex-shrink-0" />
-                    <button
-                      onClick={() => navigateInstantly('/login')}
-                      disabled={isNavigating}
-                      className="hover:text-black transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                guestLinks.map(({ href, label, Icon }) => (
+                  <li key={href} className="flex items-center gap-2 rounded-lg p-2 hover:bg-black/10 transition duration-200">
+                    <Icon className="w-5 h-5 text-black flex-shrink-0" />
+                    <Link
+                      href={href}
+                      className="flex-1 text-left text-sm text-black/80 hover:text-black"
+                      onClick={closeMenu}
                     >
-                      Login
-                    </button>
+                      {label}
+                    </Link>
                   </li>
-                  <li className="flex items-center gap-2 hover:bg-black/10 rounded-lg p-2 transition duration-200">
-                    <StarIcon className="w-5 h-5 text-black flex-shrink-0" />
-                    <button
-                      onClick={() => navigateInstantly('/signup')}
-                      disabled={isNavigating}
-                      className="hover:text-black transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Sign Up
-                    </button>
-                  </li>
-                </>
+                ))
               )}
             </ul>
           </nav>
         </div>
       )}
 
-      {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9999]">
           <div className="bg-white/40 backdrop-blur-xl rounded-2xl border-2 border-white/30 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] p-6 max-w-sm w-full">
@@ -340,7 +240,7 @@ export const Header: React.FC = () => {
                 <StarIcon className="w-6 h-6 text-black" />
               </div>
               <h3 className="text-xl font-medium text-black mb-2">Confirm Logout</h3>
-              <p className="text-black/60">Are you sure you want to log out? You can always log back in.</p>
+              <p className="text-black/60">You can log back in anytime.</p>
             </div>
 
             <div className="flex gap-3">
@@ -351,34 +251,8 @@ export const Header: React.FC = () => {
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  setShowLogoutConfirm(false);
-                  if (isNavigating) return;
-
-                  // Set navigation state
-                  setIsNavigating(true);
-
-                  // Clear all storage immediately
-                  try {
-                    clearToken();
-                    if (typeof window !== 'undefined') {
-                      window.localStorage.clear();
-                      document.cookie.split(';').forEach((c) => {
-                        document.cookie = c
-                          .replace(/^\s+/, '')
-                          .replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
-                      });
-                    }
-                  } catch {}
-
-                  router.replace('/login');
-                  setTimeout(() => {
-                    setIsMenuOpen(false);
-                    refreshUserData();
-                    setIsNavigating(false);
-                  }, 100);
-                }}
-                className="btn-shine flex-1 px-4 py-2 rounded-lg bg-black text-white font-medium hover:bg-gray-800 disabled:bg-gray-400 transition-colors duration-200"
+                onClick={performLogout}
+                className="btn-shine flex-1 px-4 py-2 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors duration-200"
               >
                 Logout
                 <span aria-hidden className="shine"></span>
@@ -387,7 +261,6 @@ export const Header: React.FC = () => {
           </div>
         </div>
       )}
-
     </header>
   );
 };

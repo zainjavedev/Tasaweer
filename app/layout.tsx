@@ -76,8 +76,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         {/* {!hideChrome && <NavigationNext />} */}
         <main className={`container mx-auto px-4 py-8 ${hideChrome ? 'min-h-screen flex items-center justify-center' : ''}`}>{children}</main>
         {!hideChrome && (
-          <footer className="text-center py-6 text-sm text-black">
-            <p>Powered by Gemini API. Built for Professionals.</p>
+          <footer className="border-t border-black/10 bg-white/70 py-6 text-center text-sm text-black/70">
+            <p className="font-semibold text-black">Built with love.</p>
           </footer>
         )}
         <Analytics />

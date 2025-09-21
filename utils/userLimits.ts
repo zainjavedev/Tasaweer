@@ -50,5 +50,5 @@ export function getRemainingImages(): number {
 export function getDefaultImageLimit(): number {
   // This is a client-side function to get the default, but it might not work reliably
   // The actual default is set server-side in the registration endpoint
-  return Number(process.env.NEXT_PUBLIC_DEFAULT_USER_IMAGE_LIMIT) || 50;
+  return Number(process.env.NEXT_PUBLIC_DEFAULT_USER_IMAGE_LIMIT) || 20;
 }

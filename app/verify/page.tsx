@@ -87,7 +87,7 @@ function VerifyForm() {
                 <input
                   id="email"
                   type="email"
-                  className="w-full h-11 pl-10 pr-28 rounded-[10px] border border-gray-300 bg-white/40 placeholder:text-black/50 focus:outline-none focus:border-black text-gray-900"
+                  className="w-full h-11 rounded-[10px] border border-gray-300 bg-white/40 pl-10 pr-28 text-gray-900 placeholder:text-black/50 focus:border-black focus:outline-none"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
@@ -95,28 +95,30 @@ function VerifyForm() {
                   aria-invalid={status === 'error' && !email}
                   aria-describedby="email-error"
                 />
-                <button
-                  type="button"
-                  disabled={!email || resending}
-                  onClick={async () => {
-                    if (!email) return;
-                    try {
-                      setResending(true);
-                      setMessage('Sending a new code…');
-                      const res = await fetch('/api/auth/resend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
-                      const data = await res.json().catch(() => ({}));
-                      if (!res.ok) throw new Error(data.error || 'Could not resend');
-                      setMessage('A new code was sent to your email.');
-                    } catch (e: any) {
-                      setMessage(e?.message || 'Failed to resend');
-                    } finally {
-                      setResending(false);
-                    }
-                  }}
-                  className="absolute inset-y-0 right-2 my-auto px-3 h-8 text-sm rounded-[8px] text-black/80 hover:text-black disabled:opacity-50"
-                >
-                  {resending ? 'Resending…' : 'Resend'}
-                </button>
+                <div className="absolute inset-y-0 right-2 my-auto">
+                  <button
+                    type="button"
+                    disabled={!email || resending}
+                    onClick={async () => {
+                      if (!email) return;
+                      try {
+                        setResending(true);
+                        setMessage('Sending a new code…');
+                        const res = await fetch('/api/auth/resend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) throw new Error(data.error || 'Could not resend');
+                        setMessage('A new code was sent to your email.');
+                      } catch (e: any) {
+                        setMessage(e?.message || 'Failed to resend');
+                      } finally {
+                        setResending(false);
+                      }
+                    }}
+                    className="h-8 rounded-[8px] px-3 text-sm text-black/80 transition hover:text-black disabled:opacity-50"
+                  >
+                    {resending ? 'Resending…' : 'Resend'}
+                  </button>
+                </div>
               </div>
               {status === 'error' && !email && (
                 <p id="email-error" className="text-red-600 text-sm mt-1">Email is required</p>
