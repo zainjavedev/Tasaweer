@@ -17,6 +17,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Tasaweers</title>
         <meta name="description" content={meta.description} />
+        <meta name="google-site-verification" content="BofawNF8Pou4P74vdBUXolMgJccsn2OiVYcr0jlZn-I" />
         <meta name="robots" content="index,follow" />
 
         {/* Open Graph */}
