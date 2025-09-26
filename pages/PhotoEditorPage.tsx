@@ -8,8 +8,9 @@ import { compressImageFile } from '@/utils/image';
 import { useUser } from '@/utils/useUser';
 import Lightbox from '@/components/Lightbox';
 import { photoEditingSamples } from '@/lib/samples';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import SurfaceCard from '@/components/SurfaceCard';
+import { useAuthStatus } from '@/utils/useAuthStatus';
 
 const PhotoEditorPage: React.FC = () => {
   const [originalImage, setOriginalImage] = useState<File | null>(null);
@@ -25,8 +26,10 @@ const PhotoEditorPage: React.FC = () => {
   const [aspectRatio, setAspectRatio] = useState<string>('16:9'); // Default to Landscape
   const maxRefImages = 3;
   const searchParams = useSearchParams();
+  const router = useRouter();
   const loadedFromQueryRef = useRef(false);
   const { refreshUserData } = useUser();
+  const isAuthenticated = useAuthStatus();
 
   // Preset prompts for common tasks
   const PRESET_PROMPTS = [
@@ -121,6 +124,11 @@ const PhotoEditorPage: React.FC = () => {
   const handleSubmit = useCallback(async () => {
     if (!originalImage) { setError('Please upload a photo.'); return; }
     if (!prompt.trim()) { setError('Please describe the edit.'); return; }
+    if (!isAuthenticated) {
+      setError("Oops, you'll have to create an account to generate.");
+      router.push('/register');
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {
@@ -146,7 +154,7 @@ const PhotoEditorPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [originalImage, prompt, originalPreview, refImages, refreshUserData]);
+  }, [originalImage, prompt, originalPreview, refImages, refreshUserData, isAuthenticated, router, aspectRatio]);
 
   const download = (url: string, name = 'edited-photo.png') => {
     const a = document.createElement('a');
@@ -537,12 +545,14 @@ const PhotoEditorPage: React.FC = () => {
                className="btn-shine flex w-full items-center justify-center gap-2 rounded-lg bg-black px-6 py-3 text-white font-bold transition-colors duration-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-400"
                title="Generate an edited version of your photo using AI"
              >
-              {isLoading ? 'Generating…' : (
-                <>
-                  <MagicWandIcon className="h-5 w-5" />
-                  Generate edit
-                </>
-              )}
+              {isAuthenticated ? (
+                isLoading ? 'Generating…' : (
+                  <>
+                    <MagicWandIcon className="h-5 w-5" />
+                    Generate edit
+                  </>
+                )
+              ) : 'Signup to generate'}
               <span aria-hidden className="shine"></span>
             </button>
 

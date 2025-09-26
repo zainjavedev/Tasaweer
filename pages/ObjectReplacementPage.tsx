@@ -10,8 +10,12 @@ import { SwapIcon } from '../components/Icon';
 import { compressImageFile } from '@/utils/image';
 import CaptureWidget from '@/components/CaptureWidget';
 import SurfaceCard from '@/components/SurfaceCard';
+import { useRouter } from 'next/navigation';
+import { useAuthStatus } from '@/utils/useAuthStatus';
 
 const ObjectReplacementPage: React.FC = () => {
+  const router = useRouter();
+  const isAuthenticated = useAuthStatus();
   const [originalImage, setOriginalImage] = useState<File | null>(null);
   const [originalPreview, setOriginalPreview] = useState<string | null>(null);
   const [editedResult, setEditedResult] = useState<EditedImageResult | null>(null);
@@ -62,6 +66,11 @@ const ObjectReplacementPage: React.FC = () => {
       setError('Please upload an image and fill both replacement fields.');
       return;
     }
+    if (!isAuthenticated) {
+      setError("Oops, you'll have to create an account to generate.");
+      router.push('/register');
+      return;
+    }
     setIsLoading(true);
     setError(null);
     setEditedResult(null);
@@ -83,7 +92,7 @@ const ObjectReplacementPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [originalImage, sourceObject, targetObject, sampleFile]);
+  }, [originalImage, sourceObject, targetObject, sampleFile, isAuthenticated, router]);
 
   const downloadEdited = useCallback(() => {
     if (!editedResult) return;
@@ -167,12 +176,14 @@ const ObjectReplacementPage: React.FC = () => {
           disabled={!originalImage || !sourceObject || !targetObject || isLoading}
           className="btn-shine flex items-center justify-center gap-3 w-full max-w-xs px-8 py-3 bg-black text-white font-bold rounded-lg shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
-          {isLoading ? 'Replacing…' : (
-            <>
-              <SwapIcon className="w-5 h-5" />
-              Replace
-            </>
-          )}
+          {isAuthenticated ? (
+            isLoading ? 'Replacing…' : (
+              <>
+                <SwapIcon className="w-5 h-5" />
+                Replace
+              </>
+            )
+          ) : 'Signup to generate'}
           <span aria-hidden className="shine"></span>
         </button>
       </div>

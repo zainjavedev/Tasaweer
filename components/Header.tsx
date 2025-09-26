@@ -38,7 +38,7 @@ export const Header: React.FC = () => {
       const paths = [
         '/',
         '/login',
-        '/signup',
+        '/register',
         '/text2image',
         '/try-apparel',
         '/photo-editor',
@@ -62,7 +62,7 @@ export const Header: React.FC = () => {
 
   const guestLinks: NavEntry[] = [
     { href: '/login', label: 'Login', Icon: UsersIcon },
-    { href: '/signup', label: 'Sign Up', Icon: StarIcon },
+    { href: '/register', label: 'Sign Up', Icon: StarIcon },
   ];
 
   const linkClasses = (href: string) => {

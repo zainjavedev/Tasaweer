@@ -11,8 +11,8 @@ import { AspectRatioSelector } from '@/components/AspectRatioSelector';
 import { textToImageSamples } from '@/lib/samples';
 import { compressImageFile } from '@/utils/image';
 import { useRouter } from 'next/navigation';
-import { getToken } from '@/utils/authClient';
 import { getUserLimits, canUserGenerate } from '@/utils/userLimits';
+import { useAuthStatus } from '@/utils/useAuthStatus';
 
 const TextToImagePage: React.FC = () => {
   const [prompt, setPrompt] = useState('');
@@ -27,24 +27,16 @@ const TextToImagePage: React.FC = () => {
   const router = useRouter();
 
   // User Limits state
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const isAuthenticated = useAuthStatus();
   const [canGenerate, setCanGenerate] = useState(true);
-  const [userLimits, setUserLimits] = useState(null);
 
   useEffect(() => {
-    const checkAuthAndLimits = () => {
-      const token = getToken();
-      setIsAuthenticated(!!token);
-
-      if (token) {
-        const limits = getUserLimits();
-        setUserLimits(limits);
-        setCanGenerate(canUserGenerate());
-      }
-    };
-
-    checkAuthAndLimits();
-  }, []);
+    if (isAuthenticated) {
+      setCanGenerate(canUserGenerate());
+    } else {
+      setCanGenerate(true);
+    }
+  }, [isAuthenticated]);
 
   const addRefFiles = useCallback((files: FileList | File[]) => {
     const incoming = Array.from(files).filter(f => f.type.startsWith('image/'));
@@ -80,6 +72,12 @@ const TextToImagePage: React.FC = () => {
       return;
     }
 
+    if (!isAuthenticated) {
+      setError("Oops, you'll have to create an account to generate.");
+      router.push('/register');
+      return;
+    }
+
     // Check if user can generate images
     if (isAuthenticated && !canGenerate) {
       const limits = getUserLimits();
@@ -110,7 +108,7 @@ const TextToImagePage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [prompt, isAuthenticated, canGenerate, refImages]);
+  }, [prompt, isAuthenticated, canGenerate, refImages, router, aspectRatio]);
 
   const download = useCallback((url: string, name = 'generated-image.png') => {
     const a = document.createElement('a');
@@ -219,12 +217,14 @@ const TextToImagePage: React.FC = () => {
               disabled={isLoading || (isAuthenticated && !canGenerate)}
               className={`btn-shine flex w-full items-center justify-center gap-2 rounded-lg bg-black px-6 py-3 text-white font-bold transition-colors duration-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-400 ${isAuthenticated && !canGenerate ? 'opacity-50' : ''}`}
             >
-              {isLoading ? 'Generating…' : (
-                <>
-                  <SparklesIcon className="h-5 w-5" />
-                  Generate{isAuthenticated && !canGenerate ? ' (Limited)' : ''}
-                </>
-              )}
+              {isAuthenticated ? (
+                isLoading ? 'Generating…' : (
+                  <>
+                    <SparklesIcon className="h-5 w-5" />
+                    Generate{isAuthenticated && !canGenerate ? ' (Limited)' : ''}
+                  </>
+                )
+              ) : 'Signup to generate'}
               <span aria-hidden className="shine"></span>
             </button>
             {error && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">{error}</div>}

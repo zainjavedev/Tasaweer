@@ -10,10 +10,14 @@ import { MagicWandIcon } from '../components/Icon';
 import { compressImageFile } from '@/utils/image';
 import CaptureWidget from '@/components/CaptureWidget';
 import SurfaceCard from '@/components/SurfaceCard';
+import { useRouter } from 'next/navigation';
+import { useAuthStatus } from '@/utils/useAuthStatus';
 
 const DEFAULT_PROMPT = 'Restore this image: repair scratches and blemishes, reduce noise, enhance sharpness and contrast, and color-correct while keeping it natural.';
 
 const RestorationPage: React.FC = () => {
+  const router = useRouter();
+  const isAuthenticated = useAuthStatus();
   const [originalImage, setOriginalImage] = useState<File | null>(null);
   const [originalPreview, setOriginalPreview] = useState<string | null>(null);
   const [editedResult, setEditedResult] = useState<EditedImageResult | null>(null);
@@ -53,6 +57,11 @@ const RestorationPage: React.FC = () => {
       setError('Please upload an image to restore.');
       return;
     }
+    if (!isAuthenticated) {
+      setError("Oops, you'll have to create an account to generate.");
+      router.push('/register');
+      return;
+    }
     setIsLoading(true);
     setError(null);
     setEditedResult(null);
@@ -71,7 +80,7 @@ const RestorationPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [originalImage, extraInstructions]);
+  }, [originalImage, extraInstructions, isAuthenticated, router]);
 
   const downloadEdited = useCallback(() => {
     if (!editedResult) return;
@@ -125,12 +134,14 @@ const RestorationPage: React.FC = () => {
           disabled={!originalImage || isLoading}
           className="btn-shine flex items-center justify-center gap-3 w-full max-w-xs px-8 py-3 bg-black text-white font-bold rounded-lg shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
-          {isLoading ? 'Restoring…' : (
-            <>
-              <MagicWandIcon className="w-5 h-5" />
-              Restore
-            </>
-          )}
+          {isAuthenticated ? (
+            isLoading ? 'Restoring…' : (
+              <>
+                <MagicWandIcon className="w-5 h-5" />
+                Restore
+              </>
+            )
+          ) : 'Signup to generate'}
           <span aria-hidden className="shine"></span>
         </button>
       </div>

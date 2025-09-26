@@ -10,7 +10,7 @@ import meta from '../metadata.json';
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const hideChrome = pathname === '/login' || pathname === '/register' || pathname === '/verify';
+  const hideChrome = pathname === '/verify';
   return (
     <html lang="en">
       <head>
@@ -60,7 +60,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           }
         `}</style>
       </head>
-      <body className={`${hideChrome ? 'bg-black' : 'bg-white'} font-sans text-black`}>
+      <body
+        className={`${hideChrome ? 'bg-black' : 'bg-white'} flex min-h-screen flex-col font-sans text-black`}
+      >
         {/* Organization JSON-LD */}
         <script
           type="application/ld+json"
@@ -76,7 +78,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         {!hideChrome && <Header />}
         {/* {!hideChrome && <NavigationNext />} */}
         <main
-          className={`container mx-auto px-4 py-6 sm:py-8 lg:py-12 ${hideChrome ? 'min-h-screen flex items-center justify-center' : ''}`}
+          className={`container mx-auto flex-1 px-4 py-6 sm:py-8 lg:py-12 ${hideChrome ? 'flex items-center justify-center' : ''}`}
         >
           {children}
         </main>

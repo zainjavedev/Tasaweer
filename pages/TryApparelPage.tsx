@@ -8,6 +8,8 @@ import { authorizedFetch } from '@/utils/authClient';
 import { compressImageFile, dataURLToBase64 } from '@/utils/image';
 import Lightbox from '@/components/Lightbox';
 import SurfaceCard from '@/components/SurfaceCard';
+import { useRouter } from 'next/navigation';
+import { useAuthStatus } from '@/utils/useAuthStatus';
 
 type ColorOption = string;
 
@@ -15,6 +17,8 @@ const COLOR_OPTIONS: ColorOption[] = ['Red', 'Blue', 'Black', 'White', 'Green', 
 const MAX_REF_IMAGES = 3;
 
 const TryApparelPage: React.FC = () => {
+  const router = useRouter();
+  const isAuthenticated = useAuthStatus();
   // User capture/upload
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -291,6 +295,11 @@ const TryApparelPage: React.FC = () => {
 
   const extractApparel = useCallback(async () => {
     if (!apparelImage) return;
+    if (!isAuthenticated) {
+      setIterError("Oops, you'll have to create an account to generate.");
+      router.push('/register');
+      return;
+    }
     setIterError(null);
     setIterLoading(true);
     try {
@@ -305,7 +314,7 @@ const TryApparelPage: React.FC = () => {
     } finally {
       setIterLoading(false);
     }
-  }, [apparelImage]);
+  }, [apparelImage, isAuthenticated, router]);
 
   const fetchUrlAsDataUrl = async (url: string): Promise<string> => {
     const res = await fetch(url);
@@ -394,7 +403,7 @@ const TryApparelPage: React.FC = () => {
         setSuggLoading(true);
         setSuggError(null);
         // Try manifest.json first
-        const res = await authorizedFetch('/apparels/manifest.json', { cache: 'no-store' });
+        const res = await authorizedFetch('/apparels/manifest.json', { cache: 'no-store', redirectOn401: false });
         if (res.ok) {
           const data = await res.json();
           const items: ApparelSuggestion[] = Array.isArray(data)
@@ -403,7 +412,7 @@ const TryApparelPage: React.FC = () => {
           if (mounted) setSuggestions(items);
         } else {
           // Fallback: ask server to list files under public/apparels
-          const lr = await authorizedFetch('/api/apparels/list', { cache: 'no-store' });
+          const lr = await authorizedFetch('/api/apparels/list', { cache: 'no-store', redirectOn401: false });
           if (lr.ok) {
             const data = await lr.json();
             const items: ApparelSuggestion[] = Array.isArray(data?.items)
@@ -425,6 +434,11 @@ const TryApparelPage: React.FC = () => {
 
   const tryOn = useCallback(async () => {
     if (!userImage || !apparelImage) return;
+    if (!isAuthenticated) {
+      setIterError("Oops, you'll have to create an account to generate.");
+      router.push('/register');
+      return;
+    }
     setIterLoading(true);
     setIterError(null);
     // don't clear previous results; we'll prepend the new one
@@ -460,11 +474,16 @@ const TryApparelPage: React.FC = () => {
     } finally {
       setIterLoading(false);
     }
-  }, [userImage, apparelImage, stylePrompt, aspectRatio, refImages]);
+  }, [userImage, apparelImage, stylePrompt, aspectRatio, refImages, isAuthenticated, router]);
 
   const recolor = useCallback(async (color: string) => {
     const base = latestResult || userImage;
     if (!base) return;
+    if (!isAuthenticated) {
+      setIterError("Oops, you'll have to create an account to generate.");
+      router.push('/register');
+      return;
+    }
     setIterError(null);
     setColorLoading(color);
     try {
@@ -479,7 +498,7 @@ const TryApparelPage: React.FC = () => {
     } finally {
       setColorLoading(null);
     }
-  }, [latestResult, userImage, aspectRatio]);
+  }, [latestResult, userImage, aspectRatio, isAuthenticated, router]);
 
   const download = useCallback(() => {
     const url = latestResult || userImage;
@@ -731,7 +750,8 @@ const TryApparelPage: React.FC = () => {
               disabled={!userImage || !apparelImage || iterLoading}
               className="btn-shine flex w-full items-center justify-center gap-2 rounded-lg bg-black px-6 py-3 text-white font-bold transition-colors duration-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-400"
             >
-              {iterLoading ? 'Generating…' : (<>Try on<span aria-hidden className="shine"></span></>)}
+              {isAuthenticated ? (iterLoading ? 'Generating…' : 'Try on') : 'Signup to generate'}
+              <span aria-hidden className="shine"></span>
             </button>
             {iterLoading && <div className="text-xs text-black/70"><EtaTimer seconds={18} label="Usually ~15–25s" /></div>}
             {iterError && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">{iterError}</div>}
