@@ -25,7 +25,7 @@ export function useUser() {
       const token = getToken();
       // Attempt to fetch current user regardless of token presence so that
       // cookie-based sessions also work in admin and elsewhere.
-      const response = await authorizedFetch('/api/users/me');
+      const response = await authorizedFetch('/api/users/me', { redirectOn401: false });
       if (!response.ok) {
         if (response.status === 401) {
           setUser(null);

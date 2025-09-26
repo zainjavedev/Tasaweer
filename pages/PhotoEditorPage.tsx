@@ -530,12 +530,13 @@ const PhotoEditorPage: React.FC = () => {
 
           <AspectRatioSelector selectedRatio={aspectRatio} onSelect={setAspectRatio} />
 
-          <section className="space-y-2">
-            <button
-              onClick={handleSubmit}
-              disabled={isLoading || !originalImage || !prompt.trim()}
-              className="btn-shine flex w-full items-center justify-center gap-2 rounded-lg bg-black px-6 py-3 text-white font-bold transition-colors duration-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-400"
-            >
+           <section className="space-y-2">
+             <button
+               onClick={handleSubmit}
+               disabled={isLoading || !originalImage || !prompt.trim()}
+               className="btn-shine flex w-full items-center justify-center gap-2 rounded-lg bg-black px-6 py-3 text-white font-bold transition-colors duration-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-400"
+               title="Generate an edited version of your photo using AI"
+             >
               {isLoading ? 'Generating…' : (
                 <>
                   <MagicWandIcon className="h-5 w-5" />
@@ -591,6 +592,7 @@ const PhotoEditorPage: React.FC = () => {
                 <button
                   onClick={() => download(latestResult, 'photo-edit-latest.png')}
                   className="rounded-lg border border-black bg-black px-3 py-2 font-semibold text-white transition-colors hover:bg-gray-800"
+                  title="Download the latest edited photo as PNG"
                 >
                   Download PNG
                 </button>
@@ -599,12 +601,14 @@ const PhotoEditorPage: React.FC = () => {
                     <button
                       onClick={() => setOriginalFromUrl(latestResult)}
                       className="rounded-lg border border-black px-3 py-2 font-semibold text-black transition-colors hover:bg-black hover:text-white"
+                      title="Use this edited photo as the new source image"
                     >
                       Use as source
                     </button>
                     <button
                       onClick={() => addRefFromUrl(latestResult)}
                       className="rounded-lg border border-black px-3 py-2 font-semibold text-black transition-colors hover:bg-black hover:text-white"
+                      title="Add this edited photo as a reference image"
                     >
                       Add as reference
                     </button>

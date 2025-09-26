@@ -22,12 +22,15 @@ export function hasSessionCookie(): boolean {
   return document.cookie.split('; ').some((c) => c.startsWith('auth_token='));
 }
 
-export async function authorizedFetch(input: RequestInfo | URL, init: RequestInit = {}) {
+type AuthorizedFetchInit = RequestInit & { redirectOn401?: boolean };
+
+export async function authorizedFetch(input: RequestInfo | URL, init: AuthorizedFetchInit = {}) {
+  const { redirectOn401 = true, ...requestInit } = init;
   const token = getToken();
-  const headers = new Headers(init.headers || {});
+  const headers = new Headers(requestInit.headers || {});
   if (token) headers.set('Authorization', `Bearer ${token}`);
-  const res = await fetch(input, { ...init, headers });
-  if (res.status === 401) {
+  const res = await fetch(input, { ...requestInit, headers });
+  if (res.status === 401 && redirectOn401) {
     // Unauthorized: redirect to login, do not clear localStorage except token may remain
     if (typeof window !== 'undefined') {
       window.location.href = '/login';

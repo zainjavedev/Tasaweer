@@ -44,6 +44,7 @@ const FeatureCard: React.FC<{ title: string; desc: string; onClick: () => void; 
 
 const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const variationImageClass = 'max-w-full h-auto object-contain';
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
   const [userLimits, setUserLimits] = useState(null);
@@ -91,7 +92,7 @@ const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
           <span className="absolute top-1/3 left-1/2 w-24 h-24 rounded-2xl bg-white/10 blur-xl animate-blob" />
         </div>
         <div className="grid gap-8 md:grid-cols-2 md:gap-10 items-center">
-          <div>
+          <div className="order-2 md:order-1">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/30 text-black text-xs font-semibold backdrop-blur-sm border border-white/20">
               <SparklesIcon className="w-4 h-4" /> AI visual editing
             </div>
@@ -135,7 +136,7 @@ const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
                 ><MagicWandIcon className="w-5 h-5"/>Photo Editor{(!canGenerate && remainingImages !== -1) ? ' (Limited)' : ''}<span aria-hidden className="shine"></span></button>
             </div>
           </div>
-          <div className="relative" onMouseMove={onHeroMove} onMouseLeave={onHeroLeave}>
+          <div className="relative order-1 md:order-2 max-w-xs w-full mx-auto md:max-w-none" onMouseMove={onHeroMove} onMouseLeave={onHeroLeave}>
             <div className="absolute -inset-6 bg-black/5 blur-2xl rounded-3xl" />
             <div className="relative rounded-2xl bg-white/40 backdrop-blur-xl border-2 border-white/30 p-4 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] will-change-transform" style={{ transform: `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)` }}>
               <div className="grid grid-cols-2 gap-3">
@@ -188,12 +189,12 @@ const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
       {/* Variations */}
       <section className="mt-12" data-reveal>
         <h3 className="text-2xl font-bold text-black">Variations</h3>
-        <div className="mt-4 grid gap-6">
+        <div className="mt-4 grid gap-6 md:grid-cols-2">
           {/* Wand variations with original sizing */}
           <div className="bg-white/40 backdrop-blur-xl rounded-2xl border-2 border-white/30 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] overflow-hidden">
             <div className="grid md:grid-cols-2 items-start">
               <div className="p-3 bg-white/30 flex flex-col items-center justify-center">
-                <img src={wandBefore.src} alt="Wand before" className="max-w-full h-auto object-contain" />
+                <img src={wandBefore.src} alt="Wand before" className={variationImageClass} />
                 <span className="mt-2 text-xs text-black">Original</span>
               </div>
               <div className="p-3 grid grid-cols-2 gap-3">
@@ -204,7 +205,7 @@ const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
                   { src: wandAfter4.src, label: 'Make Simple' },
                 ].map((it) => (
                   <div key={it.label} className="relative rounded-lg overflow-hidden border-2 border-black bg-white flex items-center justify-center">
-                    <img src={it.src} alt={it.label} className="max-w-full h-auto object-contain" />
+                    <img src={it.src} alt={it.label} className={variationImageClass} />
                     <span className="absolute left-2 top-2 text-[10px] font-semibold bg-black text-white px-1.5 py-0.5 rounded">{it.label}</span>
                   </div>
                 ))}
@@ -216,20 +217,20 @@ const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
           <div className="bg-white/40 backdrop-blur-xl rounded-2xl border-2 border-white/30 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] overflow-hidden">
             <div className="grid md:grid-cols-2 items-start">
               <div className="p-3 bg-white/30 flex flex-col items-center justify-center">
-                <img loading="lazy" src={laptopBefore.src} alt="Laptop before" className="max-w-full h-auto object-contain" />
+                <img loading="lazy" src={laptopBefore.src} alt="Laptop before" className={variationImageClass} />
                 <span className="mt-2 text-xs text-black">Original</span>
               </div>
               <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="relative rounded-lg overflow-hidden border-2 border-black bg-white flex items-center justify-center">
-                  <img loading="lazy" src={laptopAfter.src} alt="Laptop after Omnitrix" className="max-w-full h-auto object-contain" />
+                  <img loading="lazy" src={laptopAfter.src} alt="Laptop after Omnitrix" className={variationImageClass} />
                   <span className="absolute left-2 top-2 text-[10px] font-semibold bg-black text-white px-1.5 py-0.5 rounded">Omnitrix</span>
                 </div>
                 <div className="relative rounded-lg overflow-hidden border-2 border-black bg-white flex items-center justify-center">
-                  <img loading="lazy" src={laptopAfterDragonBalls.src} alt="Laptop after Dragon Balls" className="max-w-full h-auto object-contain" />
+                  <img loading="lazy" src={laptopAfterDragonBalls.src} alt="Laptop after Dragon Balls" className={variationImageClass} />
                   <span className="absolute left-2 top-2 text-[10px] font-semibold bg-black text-white px-1.5 py-0.5 rounded">Dragon Balls</span>
                 </div>
                 <div className="relative rounded-lg overflow-hidden border-2 border-black bg-white flex items-center justify-center sm:col-span-2">
-                  <img loading="lazy" src={laptopAfterDominoes.src} alt="Laptop after Dominoes" className="max-w-full h-auto object-contain" />
+                  <img loading="lazy" src={laptopAfterDominoes.src} alt="Laptop after Dominoes" className={variationImageClass} />
                   <span className="absolute left-2 top-2 text-[10px] font-semibold bg-black text-white px-1.5 py-0.5 rounded">Dominoes</span>
                 </div>
               </div>
