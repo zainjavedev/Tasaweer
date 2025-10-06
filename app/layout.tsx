@@ -6,40 +6,49 @@ import { Header } from '@/components/Header';
 import { NavigationNext } from '@/components/NavigationNext';
 import { Analytics } from '@vercel/analytics/next';
 import { usePathname } from 'next/navigation';
-import meta from '../metadata.json';
+import { getSeoConfig } from '@/lib/seoConfig';
 
 export default function RootLayout({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
+  const pathname = usePathname() || '/';
   const hideChrome = pathname === '/verify';
+  const fallbackBase = 'https://tasaweers.com';
+  const envBase = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/\/$/, '');
+  const baseUrl = envBase || fallbackBase;
+  const canonical = `${baseUrl}${pathname === '/' ? '/' : pathname}`;
+  const { title, description, keywords, robots, structuredData } = getSeoConfig(pathname);
+  const structuredEntries = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'Tasaweers',
+      url: baseUrl,
+    },
+    ...structuredData({ baseUrl, path: pathname }),
+  ];
   return (
     <html lang="en">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Tasaweers</title>
-        <meta name="description" content={meta.description} />
+        <title>{title}</title>
+        <meta name="description" content={description} />
+        {keywords?.length ? (
+          <meta name="keywords" content={keywords.join(', ')} />
+        ) : null}
+        <meta name="robots" content={robots} />
         <meta name="google-site-verification" content="-w8M2G51cw28VXBQiQmZLRYMvfT9ZCWbWZTsVDfwn0k" />
-        <meta name="robots" content="index,follow" />
 
         {/* Open Graph */}
         <meta property="og:site_name" content="Tasaweers" />
-        <meta property="og:title" content="Tasaweers" />
-        <meta property="og:description" content={meta.description} />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
         <meta property="og:type" content="website" />
-        {(() => {
-          const base = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/\/$/, '');
-          const href = base ? `${base}${pathname}` : undefined;
-          return (
-            <>
-              {href && <meta property="og:url" content={href} />}
-              {href && <link rel="canonical" href={href} />}
-            </>
-          );
-        })()}
+        {canonical && <meta property="og:url" content={canonical} />}
+        {canonical && <link rel="canonical" href={canonical} />}
 
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Tasaweers" />
-        <meta name="twitter:description" content={meta.description} />
+        <meta name="twitter:title" content={title} />
+        <meta name="twitter:description" content={description} />
 
         {/* Theme + Manifest */}
         <meta name="theme-color" content="#000000" />
@@ -63,18 +72,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body
         className={`${hideChrome ? 'bg-black' : 'bg-white'} flex min-h-screen flex-col font-sans text-black`}
       >
-        {/* Organization JSON-LD */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@type': 'Organization',
-              name: 'Tasaweers',
-              url: (process.env.NEXT_PUBLIC_BASE_URL || undefined),
-            }),
-          }}
-        />
+        {/* Structured data */}
+        {structuredEntries.map((entry, idx) => (
+          <script
+            key={idx}
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(entry) }}
+          />
+        ))}
         {!hideChrome && <Header />}
         {/* {!hideChrome && <NavigationNext />} */}
         <main

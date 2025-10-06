@@ -1,6 +1,6 @@
 import React, { useEffect, useState, MouseEvent } from 'react';
 import { Page } from '../types';
-import { SparklesIcon, MagicWandIcon, SwapIcon, CheckIcon, StarIcon } from '../components/Icon';
+import { SparklesIcon, MagicWandIcon, SwapIcon, CheckIcon, StarIcon, CleanIcon } from '../components/Icon';
 import { Inter } from 'next/font/google';
 import { getToken, getUsernameFromToken } from '@/utils/authClient';
 import { getUserLimits, getRemainingImages, canUserGenerate } from '@/utils/userLimits';
@@ -122,18 +122,23 @@ const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
               <button
                 onClick={() => goTo('text2image')}
                 disabled={isAuthenticated && !canGenerate && remainingImages !== -1}
-                className={`btn-shine px-6 py-3 rounded-lg bg-black text-white font-bold shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:bg-gray-800 hover:scale-105 transition-all duration-200 inline-flex items-center gap-3 text-lg ${isAuthenticated && !canGenerate && remainingImages !== -1 ? 'opacity-50 cursor-not-allowed hover:scale-100' : ''}`}
+                className={`btn-shine w-full px-6 py-3 rounded-lg bg-black text-white font-bold shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:bg-gray-800 hover:scale-105 transition-all duration-200 inline-flex items-center justify-center gap-3 text-lg ${isAuthenticated && !canGenerate && remainingImages !== -1 ? 'opacity-50 cursor-not-allowed hover:scale-100' : ''}`}
                 ><SparklesIcon className="w-5 h-5"/>Text → Image{(!canGenerate && remainingImages !== -1) ? ' (Limited)' : ''}<span aria-hidden className="shine"></span></button>
               <button
                 onClick={() => goTo('try-apparel')}
                 disabled={isAuthenticated && !canGenerate && remainingImages !== -1}
-                className={`px-6 py-3 rounded-lg bg-white text-black border-2 border-black font-bold shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:bg-gray-50 hover:scale-105 transition-all duration-200 inline-flex items-center gap-3 text-lg ${isAuthenticated && !canGenerate && remainingImages !== -1 ? 'opacity-50 cursor-not-allowed hover:scale-100' : ''}`}
+                className={`w-full px-6 py-3 rounded-lg bg-white text-black border-2 border-black font-bold shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:bg-gray-50 hover:scale-105 transition-all duration-200 inline-flex items-center justify-center gap-3 text-lg ${isAuthenticated && !canGenerate && remainingImages !== -1 ? 'opacity-50 cursor-not-allowed hover:scale-100' : ''}`}
                 ><SwapIcon className="w-5 h-5"/>Try Apparel{(!canGenerate && remainingImages !== -1) ? ' (Limited)' : ''}</button>
               <button
                 onClick={() => goTo('photo-editor')}
                 disabled={isAuthenticated && !canGenerate && remainingImages !== -1}
-                className={`md:col-span-2 w-full btn-shine px-6 py-3 rounded-lg bg-black text-white font-bold shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:bg-gray-800 hover:scale-105 transition-all duration-200 inline-flex items-center justify-center gap-3 text-lg ${isAuthenticated && !canGenerate && remainingImages !== -1 ? 'opacity-50 cursor-not-allowed hover:scale-100' : ''}`}
+                className={`w-full btn-shine px-6 py-3 rounded-lg bg-black text-white font-bold shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:bg-gray-800 hover:scale-105 transition-all duration-200 inline-flex items-center justify-center gap-3 text-lg ${isAuthenticated && !canGenerate && remainingImages !== -1 ? 'opacity-50 cursor-not-allowed hover:scale-100' : ''}`}
                 ><MagicWandIcon className="w-5 h-5"/>Photo Editor{(!canGenerate && remainingImages !== -1) ? ' (Limited)' : ''}<span aria-hidden className="shine"></span></button>
+              <button
+                onClick={() => goTo('watermark-remover')}
+                disabled={isAuthenticated && !canGenerate && remainingImages !== -1}
+                className={`w-full px-6 py-3 rounded-lg bg-white text-black border-2 border-black font-bold shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:bg-gray-50 hover:scale-105 transition-all duration-200 inline-flex items-center justify-center gap-3 text-lg ${isAuthenticated && !canGenerate && remainingImages !== -1 ? 'opacity-50 cursor-not-allowed hover:scale-100' : ''}`}
+                ><CleanIcon className="w-5 h-5"/>Watermark Remover{(!canGenerate && remainingImages !== -1) ? ' (Limited)' : ''}</button>
             </div>
           </div>
           <div className="relative order-1 md:order-2 max-w-xs w-full mx-auto md:max-w-none" onMouseMove={onHeroMove} onMouseLeave={onHeroLeave}>
@@ -163,7 +168,7 @@ const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
       </section>
 
       {/* Quick features */}
-      <section className="mt-12 grid gap-4 sm:grid-cols-2 md:grid-cols-3" data-reveal>
+      <section className="mt-12 grid gap-4 sm:grid-cols-2 md:grid-cols-4" data-reveal>
         <div className="bg-white/40 backdrop-blur-xl rounded-2xl border-2 border-white/30 p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:scale-105 transition-all duration-200">
           <div className="text-lg font-semibold text-black">Image Restoration</div>
           <p className="mt-2 text-sm text-black">Fix damage, denoise, and color-correct — add optional notes.</p>
@@ -173,6 +178,11 @@ const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
           <div className="text-lg font-semibold text-black">Object Replacement</div>
           <p className="mt-2 text-sm text-black">Describe what to swap and with what; add a sample if you like.</p>
           <button onClick={() => goTo('replace')} className="mt-4 px-4 py-2 rounded-lg bg-black text-white font-semibold hover:bg-gray-800 transition duration-200 inline-flex items-center gap-2">Explore</button>
+        </div>
+        <div className="bg-white/40 backdrop-blur-xl rounded-2xl border-2 border-white/30 p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:scale-105 transition-all duration-200">
+          <div className="text-lg font-semibold text-black">Gemini Watermark Remover</div>
+          <p className="mt-2 text-sm text-black">Clean the Gemini logo from AI photos while preserving all other detail.</p>
+          <button onClick={() => goTo('watermark-remover')} className="mt-4 px-4 py-2 rounded-lg bg-black text-white font-semibold hover:bg-gray-800 transition duration-200 inline-flex items-center gap-2">Explore</button>
         </div>
         <div className="bg-white/40 backdrop-blur-xl rounded-2xl border-2 border-white/30 p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)]">
           <div className="text-lg font-semibold text-black">Why Tasaweers?</div>

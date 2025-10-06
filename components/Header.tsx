@@ -11,6 +11,7 @@ import {
   SparklesIcon,
   SwapIcon,
   MagicWandIcon,
+  CleanIcon,
   BoxIcon,
   ShieldIcon,
 } from './Icon';
@@ -42,6 +43,7 @@ export const Header: React.FC = () => {
         '/text2image',
         '/try-apparel',
         '/photo-editor',
+        '/gemini-watermark-remover',
         '/profile',
         '/admin',
       ];
@@ -53,6 +55,7 @@ export const Header: React.FC = () => {
     { href: '/text2image', label: 'Text → Image', Icon: SparklesIcon },
     { href: '/try-apparel', label: 'Try Apparel', Icon: SwapIcon },
     { href: '/photo-editor', label: 'Photo Editor', Icon: MagicWandIcon },
+    { href: '/gemini-watermark-remover', label: 'Watermark Remover', Icon: CleanIcon },
   ];
 
   const authenticatedLinks: NavEntry[] = [

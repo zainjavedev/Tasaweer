@@ -16,6 +16,7 @@ export default function Page() {
       restoration: '/restoration',
       replace: '/replace',
       'bulk-edit': '/bulk-edit',
+      'watermark-remover': '/gemini-watermark-remover',
     };
     router.push(map[p]);
   };

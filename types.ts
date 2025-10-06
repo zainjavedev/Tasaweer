@@ -7,7 +7,8 @@ export type Page =
   | 'photo-editor'
   | 'restoration'
   | 'replace'
-  | 'bulk-edit';
+  | 'bulk-edit'
+  | 'watermark-remover';
 
 export interface PromptTemplate {
   label: string;
@@ -28,7 +29,7 @@ export interface SelectionBox {
     height: number;
 }
 
-export type GeneratedKind = 'restoration' | 'replace' | 'text2image' | 'camera' | 'edit';
+export type GeneratedKind = 'restoration' | 'replace' | 'text2image' | 'camera' | 'edit' | 'watermark';
 
 export interface UserImage {
   id: string;
