@@ -1,6 +1,6 @@
 import React, { useEffect, useState, MouseEvent } from 'react';
 import { Page } from '../types';
-import { SparklesIcon, MagicWandIcon, SwapIcon, CheckIcon, StarIcon } from '../components/Icon';
+import { SparklesIcon, MagicWandIcon, SwapIcon, CheckIcon, StarIcon, YoutubeIcon } from '../components/Icon';
 import { Inter } from 'next/font/google';
 import { getToken, getUsernameFromToken } from '@/utils/authClient';
 import { getUserLimits, getRemainingImages, canUserGenerate } from '@/utils/userLimits';
@@ -117,7 +117,7 @@ const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
               </div>
             )}
 
-            <p className="mt-6 text-xl text-black font-medium leading-relaxed">Generate images from text, try apparel on your photo, or quickly edit a photo — all in one place.</p>
+            <p className="mt-6 text-xl text-black font-medium leading-relaxed">Generate images from text, try apparel on your photo, design clickable YouTube thumbnails, or quickly edit a photo — all in one place.</p>
             <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <button
                 onClick={() => goTo('text2image')}
@@ -129,6 +129,11 @@ const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
                 disabled={isAuthenticated && !canGenerate && remainingImages !== -1}
                 className={`px-6 py-3 rounded-lg bg-white text-black border-2 border-black font-bold shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:bg-gray-50 hover:scale-105 transition-all duration-200 inline-flex items-center gap-3 text-lg ${isAuthenticated && !canGenerate && remainingImages !== -1 ? 'opacity-50 cursor-not-allowed hover:scale-100' : ''}`}
                 ><SwapIcon className="w-5 h-5"/>Try Apparel{(!canGenerate && remainingImages !== -1) ? ' (Limited)' : ''}</button>
+              <button
+                onClick={() => goTo('youtube-thumbnail')}
+                disabled={isAuthenticated && !canGenerate && remainingImages !== -1}
+                className={`px-6 py-3 rounded-lg bg-red-600 text-white border-2 border-red-700 font-bold shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:bg-red-500 hover:scale-105 transition-all duration-200 inline-flex items-center gap-3 text-lg ${isAuthenticated && !canGenerate && remainingImages !== -1 ? 'opacity-50 cursor-not-allowed hover:scale-100' : ''}`}
+                ><YoutubeIcon className="w-5 h-5"/>YouTube Thumbnails{(!canGenerate && remainingImages !== -1) ? ' (Limited)' : ''}</button>
               <button
                 onClick={() => goTo('photo-editor')}
                 disabled={isAuthenticated && !canGenerate && remainingImages !== -1}
@@ -285,6 +290,11 @@ const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
             disabled={isAuthenticated && !canGenerate && remainingImages !== -1}
             className={`px-6 py-3 rounded-lg bg-white text-black border-2 border-black font-bold shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:bg-gray-50 hover:scale-105 transition-all duration-200 inline-flex items-center gap-3 ${isAuthenticated && !canGenerate && remainingImages !== -1 ? 'opacity-50 cursor-not-allowed hover:scale-100' : ''}`}
             ><SwapIcon className="w-5 h-5"/>Try Apparel{(!canGenerate && remainingImages !== -1) ? ' (Limited)' : ''}</button>
+          <button
+            onClick={() => goTo('youtube-thumbnail')}
+            disabled={isAuthenticated && !canGenerate && remainingImages !== -1}
+            className={`px-6 py-3 rounded-lg bg-red-600 text-white border-2 border-red-700 font-bold shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:bg-red-500 hover:scale-105 transition-all duration-200 inline-flex items-center gap-3 ${isAuthenticated && !canGenerate && remainingImages !== -1 ? 'opacity-50 cursor-not-allowed hover:scale-100' : ''}`}
+            ><YoutubeIcon className="w-5 h-5"/>YouTube Thumbnails{(!canGenerate && remainingImages !== -1) ? ' (Limited)' : ''}</button>
           <button
             onClick={() => goTo('photo-editor')}
             disabled={isAuthenticated && !canGenerate && remainingImages !== -1}

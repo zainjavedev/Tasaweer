@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { MagicWandIcon, SwapIcon, SparklesIcon, CameraIcon, MenuIcon, XIcon, ChevronDownIcon } from './Icon';
+import { MagicWandIcon, SwapIcon, SparklesIcon, CameraIcon, MenuIcon, XIcon, ChevronDownIcon, YoutubeIcon } from './Icon';
 import { getToken, getUsernameFromToken } from '@/utils/authClient';
 
 type NavItem =
@@ -12,10 +12,12 @@ type NavItem =
 
 const baseNavItems: NavItem[] = [
   { type: 'link', href: '/', label: 'Home', icon: SparklesIcon },
-  { type: 'link', href: '/text2image', label: 'Text 12; Image', icon: SparklesIcon },
+  { type: 'link', href: '/text2image', label: 'Text \u000212; Image', icon: SparklesIcon },
   { type: 'link', href: '/try-apparel', label: 'Try Apparel', icon: CameraIcon },
   { type: 'link', href: '/photo-editor', label: 'Photo Editor', icon: MagicWandIcon },
+  { type: 'link', href: '/youtube-thumbnail', label: 'YT Thumbnails', icon: YoutubeIcon },
 ];
+
 
 export const NavigationNext: React.FC = () => {
   const pathname = usePathname();

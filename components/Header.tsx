@@ -13,6 +13,7 @@ import {
   MagicWandIcon,
   BoxIcon,
   ShieldIcon,
+  YoutubeIcon,
 } from './Icon';
 import { Fredoka } from 'next/font/google';
 import { clearToken } from '@/utils/authClient';
@@ -42,6 +43,7 @@ export const Header: React.FC = () => {
         '/text2image',
         '/try-apparel',
         '/photo-editor',
+        '/youtube-thumbnail',
         '/profile',
         '/admin',
       ];
@@ -53,6 +55,7 @@ export const Header: React.FC = () => {
     { href: '/text2image', label: 'Text → Image', Icon: SparklesIcon },
     { href: '/try-apparel', label: 'Try Apparel', Icon: SwapIcon },
     { href: '/photo-editor', label: 'Photo Editor', Icon: MagicWandIcon },
+    { href: '/youtube-thumbnail', label: 'YT Thumbnails', Icon: YoutubeIcon },
   ];
 
   const authenticatedLinks: NavEntry[] = [
