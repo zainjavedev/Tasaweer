@@ -117,8 +117,8 @@ const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
               </div>
             )}
 
-            <p className="mt-6 text-xl text-black font-medium leading-relaxed">Generate images from text, try apparel on your photo, or quickly edit a photo — all in one place.</p>
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            <p className="mt-6 text-xl text-black font-medium leading-relaxed">Generate images from text, try apparel on your photo, craft viral thumbnails, or instantly edit your photos — all in one place.</p>
+            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5">
               <button
                 onClick={() => goTo('text2image')}
                 disabled={isAuthenticated && !canGenerate && remainingImages !== -1}
@@ -168,7 +168,7 @@ const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
       </section>
 
       {/* Quick features */}
-      <section className="mt-12 grid gap-4 sm:grid-cols-2 md:grid-cols-4" data-reveal>
+      <section className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-reveal>
         <div className="bg-white/40 backdrop-blur-xl rounded-2xl border-2 border-white/30 p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:scale-105 transition-all duration-200">
           <div className="text-lg font-semibold text-black">Image Restoration</div>
           <p className="mt-2 text-sm text-black">Fix damage, denoise, and color-correct — add optional notes.</p>
@@ -183,6 +183,11 @@ const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
           <div className="text-lg font-semibold text-black">Gemini Watermark Remover</div>
           <p className="mt-2 text-sm text-black">Clean the Gemini logo from AI photos while preserving all other detail.</p>
           <button onClick={() => goTo('watermark-remover')} className="mt-4 px-4 py-2 rounded-lg bg-black text-white font-semibold hover:bg-gray-800 transition duration-200 inline-flex items-center gap-2">Explore</button>
+        </div>
+        <div className="bg-white/40 backdrop-blur-xl rounded-2xl border-2 border-white/30 p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:scale-105 transition-all duration-200">
+          <div className="text-lg font-semibold text-black">YouTube Thumbnail Editor</div>
+          <p className="mt-2 text-sm text-black">Design scroll-stopping thumbnails with presets, boosters, and CTA badges.</p>
+          <button onClick={() => goTo('youtube-thumbnail-editor')} className="mt-4 px-4 py-2 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition duration-200 inline-flex items-center gap-2">Explore</button>
         </div>
         <div className="bg-white/40 backdrop-blur-xl rounded-2xl border-2 border-white/30 p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)]">
           <div className="text-lg font-semibold text-black">Why Tasaweers?</div>

@@ -85,8 +85,10 @@ export async function getAuthenticatedUser(req: Request | NextRequest) {
     if (!token) return null;
     const payload = await verifyToken(token);
 
+    if (!process.env.DATABASE_URL) return null;
     // Import prisma dynamically to avoid circular imports
-    const { prisma } = await import('@/lib/prisma');
+    const { prisma, isPrismaAvailable } = await import('@/lib/prisma');
+    if (!isPrismaAvailable) return null;
     const user = await prisma.user.findUnique({ where: { id: payload.sub } });
     if (!user) return null;
 

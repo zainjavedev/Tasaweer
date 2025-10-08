@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { getToken, authorizedFetch } from './authClient';
+import { getToken, authorizedFetch, AUTH_TOKEN_CHANGE_EVENT } from './authClient';
 import { setUserLimits, UserLimits, getUserLimits } from './userLimits';
 
 export interface UserData {
@@ -62,6 +62,17 @@ export function useUser() {
 
   useEffect(() => {
     fetchUserData();
+  }, [fetchUserData]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleAuthChange = () => {
+      fetchUserData();
+    };
+    window.addEventListener(AUTH_TOKEN_CHANGE_EVENT, handleAuthChange);
+    return () => {
+      window.removeEventListener(AUTH_TOKEN_CHANGE_EVENT, handleAuthChange);
+    };
   }, [fetchUserData]);
 
   // Also load initial data from localStorage if available

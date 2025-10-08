@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma, isPrismaAvailable } from '@/lib/prisma';
 import { signToken, verifyPassword, setAuthCookieHeaders } from '@/lib/authDb';
 import { sendVerificationCodeEmail } from '@/lib/email';
 import crypto from 'crypto';
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Database mode only
-    if (!process.env.DATABASE_URL) {
+    if (!isPrismaAvailable) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }
     if (!email && !username) {

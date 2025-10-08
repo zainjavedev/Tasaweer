@@ -16,19 +16,35 @@ export interface SeoConfigEntry {
 const DEFAULT_TITLE = 'Tasaweers | AI Photo Editing Suite';
 const DEFAULT_DESCRIPTION = meta.description;
 
-const defaultStructuredData = ({ baseUrl }: StructuredDataContext) => [
-  {
-    '@context': 'https://schema.org',
-    '@type': 'WebSite',
-    name: 'Tasaweers',
-    url: baseUrl,
-    potentialAction: {
-      '@type': 'SearchAction',
-      target: `${baseUrl}/?q={search_term_string}`,
-      'query-input': 'required name=search_term_string',
+const defaultStructuredData = ({ baseUrl }: StructuredDataContext) => {
+  const navItems = [
+    { name: 'AI Photo Editor', url: `${baseUrl}/photo-editor` },
+    { name: 'AI Text to Image Generator', url: `${baseUrl}/text2image` },
+    { name: 'AI Apparel Try-On', url: `${baseUrl}/try-apparel` },
+    { name: 'YouTube Thumbnail Editor', url: `${baseUrl}/youtube-thumbnail-editor` },
+    { name: 'Gemini Watermark Remover', url: `${baseUrl}/gemini-watermark-remover` },
+  ];
+
+  return [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: 'Tasaweers',
+      url: baseUrl,
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: `${baseUrl}/?q={search_term_string}`,
+        'query-input': 'required name=search_term_string',
+      },
     },
-  },
-];
+    ...navItems.map((item) => ({
+      '@context': 'https://schema.org',
+      '@type': 'SiteNavigationElement',
+      name: item.name,
+      url: item.url,
+    })),
+  ];
+};
 
 const ROUTE_MAP: Record<string, SeoConfigEntry> = {
   '/': {
@@ -74,18 +90,24 @@ const ROUTE_MAP: Record<string, SeoConfigEntry> = {
           {
             '@type': 'ListItem',
             position: 4,
+            name: 'YouTube Thumbnail Editor',
+            url: `${baseUrl}/youtube-thumbnail-editor`,
+          },
+          {
+            '@type': 'ListItem',
+            position: 5,
             name: 'AI Photo Restoration',
             url: `${baseUrl}/restoration`,
           },
           {
             '@type': 'ListItem',
-            position: 5,
+            position: 6,
             name: 'AI Object Replacement',
             url: `${baseUrl}/replace`,
           },
           {
             '@type': 'ListItem',
-            position: 6,
+            position: 7,
             name: 'Gemini Watermark Remover',
             url: `${baseUrl}/gemini-watermark-remover`,
           },
@@ -139,6 +161,57 @@ const ROUTE_MAP: Record<string, SeoConfigEntry> = {
             position: 2,
             name: 'AI Photo Editor',
             item: `${baseUrl}/photo-editor`,
+          },
+        ],
+      },
+    ],
+  },
+  '/youtube-thumbnail-editor': {
+    title: 'YouTube Thumbnail Maker | Tasaweers',
+    description:
+      'Design high-converting YouTube thumbnails with AI presets, style boosters, CTA badges, and ready-to-upload exports.',
+    keywords: [
+      'tasaweers youtube thumbnail maker',
+      'ai youtube thumbnail generator',
+      'youtube thumbnail design tool',
+      'ai thumbnail creator',
+      'youtube thumbnail editor',
+    ],
+    structuredData: ({ baseUrl }) => [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        name: 'Tasaweers YouTube Thumbnail Editor',
+        applicationCategory: 'MultimediaApplication',
+        operatingSystem: 'Web',
+        url: `${baseUrl}/youtube-thumbnail-editor`,
+        offers: {
+          '@type': 'Offer',
+          price: '0',
+          priceCurrency: 'USD',
+        },
+        featureList: [
+          'Preset storytelling prompts',
+          'Toggleable style boosters and CTA badges',
+          'YouTube-ready 16:9 output',
+          'Reference image support for consistent branding',
+        ],
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Tasaweers',
+            item: baseUrl,
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'YouTube Thumbnail Editor',
+            item: `${baseUrl}/youtube-thumbnail-editor`,
           },
         ],
       },

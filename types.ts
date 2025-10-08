@@ -5,6 +5,7 @@ export type Page =
   | 'text2image'
   | 'try-apparel'
   | 'photo-editor'
+  | 'youtube-thumbnail-editor'
   | 'restoration'
   | 'replace'
   | 'bulk-edit'

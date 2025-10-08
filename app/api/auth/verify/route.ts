@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma, isPrismaAvailable } from '@/lib/prisma';
 import crypto from 'crypto';
 import { signToken, setAuthCookieHeaders } from '@/lib/authDb';
 
 export const runtime = 'nodejs';
 
 export async function GET(req: NextRequest) {
-  if (!process.env.DATABASE_URL) {
+  if (!isPrismaAvailable) {
     return NextResponse.json({ error: 'No database configured' }, { status: 400 });
   }
   try {
@@ -27,21 +27,21 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   console.log('Verification POST called');
+  if (!isPrismaAvailable) {
+    return NextResponse.json({ error: 'No database configured' }, { status: 400 });
+  }
   try {
     const body = await req.json();
     console.log('Request body:', body);
-  if (!process.env.DATABASE_URL) {
-    return NextResponse.json({ error: 'No database configured' }, { status: 400 });
-  }
-  const { email, code } = body;
-  if (!email || !code) {
-    console.log('Missing email or code:', email, code);
-    return NextResponse.json({ error: 'Missing email or code' }, { status: 400 });
-  }
 
-  const codeHash = crypto.createHash('sha256').update(code).digest('hex');
-  console.log('Code:', code, 'hashed as:', codeHash);
+    const { email, code } = body;
+    if (!email || !code) {
+      console.log('Missing email or code:', email, code);
+      return NextResponse.json({ error: 'Missing email or code' }, { status: 400 });
+    }
 
+    const codeHash = crypto.createHash('sha256').update(code).digest('hex');
+    console.log('Code:', code, 'hashed as:', codeHash);
 
     const user = await prisma.user.findFirst({ where: { email, verificationToken: code } });
     if (!user) return NextResponse.json({ error: 'Invalid or expired code' }, { status: 400 });

@@ -1,6 +1,16 @@
 'use client';
 
 const TOKEN_KEY = 'authToken';
+export const AUTH_TOKEN_CHANGE_EVENT = 'tasaweers:auth-change';
+
+const dispatchAuthChange = (token: string | null) => {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(
+    new CustomEvent(AUTH_TOKEN_CHANGE_EVENT, {
+      detail: { token },
+    })
+  );
+};
 
 export function getToken(): string | null {
   if (typeof window === 'undefined') return null;
@@ -10,11 +20,13 @@ export function getToken(): string | null {
 export function setToken(t: string) {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(TOKEN_KEY, t);
+  dispatchAuthChange(t);
 }
 
 export function clearToken() {
   if (typeof window === 'undefined') return;
   window.localStorage.removeItem(TOKEN_KEY);
+  dispatchAuthChange(null);
 }
 
 export function hasSessionCookie(): boolean {

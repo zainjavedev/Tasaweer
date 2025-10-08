@@ -12,6 +12,7 @@ const routes = [
   '/restoration',
   '/replace',
   '/bulk-edit',
+  '/youtube-thumbnail-editor',
   '/gemini-watermark-remover',
 ];
 

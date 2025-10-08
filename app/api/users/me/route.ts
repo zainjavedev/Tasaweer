@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/authDb';
-import { prisma } from '@/lib/prisma';
+import { prisma, isPrismaAvailable } from '@/lib/prisma';
 
 export const runtime = 'nodejs';
 
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     const token = bearer || (cookieToken ? decodeURIComponent(cookieToken) : null);
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const payload = await verifyToken(token);
-    if (!process.env.DATABASE_URL) {
+    if (!isPrismaAvailable) {
       return NextResponse.json({ username: payload.username, role: 'FREE', imageCount: 0, imageLimit: null });
     }
     const user = await prisma.user.findUnique({ where: { id: payload.sub } });
@@ -23,4 +23,3 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: err?.message || 'Unauthorized' }, { status: 401 });
   }
 }
-

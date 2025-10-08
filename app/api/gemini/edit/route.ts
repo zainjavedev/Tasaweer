@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { editImage } from '@/lib/gemini';
 import { getAuthenticatedUser } from '@/lib/authDb';
-import { prisma } from '@/lib/prisma';
+import { prisma, isPrismaAvailable } from '@/lib/prisma';
 
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
   try {
+    if (!isPrismaAvailable) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+    }
     const user = await getAuthenticatedUser(req);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

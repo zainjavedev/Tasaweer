@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma, isPrismaAvailable } from '@/lib/prisma';
 import { getAuthenticatedUser } from '@/lib/authDb';
 
 export const runtime = 'nodejs';
 
 export async function GET(req: NextRequest) {
   try {
+    if (!isPrismaAvailable) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+    }
     const authError = await getAuthenticatedUser(req);
     if (!authError && typeof authError === 'string') {
       return NextResponse.json({ error: authError }, { status: 401 });

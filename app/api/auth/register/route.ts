@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma, isPrismaAvailable } from '@/lib/prisma';
 import { hashPassword } from '@/lib/authDb';
 import { sendVerificationCodeEmail } from '@/lib/email';
 import crypto from 'crypto';
@@ -7,7 +7,7 @@ import crypto from 'crypto';
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
-  if (!process.env.DATABASE_URL) {
+  if (!isPrismaAvailable) {
     return NextResponse.json({ error: 'Registration requires a database' }, { status: 400 });
   }
   try {

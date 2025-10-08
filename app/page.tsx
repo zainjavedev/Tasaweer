@@ -13,6 +13,7 @@ export default function Page() {
       text2image: '/text2image',
       'try-apparel': '/try-apparel',
       'photo-editor': '/photo-editor',
+      'youtube-thumbnail-editor': '/youtube-thumbnail-editor',
       restoration: '/restoration',
       replace: '/replace',
       'bulk-edit': '/bulk-edit',

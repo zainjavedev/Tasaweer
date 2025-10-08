@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma, isPrismaAvailable } from '@/lib/prisma';
 import { sendVerificationCodeEmail } from '@/lib/email';
 import crypto from 'crypto';
 
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
-  if (!process.env.DATABASE_URL) return NextResponse.json({ error: 'No database configured' }, { status: 400 });
+  if (!isPrismaAvailable) return NextResponse.json({ error: 'No database configured' }, { status: 400 });
   try {
     const { email } = await req.json();
     if (!email) return NextResponse.json({ error: 'Missing email' }, { status: 400 });

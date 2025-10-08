@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -14,6 +14,8 @@ import {
   CleanIcon,
   BoxIcon,
   ShieldIcon,
+  YoutubeIcon,
+  ChevronDownIcon,
 } from './Icon';
 import { Fredoka } from 'next/font/google';
 import { clearToken } from '@/utils/authClient';
@@ -30,9 +32,11 @@ interface NavEntry {
 export const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [isToolsOpen, setIsToolsOpen] = useState(false);
   const { user, refreshUserData } = useUser();
   const router = useRouter();
   const pathname = usePathname();
+  const toolsMenuRef = useRef<HTMLLIElement | null>(null);
 
   useEffect(() => {
     try {
@@ -43,6 +47,7 @@ export const Header: React.FC = () => {
         '/text2image',
         '/try-apparel',
         '/photo-editor',
+        '/youtube-thumbnail-editor',
         '/gemini-watermark-remover',
         '/profile',
         '/admin',
@@ -51,10 +56,11 @@ export const Header: React.FC = () => {
     } catch {}
   }, [router]);
 
-  const navItems: NavEntry[] = [
+  const toolsNavItems: NavEntry[] = [
     { href: '/text2image', label: 'Text → Image', Icon: SparklesIcon },
     { href: '/try-apparel', label: 'Try Apparel', Icon: SwapIcon },
     { href: '/photo-editor', label: 'Photo Editor', Icon: MagicWandIcon },
+    { href: '/youtube-thumbnail-editor', label: 'YouTube Thumbnails', Icon: YoutubeIcon },
     { href: '/gemini-watermark-remover', label: 'Watermark Remover', Icon: CleanIcon },
   ];
 
@@ -77,7 +83,17 @@ export const Header: React.FC = () => {
     }`;
   };
 
-  const closeMenu = () => setIsMenuOpen(false);
+  const dropdownLinkClasses = (href: string) => {
+    const isActive = pathname === href;
+    return `flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition ${
+      isActive ? 'bg-black text-white' : 'text-black/70 hover:bg-black/10 hover:text-black'
+    }`;
+  };
+
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+    setIsToolsOpen(false);
+  };
   const requestLogout = () => {
     setShowLogoutConfirm(true);
     closeMenu();
@@ -103,6 +119,24 @@ export const Header: React.FC = () => {
     }, 100);
   };
 
+  useEffect(() => {
+    if (!isToolsOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (toolsMenuRef.current && !toolsMenuRef.current.contains(event.target as Node)) {
+        setIsToolsOpen(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [isToolsOpen]);
+
+  useEffect(() => {
+    setIsToolsOpen(false);
+    setIsMenuOpen(false);
+  }, [pathname]);
+
+  const isToolsActive = toolsNavItems.some(({ href }) => pathname === href);
+
   return (
     <header className="relative bg-white/40 backdrop-blur-xl border-b-2 border-white/30 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] px-4 sm:px-6 md:px-8 lg:px-12 py-3 sm:py-4 flex justify-between items-center gap-3 z-[10000]">
       <Link href="/" className={`btn-shine text-3xl sm:text-4xl md:text-5xl font-medium tracking-wide text-black ${fredoka.className}`}>
@@ -112,14 +146,36 @@ export const Header: React.FC = () => {
 
       <nav className="hidden md:block">
         <ul className="flex items-center gap-6 text-black font-semibold">
-          {navItems.map(({ href, label, Icon }) => (
-            <li key={href}>
-              <Link href={href} className={linkClasses(href)}>
-                <Icon className="w-4 h-4" />
-                {label}
-              </Link>
-            </li>
-          ))}
+          <li ref={toolsMenuRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setIsToolsOpen((open) => !open)}
+              className={`flex items-center gap-2 text-sm transition-colors duration-200 ${
+                isToolsActive ? 'text-black' : 'text-black/70 hover:text-black'
+              }`}
+            >
+              <SparklesIcon className="w-4 h-4" />
+              Tools
+              <ChevronDownIcon className={`w-3 h-3 transition-transform ${isToolsOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {isToolsOpen && (
+              <div className="absolute right-0 mt-3 w-64 rounded-2xl border border-black/10 bg-white/95 p-3 shadow-lg">
+                <div className="flex flex-col gap-1">
+                  {toolsNavItems.map(({ href, label, Icon }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      className={dropdownLinkClasses(href)}
+                      onClick={() => setIsToolsOpen(false)}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </li>
           {user ? (
             <>
               <li className="flex items-center gap-2 text-sm text-black">
@@ -172,13 +228,16 @@ export const Header: React.FC = () => {
         <div className="absolute top-full left-0 right-0 bg-white border-2 border-gray-200 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] md:hidden max-h-96 overflow-y-auto z-[99999]">
           <nav className="px-6 py-4">
             <ul className="space-y-3 text-black font-semibold">
-              {navItems.map(({ href, label, Icon }) => (
+              <li className="text-xs uppercase tracking-wide text-black/50">Tools</li>
+              {toolsNavItems.map(({ href, label, Icon }) => (
                 <li key={href} className="flex items-center gap-2 rounded-lg p-2 hover:bg-black/10 transition duration-200">
                   <Icon className="w-5 h-5 text-black flex-shrink-0" />
                   <Link
                     href={href}
                     className="flex-1 text-left text-sm text-black/80 hover:text-black"
-                    onClick={closeMenu}
+                    onClick={() => {
+                      closeMenu();
+                    }}
                   >
                     {label}
                   </Link>
