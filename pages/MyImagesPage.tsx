@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { getUserImages, removeUserImage, clearUserImages } from '../utils/userImages';
 import { UserImage } from '../types';
+import Lightbox from '@/components/Lightbox';
 
 const MyImagesPage: React.FC = () => {
   const [items, setItems] = useState<UserImage[]>([]);
+  const [lightbox, setLightbox] = useState<{ url: string; name: string } | null>(null);
 
   const reload = () => setItems(getUserImages());
 
@@ -21,11 +23,15 @@ const MyImagesPage: React.FC = () => {
     }
   };
 
-  const download = (url: string, name = 'image.png') => {
+  const downloadImage = (url: string, name = 'image.png') => {
     const a = document.createElement('a');
     a.href = url;
     a.download = name;
     a.click();
+  };
+
+  const openPreview = (url: string, name: string) => {
+    setLightbox({ url, name });
   };
 
   return (
@@ -49,16 +55,31 @@ const MyImagesPage: React.FC = () => {
               {it.original && (
                 <div className="p-2 grid grid-cols-2 gap-2 border-b">
                   <div className="bg-gray-50 dark:bg-gray-900/30 p-2 flex items-center justify-center">
-                    <img src={it.original} alt="original" className="max-w-full h-auto object-contain" />
+                    <img
+                      src={it.original}
+                      alt="original"
+                      className="max-w-full h-auto cursor-zoom-in object-contain"
+                      onClick={() => openPreview(it.original, `${it.kind}-${it.id}-original.png`)}
+                    />
                   </div>
                   <div className="bg-white dark:bg-gray-800 p-2 border-2 border-purple-500 flex items-center justify-center">
-                    <img src={it.generated} alt="generated" className="max-w-full h-auto object-contain" />
+                    <img
+                      src={it.generated}
+                      alt="generated"
+                      className="max-w-full h-auto cursor-zoom-in object-contain"
+                      onClick={() => openPreview(it.generated, `${it.kind}-${it.id}-generated.png`)}
+                    />
                   </div>
                 </div>
               )}
               {!it.original && (
                 <div className="p-2 flex items-center justify-center border-b">
-                  <img src={it.generated} alt="generated" className="max-w-full h-auto object-contain" />
+                  <img
+                    src={it.generated}
+                    alt="generated"
+                    className="max-w-full h-auto cursor-zoom-in object-contain"
+                    onClick={() => openPreview(it.generated, `${it.kind}-${it.id}.png`)}
+                  />
                 </div>
               )}
               <div className="p-3 space-y-1 text-xs text-gray-600 dark:text-gray-300">
@@ -67,13 +88,21 @@ const MyImagesPage: React.FC = () => {
                 <div><span className="font-semibold">Saved:</span> {new Date(it.createdAt).toLocaleString()}</div>
               </div>
               <div className="p-3 flex justify-end gap-2">
-                <button onClick={() => download(it.generated, `${it.kind}-${it.id}.png`)} className="px-3 py-1.5 rounded-md bg-purple-600 text-white text-xs font-semibold hover:bg-purple-700">Download</button>
+                <button onClick={() => downloadImage(it.generated, `${it.kind}-${it.id}.png`)} className="px-3 py-1.5 rounded-md bg-purple-600 text-white text-xs font-semibold hover:bg-purple-700">Download</button>
                 <button onClick={() => onDelete(it.id)} className="px-3 py-1.5 rounded-md bg-white dark:bg-gray-700 border text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-600">Delete</button>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      <Lightbox
+        imageUrl={lightbox?.url}
+        onClose={() => setLightbox(null)}
+        title="Saved image preview"
+        alt="Saved image preview"
+        onDownload={lightbox ? () => downloadImage(lightbox.url, lightbox.name) : undefined}
+      />
     </div>
   );
 };

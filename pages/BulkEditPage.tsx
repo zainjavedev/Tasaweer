@@ -4,6 +4,7 @@ import EtaTimer from '@/components/EtaTimer';
 import { compressImageFile } from '@/utils/image';
 import { createZip, dataUrlToUint8 } from '@/utils/zip';
 import SurfaceCard from '@/components/SurfaceCard';
+import Lightbox from '@/components/Lightbox';
 
 type Task = {
   file: File;
@@ -18,6 +19,7 @@ const BulkEditPage: React.FC = () => {
   const [prompt, setPrompt] = useState('Fix lighting, enhance clarity, and make colors pop naturally.');
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<{ url: string; name: string } | null>(null);
 
   const onFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -76,6 +78,21 @@ const BulkEditPage: React.FC = () => {
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   }, [completed]);
+
+  const downloadSingle = useCallback((url: string, name: string) => {
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = name;
+    document.body.appendChild(anchor);
+    anchor.click();
+    requestAnimationFrame(() => {
+      document.body.removeChild(anchor);
+    });
+  }, []);
+
+  const openLightbox = useCallback((url: string, name: string) => {
+    setLightbox({ url, name });
+  }, []);
 
   return (
     <SurfaceCard className="max-w-5xl mx-auto overflow-hidden p-6 sm:p-8 space-y-6">
@@ -144,8 +161,22 @@ const BulkEditPage: React.FC = () => {
               <div key={idx} className="rounded-xl overflow-hidden border border-white/40 bg-white/50 relative">
                 <div className="aspect-[4/3] w-full flex items-center justify-center">
                   {t.url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={t.url} alt={t.name} className="w-full h-full object-contain" />
+                    <button
+                      type="button"
+                      onClick={() => openLightbox(t.url!, t.name)}
+                      className="group relative flex h-full w-full items-center justify-center"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={t.url}
+                        alt={t.name}
+                        className="h-full w-full origin-center transform object-contain transition group-hover:scale-[1.02]"
+                      />
+                      <div className="pointer-events-none absolute inset-0 flex items-end justify-between bg-gradient-to-t from-black/60 via-black/0 to-transparent opacity-0 transition group-hover:opacity-100">
+                        <span className="px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-white">View larger</span>
+                        <span className="px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-white/80">Click to zoom</span>
+                      </div>
+                    </button>
                   ) : (
                     <div className="text-sm text-black/60">
                       {t.status === 'pending'
@@ -159,11 +190,30 @@ const BulkEditPage: React.FC = () => {
                   )}
                 </div>
                 <div className="p-2 text-xs text-black/70 truncate">{t.name}</div>
+                {t.url && (
+                  <div className="flex justify-end gap-2 px-2 pb-2">
+                    <button
+                      type="button"
+                      onClick={() => downloadSingle(t.url!, t.name.replace(/\.[^.]+$/, '') + '-edited.png')}
+                      className="rounded-full border border-black/15 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-black/70 transition hover:border-black/40 hover:text-black"
+                    >
+                      Download
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         </div>
       )}
+
+      <Lightbox
+        imageUrl={lightbox?.url}
+        onClose={() => setLightbox(null)}
+        title="Bulk edit preview"
+        alt="Processed image preview"
+        onDownload={lightbox ? () => downloadSingle(lightbox.url, lightbox.name.replace(/\.[^.]+$/, '') + '-edited.png') : undefined}
+      />
     </SurfaceCard>
   );
 };

@@ -22,17 +22,23 @@ export const EtaTimer: React.FC<EtaTimerProps> = ({ seconds, label }) => {
     return () => cancelAnimationFrame(raf);
   }, [seconds]);
 
-  const pct = Math.min(100, Math.round((elapsed / seconds) * 100));
-  const remaining = Math.max(0, Math.ceil(seconds - elapsed));
+  const totalSeconds = Math.max(1, seconds);
+  const pct = Math.min(100, Math.round((elapsed / totalSeconds) * 100));
+  const remaining = Math.max(0, Math.ceil(totalSeconds - elapsed));
+  const status = label || `Generating preview`;
 
   return (
-    <div className="w-full max-w-md mx-auto text-center space-y-2">
-      <div className="text-xs text-gray-600 dark:text-gray-300">
-        {label || `Estimated ${seconds}s · ~${remaining}s remaining`}
+    <div className="w-full max-w-md mx-auto text-center space-y-3" aria-live="polite">
+      <div className="inline-flex items-center justify-center gap-2 rounded-full bg-black px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-white shadow-sm">
+        <span className="h-2 w-2 animate-pulse rounded-full bg-white"></span>
+        <span>{status}</span>
       </div>
-      <div className="h-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+      <div className="text-xs font-medium text-black/70 dark:text-white/70">
+        ~{remaining}s remaining (est. {totalSeconds}s)
+      </div>
+      <div className="h-2 w-full overflow-hidden rounded-full bg-black/10 dark:bg-white/20">
         <div
-          className="h-full bg-black transition-[width] duration-200 ease-out"
+          className="h-full bg-black transition-[width] duration-200 ease-out dark:bg-white"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -41,4 +47,3 @@ export const EtaTimer: React.FC<EtaTimerProps> = ({ seconds, label }) => {
 };
 
 export default EtaTimer;
-
