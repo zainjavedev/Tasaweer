@@ -281,7 +281,7 @@ const GeminiWatermarkRemoverPage: React.FC = () => {
         </div>
       </SurfaceCard>
 
-      <Lightbox url={lightbox} onClose={() => setLightbox(null)} />
+      <Lightbox imageUrl={lightbox} onClose={() => setLightbox(null)} title="Preview" alt="Watermark-free preview" />
     </div>
   );
 };

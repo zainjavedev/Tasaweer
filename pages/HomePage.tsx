@@ -81,6 +81,7 @@ const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
     setTilt({ x: (py - 0.5) * 6, y: (0.5 - px) * 6 });
   };
   const onHeroLeave = () => setTilt({ x: 0, y: 0 });
+  const isGenerationLimited = isAuthenticated && !canGenerate && remainingImages !== -1;
 
   return (
     <div className={`max-w-7xl mx-auto ${inter.className}`}>
@@ -118,27 +119,45 @@ const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
             )}
 
             <p className="mt-6 text-xl text-black font-medium leading-relaxed">Generate images from text, try apparel on your photo, craft viral thumbnails, or instantly edit your photos — all in one place.</p>
-            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5">
+            <div className="mt-8 flex flex-wrap gap-3 sm:gap-4">
               <button
                 onClick={() => goTo('text2image')}
-                disabled={isAuthenticated && !canGenerate && remainingImages !== -1}
-                className={`btn-shine w-full px-6 py-3 rounded-lg bg-black text-white font-bold shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:bg-gray-800 hover:scale-105 transition-all duration-200 inline-flex items-center justify-center gap-3 text-lg ${isAuthenticated && !canGenerate && remainingImages !== -1 ? 'opacity-50 cursor-not-allowed hover:scale-100' : ''}`}
-                ><SparklesIcon className="w-5 h-5"/>Text → Image{(!canGenerate && remainingImages !== -1) ? ' (Limited)' : ''}<span aria-hidden className="shine"></span></button>
+                disabled={isGenerationLimited}
+                className={`btn-shine w-full sm:w-auto sm:min-w-[220px] px-6 py-3 rounded-xl bg-black text-white font-bold shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:bg-gray-800 transition-all duration-200 inline-flex items-center justify-center gap-3 text-lg whitespace-nowrap ${isGenerationLimited ? 'opacity-50 cursor-not-allowed' : 'hover:-translate-y-1'}`}
+              >
+                <SparklesIcon className="w-5 h-5" />
+                Text → Image
+                {isGenerationLimited ? ' (Limited)' : ''}
+                <span aria-hidden className="shine"></span>
+              </button>
               <button
                 onClick={() => goTo('try-apparel')}
-                disabled={isAuthenticated && !canGenerate && remainingImages !== -1}
-                className={`w-full px-6 py-3 rounded-lg bg-white text-black border-2 border-black font-bold shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:bg-gray-50 hover:scale-105 transition-all duration-200 inline-flex items-center justify-center gap-3 text-lg ${isAuthenticated && !canGenerate && remainingImages !== -1 ? 'opacity-50 cursor-not-allowed hover:scale-100' : ''}`}
-                ><SwapIcon className="w-5 h-5"/>Try Apparel{(!canGenerate && remainingImages !== -1) ? ' (Limited)' : ''}</button>
+                disabled={isGenerationLimited}
+                className={`w-full sm:w-auto sm:min-w-[220px] px-6 py-3 rounded-xl bg-white text-black border-2 border-black font-bold shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:bg-gray-50 transition-all duration-200 inline-flex items-center justify-center gap-3 text-lg whitespace-nowrap ${isGenerationLimited ? 'opacity-50 cursor-not-allowed' : 'hover:-translate-y-1'}`}
+              >
+                <SwapIcon className="w-5 h-5" />
+                Try Apparel
+                {isGenerationLimited ? ' (Limited)' : ''}
+              </button>
               <button
                 onClick={() => goTo('photo-editor')}
-                disabled={isAuthenticated && !canGenerate && remainingImages !== -1}
-                className={`w-full btn-shine px-6 py-3 rounded-lg bg-black text-white font-bold shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:bg-gray-800 hover:scale-105 transition-all duration-200 inline-flex items-center justify-center gap-3 text-lg ${isAuthenticated && !canGenerate && remainingImages !== -1 ? 'opacity-50 cursor-not-allowed hover:scale-100' : ''}`}
-                ><MagicWandIcon className="w-5 h-5"/>Photo Editor{(!canGenerate && remainingImages !== -1) ? ' (Limited)' : ''}<span aria-hidden className="shine"></span></button>
+                disabled={isGenerationLimited}
+                className={`btn-shine w-full sm:w-auto sm:min-w-[220px] px-6 py-3 rounded-xl bg-black text-white font-bold shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:bg-gray-800 transition-all duration-200 inline-flex items-center justify-center gap-3 text-lg whitespace-nowrap ${isGenerationLimited ? 'opacity-50 cursor-not-allowed' : 'hover:-translate-y-1'}`}
+              >
+                <MagicWandIcon className="w-5 h-5" />
+                Photo Editor
+                {isGenerationLimited ? ' (Limited)' : ''}
+                <span aria-hidden className="shine"></span>
+              </button>
               <button
                 onClick={() => goTo('watermark-remover')}
-                disabled={isAuthenticated && !canGenerate && remainingImages !== -1}
-                className={`w-full px-6 py-3 rounded-lg bg-white text-black border-2 border-black font-bold shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:bg-gray-50 hover:scale-105 transition-all duration-200 inline-flex items-center justify-center gap-3 text-lg ${isAuthenticated && !canGenerate && remainingImages !== -1 ? 'opacity-50 cursor-not-allowed hover:scale-100' : ''}`}
-                ><CleanIcon className="w-5 h-5"/>Watermark Remover{(!canGenerate && remainingImages !== -1) ? ' (Limited)' : ''}</button>
+                disabled={isGenerationLimited}
+                className={`w-full sm:w-auto sm:min-w-[220px] px-6 py-3 rounded-xl bg-white text-black border-2 border-black font-bold shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:bg-gray-50 transition-all duration-200 inline-flex items-center justify-center gap-3 text-lg whitespace-nowrap ${isGenerationLimited ? 'opacity-50 cursor-not-allowed' : 'hover:-translate-y-1'}`}
+              >
+                <CleanIcon className="w-5 h-5" />
+                Watermark Remover
+                {isGenerationLimited ? ' (Limited)' : ''}
+              </button>
             </div>
           </div>
           <div className="relative order-1 md:order-2 max-w-xs w-full mx-auto md:max-w-none" onMouseMove={onHeroMove} onMouseLeave={onHeroLeave}>

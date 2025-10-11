@@ -215,7 +215,7 @@ const TextToImagePage: React.FC = () => {
             <button
               onClick={handleGenerate}
               disabled={isLoading || (isAuthenticated && !canGenerate)}
-              className={`btn-shine flex w-full items-center justify-center gap-2 rounded-lg bg-black px-6 py-3 text-white font-bold transition-colors duration-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-400 ${isAuthenticated && !canGenerate ? 'opacity-50' : ''}`}
+              className={`btn-shine flex w-full items-center justify-center gap-2 rounded-lg bg-black px-6 py-3 text-white font-bold transition-colors duration-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-400 disabled:text-black ${isAuthenticated && !canGenerate ? 'opacity-50' : ''}`}
             >
               {isAuthenticated ? (
                 isLoading ? 'Generating…' : (
@@ -310,7 +310,7 @@ const TextToImagePage: React.FC = () => {
         </div>
       </div>
 
-      <Lightbox url={lightbox} onClose={() => setLightbox(null)} />
+      <Lightbox imageUrl={lightbox} onClose={() => setLightbox(null)} title="Generated image" alt="Generated image preview" />
     </SurfaceCard>
   );
 };

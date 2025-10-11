@@ -54,6 +54,18 @@ const PRESET_PROMPTS = [
     prompt:
       'Turn this photo into a lifestyle vlog thumbnail with warm tones, subtle lens flare, and a friendly handwritten style for the headline area.',
   },
+  {
+    id: 'commentary-breakdown',
+    label: 'Commentary breakdown',
+    prompt:
+      'Design a commentary-style thumbnail with bold speech-bubble headlines, contrasting background panels, and reaction cutouts that highlight the topic being debated. Feature the host portrait if provided, otherwise focus on the key symbols or guests.',
+  },
+  {
+    id: 'question-cluster',
+    label: 'Curious questions',
+    prompt:
+      'Make a curiosity-driven thumbnail featuring floating question bubbles, layered text callouts, and a dramatic close-up expression that makes viewers want to click for the answers.',
+  },
 ] as const;
 
 const STYLE_ENHANCERS = [
@@ -181,6 +193,8 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
   const [selectedRatio, setSelectedRatio] = useState<string>('16:9');
   const [selectedEnhancers, setSelectedEnhancers] = useState<string[]>([]);
   const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
+  const [hostImage, setHostImage] = useState<File | null>(null);
+  const [hostPreview, setHostPreview] = useState<string | null>(null);
   const [refImages, setRefImages] = useState<File[]>([]);
   const [refPreviews, setRefPreviews] = useState<string[]>([]);
   const [results, setResults] = useState<string[]>([]);
@@ -215,6 +229,32 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
     } catch {
       setPreview(null);
     }
+  }, []);
+
+  const handleHostUpload = useCallback(async (file: File | null) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setError('Host portrait must be a PNG, JPG, or WEBP image.');
+      return;
+    }
+    setError(null);
+    setHostImage(file);
+    try {
+      const dataUrl = await toDataUrl(file);
+      setHostPreview(dataUrl);
+    } catch {
+      setHostPreview(null);
+    }
+  }, []);
+
+  const clearHostImage = useCallback(() => {
+    setHostImage(null);
+    setHostPreview(null);
+  }, []);
+
+  const clearSourceImage = useCallback(() => {
+    setSourceImage(null);
+    setPreview(null);
   }, []);
 
   const addRefFiles = useCallback((files: FileList | File[] | null) => {
@@ -279,10 +319,20 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
       const additions = [...selectedEnhancers, ...selectedBadges]
         .map((id) => additionMap[id])
         .filter(Boolean);
-      const finalPrompt = [prompt.trim(), ...additions].join(' ');
-      let additionalImages: { data: string; mimeType: string }[] | undefined;
+      const hostInstruction = hostImage
+        ? 'Use the supplied host portrait as the primary subject and preserve their facial features accurately.'
+        : '';
+      const finalPrompt = [prompt.trim(), hostInstruction, ...additions].filter(Boolean).join(' ');
+      const supplemental: { data: string; mimeType: string }[] = [];
+      if (hostImage) {
+        const { blob, dataUrl } = await compressImageFile(hostImage, { maxDim: 1600, type: 'image/webp', quality: 0.9 });
+        supplemental.push({
+          data: dataUrl.split(',')[1] || '',
+          mimeType: blob.type || hostImage.type || 'image/webp',
+        });
+      }
       if (refImages.length) {
-        additionalImages = await Promise.all(
+        const referencePayloads = await Promise.all(
           refImages.map(async (file) => {
             const { blob, dataUrl } = await compressImageFile(file, { maxDim: 1600, type: 'image/webp', quality: 0.88 });
             return {
@@ -291,7 +341,9 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
             };
           })
         );
+        supplemental.push(...referencePayloads);
       }
+      const additionalImages = supplemental.length ? supplemental : undefined;
       const result = await editImageWithNanoBanana(base64, mimeType, finalPrompt, additionalImages, selectedRatio);
       setResults((prev) => [result.imageUrl, ...prev]);
       try {
@@ -304,6 +356,8 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
             tool: 'youtube-thumbnail-editor',
             ratio: selectedRatio,
             boosters: [...selectedEnhancers, ...selectedBadges],
+            hostPortrait: Boolean(hostImage),
+            references: refImages.length,
           },
         });
         await refreshUserData();
@@ -318,6 +372,7 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
   }, [
     additionMap,
     isAuthenticated,
+    hostImage,
     preview,
     refImages,
     router,
@@ -340,8 +395,23 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
     });
   }, []);
 
+  const setSourceFromUrl = useCallback(async (url: string) => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('failed');
+      const blob = await response.blob();
+      const extension = blob.type.split('/')[1] || 'webp';
+      const file = new File([blob], `thumbnail-source.${extension}`, { type: blob.type || 'image/webp' });
+      setSourceImage(file);
+      const dataUrl = await toDataUrl(file);
+      setPreview(dataUrl);
+      setError(null);
+    } catch {
+      setError('Could not reuse this thumbnail automatically. Download it and upload manually instead.');
+    }
+  }, []);
+
   const selectionSummary = useMemo(() => {
-    if (!selectedEnhancers.length && !selectedBadges.length) return 'No boosters selected yet.';
     const labels: string[] = [];
     STYLE_ENHANCERS.forEach((item) => {
       if (selectedEnhancers.includes(item.id)) labels.push(item.label);
@@ -349,8 +419,12 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
     CTA_STICKERS.forEach((item) => {
       if (selectedBadges.includes(item.id)) labels.push(item.label);
     });
-    return `Boosters: ${labels.join(', ')}.`;
-  }, [selectedBadges, selectedEnhancers]);
+    const boosterSummary = labels.length ? `Boosters: ${labels.join(', ')}.` : 'No boosters selected yet.';
+    if (hostImage) {
+      return `Host portrait locked in. ${boosterSummary}`;
+    }
+    return boosterSummary;
+  }, [hostImage, selectedBadges, selectedEnhancers]);
 
   return (
     <div className="space-y-10">
@@ -369,7 +443,20 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
 
         <div className="grid gap-6 lg:grid-cols-[1.1fr,0.9fr]">
           <div className="space-y-6">
-            <ImageUploader onImageUpload={handleImageUpload} preview={preview} />
+            <div className="relative">
+              <ImageUploader onImageUpload={handleImageUpload} preview={preview} />
+              {preview && (
+                <div className="absolute right-3 top-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={clearSourceImage}
+                    className="rounded-full border border-white/60 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-black transition hover:bg-white"
+                  >
+                    Remove image
+                  </button>
+                </div>
+              )}
+            </div>
 
             <div className="space-y-3">
               <label className="text-sm font-semibold text-black">Prompt</label>
@@ -468,39 +555,74 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
 
           <div className="space-y-6">
             <AspectRatioSelector selectedRatio={selectedRatio} onSelect={setSelectedRatio} />
-            <div className="space-y-2">
-              <span className="text-sm font-semibold text-black">Reference images (optional)</span>
-              <p className="text-xs text-black/60">
-                Drop up to {maxRefImages} images to show fonts, logos, or past thumbnails you want to mimic.
-              </p>
-              <div className="flex flex-wrap gap-3">
-                {refPreviews.map((src, index) => (
-                  <div key={src} className="relative h-20 w-28 overflow-hidden rounded-xl border border-black/15">
-                    <img src={src} alt="Reference" className="h-full w-full object-cover" />
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <span className="text-sm font-semibold text-black">Host portrait (optional)</span>
+                <p className="text-xs text-black/60">
+                  Upload a clean photo of your presenter so we can keep their features accurate. Skip this if you&apos;re focusing on objects or
+                  text-led concepts.
+                </p>
+                {hostPreview ? (
+                  <div className="relative flex h-32 w-32 items-center justify-center overflow-hidden rounded-xl border border-black/15 bg-white/70">
+                    <img src={hostPreview} alt="Host portrait" className="h-full w-full object-cover" />
                     <button
                       type="button"
-                      onClick={() => removeRefAt(index)}
+                      onClick={clearHostImage}
                       className="absolute top-1 right-1 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-semibold text-white"
                     >
                       Remove
                     </button>
                   </div>
-                ))}
-                {refImages.length < maxRefImages && (
-                  <label className="flex h-20 w-28 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-black/20 text-xs text-black/60 hover:border-black/40">
-                    + Add ref
+                ) : (
+                  <label className="flex h-32 w-32 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-black/20 text-xs text-black/60 transition hover:border-black/40 hover:text-black">
+                    + Host portrait
                     <input
                       type="file"
                       accept="image/*"
-                      multiple
                       className="hidden"
                       onChange={(event) => {
-                        addRefFiles(event.target.files);
+                        handleHostUpload(event.target.files?.[0] ?? null);
                         event.target.value = '';
                       }}
                     />
                   </label>
                 )}
+              </div>
+
+              <div className="space-y-2">
+                <span className="text-sm font-semibold text-black">Reference images (optional)</span>
+                <p className="text-xs text-black/60">
+                  Drop up to {maxRefImages} images to show fonts, logos, or past thumbnails you want to mimic.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  {refPreviews.map((src, index) => (
+                    <div key={src} className="relative h-20 w-28 overflow-hidden rounded-xl border border-black/15">
+                      <img src={src} alt="Reference" className="h-full w-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeRefAt(index)}
+                        className="absolute top-1 right-1 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-semibold text-white"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                  {refImages.length < maxRefImages && (
+                    <label className="flex h-20 w-28 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-black/20 text-xs text-black/60 hover:border-black/40">
+                      + Add ref
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={(event) => {
+                          addRefFiles(event.target.files);
+                          event.target.value = '';
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -512,6 +634,69 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
                 <li>Run generate, review, and save your favorite.</li>
                 <li>Try alternate presets to batch test click-through ideas.</li>
               </ol>
+            </div>
+            <div className="rounded-2xl border border-black/10 bg-white/70 p-4">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-semibold text-black">Latest thumbnails</span>
+                {results.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => download(results[0], 'tasaweers-thumbnail-latest.png')}
+                    className="rounded-full border border-black/20 bg-black px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white transition hover:bg-black/80"
+                  >
+                    Download latest
+                  </button>
+                )}
+              </div>
+              {results.length > 0 ? (
+                <div className="mt-3 max-h-[340px] space-y-3 overflow-y-auto pr-1">
+                  {results.map((url, idx) => {
+                    const version = results.length - idx;
+                    return (
+                      <div
+                        key={`${url}-${idx}`}
+                        className="group relative overflow-hidden rounded-xl border border-black/10 bg-white/80 shadow-sm transition hover:border-black/20"
+                      >
+                        <img
+                          src={url}
+                          alt={`Generated thumbnail ${version}`}
+                          className="h-full w-full cursor-pointer object-cover transition group-hover:scale-[1.02]"
+                          onClick={() => setLightbox(url)}
+                        />
+                        <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-black/65 px-3 py-2 text-[11px] font-semibold text-white opacity-0 transition group-hover:opacity-100">
+                          <span className="truncate uppercase tracking-wide">Version {version}</span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                void setSourceFromUrl(url);
+                              }}
+                              className="rounded border border-white/50 px-2 py-0.5 text-[10px] uppercase tracking-wide transition hover:bg-white/20"
+                            >
+                              Use as source
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                download(url, `tasaweers-thumbnail-${version}.png`);
+                              }}
+                              className="rounded border border-white/50 px-2 py-0.5 text-[10px] uppercase tracking-wide transition hover:bg-white/20"
+                            >
+                              Download
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="mt-3 text-xs text-black/60">
+                  Generate a thumbnail to see your latest renders here for quick review.
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -587,43 +772,14 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
         </div>
       </SurfaceCard>
 
-      <SurfaceCard className="max-w-6xl mx-auto p-6 sm:p-8 space-y-6">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <h2 className="text-2xl font-semibold text-black">Latest thumbnails</h2>
-          <p className="text-xs text-black/60">Click a result to open it larger; download favorites instantly.</p>
-        </div>
-        {results.length ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {results.map((url, idx) => (
-              <div key={url} className="group relative overflow-hidden rounded-2xl border border-black/10 bg-white/70">
-                <img
-                  src={url}
-                  alt={`Generated thumbnail ${idx + 1}`}
-                  className="h-full w-full cursor-pointer object-cover transition group-hover:scale-[1.02]"
-                  onClick={() => setLightbox(url)}
-                />
-                <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-black/60 p-2 text-xs text-white opacity-0 transition group-hover:opacity-100">
-                  <span className="truncate">Version {results.length - idx}</span>
-                  <button
-                    type="button"
-                    onClick={() => download(url, `tasaweers-thumbnail-${results.length - idx}.png`)}
-                    className="rounded border border-white/50 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide"
-                  >
-                    Download
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-black/10 bg-white/60 px-6 py-10 text-center text-sm text-black/60">
-            Results will appear here after you generate your first thumbnail.
-          </div>
-        )}
-      </SurfaceCard>
-
       {lightbox && (
-        <Lightbox imageUrl={lightbox} onClose={() => setLightbox(null)} onDownload={() => download(lightbox)} />
+        <Lightbox
+          imageUrl={lightbox}
+          onClose={() => setLightbox(null)}
+          onDownload={() => lightbox && download(lightbox)}
+          title="Thumbnail preview"
+          alt="Generated YouTube thumbnail"
+        />
       )}
     </div>
   );

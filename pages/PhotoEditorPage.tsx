@@ -542,7 +542,7 @@ const PhotoEditorPage: React.FC = () => {
              <button
                onClick={handleSubmit}
                disabled={isLoading || !originalImage || !prompt.trim()}
-               className="btn-shine flex w-full items-center justify-center gap-2 rounded-lg bg-black px-6 py-3 text-white font-bold transition-colors duration-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-400"
+               className="btn-shine flex w-full items-center justify-center gap-2 rounded-lg bg-black px-6 py-3 text-white font-bold transition-colors duration-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-400 disabled:text-black"
                title="Generate an edited version of your photo using AI"
              >
               {isAuthenticated ? (
@@ -677,7 +677,7 @@ const PhotoEditorPage: React.FC = () => {
 
       </div>
 
-      <Lightbox url={lightbox} onClose={() => setLightbox(null)} />
+      <Lightbox imageUrl={lightbox} onClose={() => setLightbox(null)} title="Preview" alt="Edited photo preview" />
     </SurfaceCard>
   );
 };

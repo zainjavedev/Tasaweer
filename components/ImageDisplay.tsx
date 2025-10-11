@@ -45,7 +45,7 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({ original, edited }) 
           <p className="text-gray-600 dark:text-gray-400 mt-1">{edited.text}</p>
         </div>
       )}
-      <Lightbox url={open} onClose={() => setOpen(null)} />
+      <Lightbox imageUrl={open} onClose={() => setOpen(null)} title="Generated preview" alt="Generated image preview" />
     </div>
   );
 };

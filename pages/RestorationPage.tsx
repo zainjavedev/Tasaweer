@@ -132,7 +132,7 @@ const RestorationPage: React.FC = () => {
         <button
           onClick={handleSubmit}
           disabled={!originalImage || isLoading}
-          className="btn-shine flex items-center justify-center gap-3 w-full max-w-xs px-8 py-3 bg-black text-white font-bold rounded-lg shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          className="btn-shine flex items-center justify-center gap-3 w-full max-w-xs px-8 py-3 bg-black text-white font-bold rounded-lg shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:bg-gray-800 disabled:bg-gray-400 disabled:text-black disabled:cursor-not-allowed"
         >
           {isAuthenticated ? (
             isLoading ? 'Restoring…' : (

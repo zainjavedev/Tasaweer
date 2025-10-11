@@ -122,7 +122,7 @@ const BulkEditPage: React.FC = () => {
         <button
           onClick={start}
           disabled={running || tasks.length === 0 || !prompt.trim()}
-          className="btn-shine px-6 py-3 rounded-lg bg-black text-white font-semibold hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          className="btn-shine px-6 py-3 rounded-lg bg-black text-white font-semibold hover:bg-gray-800 disabled:bg-gray-400 disabled:text-black disabled:cursor-not-allowed"
         >
           {running ? 'Processing…' : 'Start'}
           <span aria-hidden className="shine"></span>

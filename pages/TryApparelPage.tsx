@@ -748,7 +748,7 @@ const TryApparelPage: React.FC = () => {
             <button
               onClick={tryOn}
               disabled={!userImage || !apparelImage || iterLoading}
-              className="btn-shine flex w-full items-center justify-center gap-2 rounded-lg bg-black px-6 py-3 text-white font-bold transition-colors duration-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-400"
+              className="btn-shine flex w-full items-center justify-center gap-2 rounded-lg bg-black px-6 py-3 text-white font-bold transition-colors duration-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-400 disabled:text-black"
             >
               {isAuthenticated ? (iterLoading ? 'Generating…' : 'Try on') : 'Signup to generate'}
               <span aria-hidden className="shine"></span>
@@ -964,7 +964,7 @@ const TryApparelPage: React.FC = () => {
         </div>
       </div>
 
-      <Lightbox url={lightbox} onClose={() => setLightbox(null)} />
+      <Lightbox imageUrl={lightbox} onClose={() => setLightbox(null)} title="Preview" alt="Generated apparel preview" />
     </SurfaceCard>
   );
 };
