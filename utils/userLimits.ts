@@ -33,7 +33,9 @@ export function canUserGenerate(): boolean {
   const limits = getUserLimits();
   if (!limits) return false;
 
-  // Admins (null imageLimit) can always generate
+  if (limits.role === 'ADMIN') return true;
+
+  // Legacy unlimited plans also use null limit
   if (limits.imageLimit === null) return true;
 
   // Users with limits can generate if they haven't reached their limit
@@ -42,7 +44,7 @@ export function canUserGenerate(): boolean {
 
 export function getRemainingImages(): number {
   const limits = getUserLimits();
-  if (!limits || limits.imageLimit === null) return -1; // Unlimited for admins
+  if (!limits || limits.role === 'ADMIN' || limits.imageLimit === null) return -1; // Unlimited usage
 
   return Math.max(0, limits.imageLimit - limits.imageCount);
 }

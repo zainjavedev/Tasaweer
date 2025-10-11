@@ -32,17 +32,15 @@ export async function generateImage(
   }
   parts.push({ text: prompt });
 
-  const config: any = { responseModalities: [Modality.IMAGE, Modality.TEXT] };
+  const config: any = {
+    responseModalities: [Modality.IMAGE, Modality.TEXT],
+  };
 
-  // Add aspect ratio if provided
   if (aspectRatio) {
-    // Parse aspect ratio (e.g., "16:9" -> 16/9 = 1.777...)
-    const [widthRatio, heightRatio] = aspectRatio.split(':').map(Number);
-    if (widthRatio && heightRatio) {
-      const ratio = widthRatio / heightRatio;
-      // Gemini supports aspectRatio parameter in some versions
-      config.aspectRatio = ratio;
-    }
+    config.imageConfig = {
+      ...(config.imageConfig ?? {}),
+      aspectRatio,
+    };
   }
 
   const response: GenerateContentResponse = await ai.models.generateContent({
@@ -91,17 +89,15 @@ export async function editImage(
   }
   parts.push({ text: prompt });
 
-  const config: any = { responseModalities: [Modality.IMAGE, Modality.TEXT] };
+  const config: any = {
+    responseModalities: [Modality.IMAGE, Modality.TEXT],
+  };
 
-  // Add aspect ratio if provided
   if (aspectRatio) {
-    // Parse aspect ratio (e.g., "16:9" -> 16/9 = 1.777...)
-    const [widthRatio, heightRatio] = aspectRatio.split(':').map(Number);
-    if (widthRatio && heightRatio) {
-      const ratio = widthRatio / heightRatio;
-      // Gemini supports aspectRatio parameter in some versions
-      config.aspectRatio = ratio;
-    }
+    config.imageConfig = {
+      ...(config.imageConfig ?? {}),
+      aspectRatio,
+    };
   }
 
   const response: GenerateContentResponse = await ai.models.generateContent({

@@ -20,8 +20,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing prompt' }, { status: 400 });
     }
 
+    const isAdmin = user.role === 'ADMIN';
+
     // Check if user has reached their image limit (only for non-admin users)
-    if (user.imageLimit !== null && user.imageCount >= user.imageLimit) {
+    if (!isAdmin && user.imageLimit !== null && user.imageCount >= user.imageLimit) {
       const remaining = user.imageLimit - user.imageCount;
       return NextResponse.json({
         error: `Image generation limit reached. You have generated ${user.imageCount} out of ${user.imageLimit} images.`
@@ -39,13 +41,11 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    // Increment the user's image count in the database (only for non-admin users)
-    if (user.imageLimit !== null) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { imageCount: { increment: 1 } }
-      });
-    }
+    // Track usage for all users (admins have unlimited quota but still count generations)
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { imageCount: { increment: 1 } }
+    });
 
     return NextResponse.json(result);
   } catch (err: any) {

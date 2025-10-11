@@ -13,7 +13,6 @@ import Lightbox from '@/components/Lightbox';
 import {
   CheckIcon,
   MagicWandIcon,
-  SparklesIcon,
   YoutubeIcon,
 } from '@/components/Icon';
 
@@ -65,6 +64,54 @@ const PRESET_PROMPTS = [
     label: 'Curious questions',
     prompt:
       'Make a curiosity-driven thumbnail featuring floating question bubbles, layered text callouts, and a dramatic close-up expression that makes viewers want to click for the answers.',
+  },
+  {
+    id: 'phone-vlog',
+    label: 'Phone vlog energy',
+    prompt:
+      'Style this as a handheld phone vlog thumbnail with raw ambient lighting, subtle motion blur, a vertical frame feel, and on-screen recording badges like REC and time stamps.',
+  },
+  {
+    id: 'news-flash',
+    label: 'Breaking news',
+    prompt:
+      'Transform this into an urgent breaking news thumbnail with bold red banners, ticker bars, and a confident anchor pose in the foreground.',
+  },
+  {
+    id: 'travel-postcard',
+    label: 'Travel postcard',
+    prompt:
+      'Design a travel vlog thumbnail with golden-hour colors, a bold location label, and layered map pins to highlight the destination.',
+  },
+  {
+    id: 'podcast-clip',
+    label: 'Podcast clip',
+    prompt:
+      'Frame this as a podcast highlight thumbnail with a split-screen of hosts, waveform overlays, and a timestamp sticker.',
+  },
+  {
+    id: 'fitness-challenge',
+    label: 'Fitness challenge',
+    prompt:
+      'Create an intense fitness challenge thumbnail with dynamic motion blur, sweat highlights, timer badges, and bold energy lines.',
+  },
+  {
+    id: 'food-sizzle',
+    label: 'Food sizzle',
+    prompt:
+      'Make a mouthwatering cooking thumbnail with an overhead plated dish, ingredient callouts, warm studio lighting, and steam highlights.',
+  },
+  {
+    id: 'mystery-deepdive',
+    label: 'Mystery deep-dive',
+    prompt:
+      'Style this as an investigative deep-dive thumbnail with noir lighting, a spotlight on the subject, and headline space for a shocking question.',
+  },
+  {
+    id: 'music-drop',
+    label: 'Music drop',
+    prompt:
+      'Build a music release thumbnail with neon gradients, equalizer bars, an artist silhouette, and a bold release date badge.',
   },
 ] as const;
 
@@ -193,6 +240,9 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
   const [selectedRatio, setSelectedRatio] = useState<string>('16:9');
   const [selectedEnhancers, setSelectedEnhancers] = useState<string[]>([]);
   const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
+  const [selectedPresetId, setSelectedPresetId] = useState<string>(PRESET_PROMPTS[0].id);
+  const [stylePanelOpen, setStylePanelOpen] = useState<boolean>(false);
+  const [ctaPanelOpen, setCtaPanelOpen] = useState<boolean>(false);
   const [hostImage, setHostImage] = useState<File | null>(null);
   const [hostPreview, setHostPreview] = useState<string | null>(null);
   const [refImages, setRefImages] = useState<File[]>([]);
@@ -205,6 +255,11 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
   const isAuthenticated = useAuthStatus();
   const { refreshUserData } = useUser();
 
+  const selectedPreset = useMemo(
+    () => PRESET_PROMPTS.find((preset) => preset.id === selectedPresetId) ?? PRESET_PROMPTS[0],
+    [selectedPresetId]
+  );
+
   const additionMap = useMemo(() => {
     const map: Record<string, string> = {};
     STYLE_ENHANCERS.forEach((item) => {
@@ -215,6 +270,23 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
     });
     return map;
   }, []);
+
+  const clearSelections = useCallback(() => {
+    setSelectedEnhancers([]);
+    setSelectedBadges([]);
+  }, []);
+
+  const handlePresetChange = useCallback(
+    (id: string) => {
+      setSelectedPresetId(id);
+      const preset = PRESET_PROMPTS.find((item) => item.id === id);
+      if (preset) {
+        setPrompt(preset.prompt);
+        clearSelections();
+      }
+    },
+    [clearSelections]
+  );
 
   const handleImageUpload = useCallback(async (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -290,11 +362,6 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
     setSelectedBadges((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
-  };
-
-  const clearSelections = () => {
-    setSelectedEnhancers([]);
-    setSelectedBadges([]);
   };
 
   const handleGenerate = useCallback(async () => {
@@ -470,7 +537,7 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <span className="text-sm font-semibold text-black">Popular presets</span>
+                <span className="text-sm font-semibold text-black">Thumbnail preset</span>
                 <button
                   type="button"
                   onClick={clearSelections}
@@ -479,70 +546,107 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
                   Clear boosters
                 </button>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {PRESET_PROMPTS.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      setPrompt(item.prompt);
-                      clearSelections();
-                    }}
-                    className="inline-flex items-center gap-2 rounded-full border border-black/15 bg-white px-3 py-1.5 text-xs font-semibold text-black/80 hover:border-black/40 hover:text-black transition"
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                <div className="relative w-full sm:max-w-xs">
+                  <select
+                    value={selectedPresetId}
+                    onChange={(event) => handlePresetChange(event.target.value)}
+                    className="w-full appearance-none rounded-2xl border border-black/15 bg-white px-4 py-2 text-sm text-black shadow-sm focus:border-black/30 focus:outline-none focus:ring-2 focus:ring-black/10"
                   >
-                    <SparklesIcon className="h-3.5 w-3.5" />
-                    {item.label}
-                  </button>
-                ))}
+                    {PRESET_PROMPTS.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-black/50">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                      <path
+                        fillRule="evenodd"
+                        d="M5.23 7.21a.75.75 0 011.06.02L10 10.584l3.71-3.354a.75.75 0 111.04 1.08l-4.23 3.823a.75.75 0 01-1.04 0L5.21 8.31a.75.75 0 01.02-1.1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </span>
+                </div>
+                <p className="rounded-2xl border border-black/10 bg-white/60 px-4 py-3 text-xs text-black/70 sm:flex-1">
+                  {selectedPreset?.prompt}
+                </p>
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <span className="text-sm font-semibold text-black">Style boosters</span>
-                <p className="text-xs text-black/60">Toggle a few to keep your channel&apos;s look consistent.</p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {STYLE_ENHANCERS.map((item) => {
-                  const active = selectedEnhancers.includes(item.id);
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => toggleEnhancer(item.id)}
-                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                        active ? 'border-black bg-black text-white shadow' : 'border-black/15 bg-white text-black/75 hover:border-black/40 hover:text-black'
-                      }`}
-                    >
-                      {item.label}
-                    </button>
-                  );
-                })}
-              </div>
+            <div className="space-y-3 rounded-2xl border border-black/10 bg-white/60 p-4">
+              <button
+                type="button"
+                onClick={() => setStylePanelOpen((open) => !open)}
+                className="flex w-full items-center justify-between text-sm font-semibold text-black"
+              >
+                <span>Style boosters</span>
+                <span className="text-xs uppercase tracking-wide text-black/50">
+                  {stylePanelOpen ? 'Hide' : 'Show'}
+                </span>
+              </button>
+              {stylePanelOpen && (
+                <>
+                  <p className="text-xs text-black/60">Toggle a few to keep your channel&apos;s look consistent.</p>
+                  <div className="flex flex-wrap gap-2">
+                    {STYLE_ENHANCERS.map((item) => {
+                      const active = selectedEnhancers.includes(item.id);
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => toggleEnhancer(item.id)}
+                          className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                            active
+                              ? 'border-black bg-black text-white shadow'
+                              : 'border-black/15 bg-white text-black/75 hover:border-black/40 hover:text-black'
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </div>
 
-            <div className="space-y-3">
-              <div>
-                <span className="text-sm font-semibold text-black">Call-to-action add-ons</span>
-                <p className="text-xs text-black/60">Badges, dividers, or overlays to lift clicks.</p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {CTA_STICKERS.map((item) => {
-                  const active = selectedBadges.includes(item.id);
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => toggleBadge(item.id)}
-                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                        active ? 'border-black bg-black text-white shadow' : 'border-black/15 bg-white text-black/75 hover:border-black/40 hover:text-black'
-                      }`}
-                    >
-                      {item.label}
-                    </button>
-                  );
-                })}
-              </div>
+            <div className="space-y-3 rounded-2xl border border-black/10 bg-white/60 p-4">
+              <button
+                type="button"
+                onClick={() => setCtaPanelOpen((open) => !open)}
+                className="flex w-full items-center justify-between text-sm font-semibold text-black"
+              >
+                <span>Call-to-action add-ons</span>
+                <span className="text-xs uppercase tracking-wide text-black/50">
+                  {ctaPanelOpen ? 'Hide' : 'Show'}
+                </span>
+              </button>
+              {ctaPanelOpen && (
+                <>
+                  <p className="text-xs text-black/60">Badges, dividers, or overlays to lift clicks.</p>
+                  <div className="flex flex-wrap gap-2">
+                    {CTA_STICKERS.map((item) => {
+                      const active = selectedBadges.includes(item.id);
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => toggleBadge(item.id)}
+                          className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                            active
+                              ? 'border-black bg-black text-white shadow'
+                              : 'border-black/15 bg-white text-black/75 hover:border-black/40 hover:text-black'
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="space-y-2 rounded-2xl border border-black/10 bg-black/5 px-4 py-3 text-sm text-black/70">
