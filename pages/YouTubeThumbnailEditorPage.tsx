@@ -850,24 +850,25 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
           </div>
         )}
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-          <button
-            type="button"
-            onClick={handleGenerate}
-            disabled={isLoading}
-            className={`inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white shadow transition focus:outline-none focus-visible:ring-2 focus-visible:ring-black/30 ${
-              isLoading ? 'bg-black/40' : 'bg-black hover:bg-black/80'
-            }`}
-          >
-            <MagicWandIcon className="h-4 w-4" />
-            {isLoading ? 'Designing…' : 'Generate thumbnail'}
-          </button>
+        <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
           {isLoading ? (
-            <div className="w-full sm:flex-1">
+            <div className="w-full">
               <EtaTimer seconds={50} label="Rendering with Gemini — hang tight" />
             </div>
           ) : (
-            <div className="text-xs uppercase tracking-wide text-black/50">Average turnaround 30–45 seconds</div>
+            <>
+              <button
+                type="button"
+                onClick={handleGenerate}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white shadow transition hover:bg-black/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-black/30"
+              >
+                <MagicWandIcon className="h-4 w-4" />
+                Generate thumbnail
+              </button>
+              <div className="text-xs uppercase tracking-wide text-black/50">
+                Average turnaround 30–45 seconds
+              </div>
+            </>
           )}
         </div>
         <p className="text-xs text-center text-black/50 sm:text-left">

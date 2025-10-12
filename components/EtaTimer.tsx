@@ -28,17 +28,20 @@ export const EtaTimer: React.FC<EtaTimerProps> = ({ seconds, label }) => {
   const status = label || `Generating preview`;
 
   return (
-    <div className="w-full sm:max-w-md mx-auto sm:mx-0 text-center sm:text-left space-y-2 sm:space-y-3" aria-live="polite">
-      <div className="inline-flex items-center justify-center gap-2 rounded-full bg-black px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-white shadow-sm">
-        <span className="h-2 w-2 animate-pulse rounded-full bg-white"></span>
+    <div
+      className="w-full sm:max-w-md mx-auto sm:mx-0 space-y-3 rounded-2xl border border-black/10 bg-white/90 p-4 shadow-sm"
+      aria-live="polite"
+    >
+      <div className="inline-flex items-center gap-2 rounded-full bg-black px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
+        <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
         <span>{status}</span>
       </div>
-      <div className="text-sm font-semibold text-black dark:text-white">
-        ~{remaining}s remaining (est. {totalSeconds}s)
+      <div className="text-sm font-semibold text-black tracking-wide">
+        ~{remaining}s remaining <span className="text-black/50">(est. {totalSeconds}s)</span>
       </div>
-      <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/20 dark:bg-white/25">
+      <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/10">
         <div
-          className="h-full rounded-full bg-black transition-[width] duration-200 ease-out dark:bg-white"
+          className="h-full rounded-full bg-black transition-[width] duration-200 ease-out"
           style={{ width: `${pct}%` }}
         />
       </div>
