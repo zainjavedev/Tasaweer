@@ -478,6 +478,29 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
     }
   }, []);
 
+  const addRefFromUrl = useCallback(
+    async (url: string) => {
+      if (refImages.length >= maxRefImages) {
+        return;
+      }
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('failed');
+        const blob = await response.blob();
+        const extension = blob.type.split('/')[1] || 'webp';
+        const file = new File([blob], `thumbnail-reference-${Date.now()}.${extension}`, {
+          type: blob.type || 'image/webp',
+        });
+        const dataUrl = await toDataUrl(file);
+        setRefImages((prev) => [...prev, file]);
+        setRefPreviews((prev) => [...prev, dataUrl]);
+      } catch {
+        setError('Could not add this thumbnail as a reference. Download it and upload manually instead.');
+      }
+    },
+    [refImages.length]
+  );
+
   const selectionSummary = useMemo(() => {
     const labels: string[] = [];
     STYLE_ENHANCERS.forEach((item) => {
@@ -492,6 +515,8 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
     }
     return boosterSummary;
   }, [hostImage, selectedBadges, selectedEnhancers]);
+
+  const refLimitReached = refImages.length >= maxRefImages;
 
   return (
     <div className="space-y-10">
@@ -782,6 +807,20 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
                             </button>
                             <button
                               type="button"
+                              disabled={refLimitReached}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                void addRefFromUrl(url);
+                              }}
+                              className={`rounded border border-white/50 px-2 py-0.5 text-[10px] uppercase tracking-wide transition ${
+                                refLimitReached ? 'cursor-not-allowed opacity-60' : 'hover:bg-white/20'
+                              }`}
+                              title={refLimitReached ? 'Remove a reference image to add another.' : 'Add this thumbnail as a reference'}
+                            >
+                              Use as ref
+                            </button>
+                            <button
+                              type="button"
                               onClick={(event) => {
                                 event.stopPropagation();
                                 download(url, `tasaweers-thumbnail-${version}.png`);
@@ -811,7 +850,7 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
           </div>
         )}
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
           <button
             type="button"
             onClick={handleGenerate}
@@ -824,7 +863,9 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
             {isLoading ? 'Designing…' : 'Generate thumbnail'}
           </button>
           {isLoading ? (
-            <EtaTimer seconds={50} label="Rendering with Gemini — hang tight" />
+            <div className="w-full sm:flex-1">
+              <EtaTimer seconds={50} label="Rendering with Gemini — hang tight" />
+            </div>
           ) : (
             <div className="text-xs uppercase tracking-wide text-black/50">Average turnaround 30–45 seconds</div>
           )}
