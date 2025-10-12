@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { CameraIcon, SwapIcon, UploadIcon, ChevronDownIcon } from '../components/Icon';
 import { addUserImage } from '../utils/userImages';

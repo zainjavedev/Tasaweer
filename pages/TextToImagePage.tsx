@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { generateImageFromText } from '../services/geminiService';
 import { EditedImageResult } from '../types';

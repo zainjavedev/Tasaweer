@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect, useState } from 'react';
 import { getUserImages, removeUserImage, clearUserImages } from '../utils/userImages';
 import { UserImage } from '../types';

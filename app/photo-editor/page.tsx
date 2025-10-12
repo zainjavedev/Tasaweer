@@ -1,11 +1,12 @@
-'use client';
-
-import React, { Suspense } from 'react';
+import { Suspense } from 'react';
 import PhotoEditorPage from '@/pages/PhotoEditorPage';
+import { buildPageMetadata } from '@/lib/seoMetadata';
+
+export const metadata = buildPageMetadata('/photo-editor');
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className="text-center p-8">Loading...</div>}>
+    <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
       <PhotoEditorPage />
     </Suspense>
   );

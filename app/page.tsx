@@ -1,27 +1,8 @@
-'use client';
+import HomePageClient from './HomePageClient';
+import { buildPageMetadata } from '@/lib/seoMetadata';
 
-import React from 'react';
-import HomePage from '@/pages/HomePage';
-import { useRouter } from 'next/navigation';
-import type { Page } from '@/types';
+export const metadata = buildPageMetadata('/');
 
 export default function Page() {
-  const router = useRouter();
-  const goTo = (p: Page) => {
-    const map: Record<Page, string> = {
-      home: '/',
-      text2image: '/text2image',
-      'try-apparel': '/try-apparel',
-      'photo-editor': '/photo-editor',
-      'youtube-thumbnail-editor': '/youtube-thumbnail-editor',
-      restoration: '/restoration',
-      replace: '/replace',
-      'bulk-edit': '/bulk-edit',
-      'watermark-remover': '/gemini-watermark-remover',
-    };
-    router.push(map[p]);
-  };
-  return (
-    <HomePage goTo={goTo} />
-  );
+  return <HomePageClient />;
 }

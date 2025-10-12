@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect, useState, MouseEvent } from 'react';
 import { Page } from '../types';
 import { SparklesIcon, MagicWandIcon, SwapIcon, CheckIcon, StarIcon, CleanIcon } from '../components/Icon';

@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { CameraIcon, UploadIcon, MagicWandIcon, SwapIcon } from '../components/Icon';
 import { editImageWithNanoBanana } from '../services/geminiService';

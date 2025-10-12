@@ -1,13 +1,13 @@
-'use client';
-
-import React, { Suspense } from 'react';
+import { Suspense } from 'react';
 import GeminiWatermarkRemoverPage from '@/pages/GeminiWatermarkRemoverPage';
+import { buildPageMetadata } from '@/lib/seoMetadata';
+
+export const metadata = buildPageMetadata('/gemini-watermark-remover');
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className="text-center p-8">Loading...</div>}>
+    <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
       <GeminiWatermarkRemoverPage />
     </Suspense>
   );
 }
-
