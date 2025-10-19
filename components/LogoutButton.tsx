@@ -18,26 +18,25 @@ export default function LogoutButton() {
     } catch {}
   }, [router]);
 
-  const logout = () => {
+  const logout = async () => {
     if (isNavigating.current) return;
     isNavigating.current = true;
-    // First navigate to login to avoid visible UI flicker
-    router.push('/login');
-    // Then clear auth and storage on the next tick
-    setTimeout(() => {
+    try {
+      // Ask server to clear HttpOnly cookie
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
+    } finally {
+      // Clear any client-side token and caches
       try {
         clearToken();
         if (typeof window !== 'undefined') {
           window.localStorage.clear();
-          document.cookie.split(';').forEach((c) => {
-            document.cookie = c
-              .replace(/^\s+/, '')
-              .replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
-          });
         }
       } catch {}
-      refreshUserData();
-    }, 0);
+      // Refresh user state first so UI swaps immediately
+      await refreshUserData();
+      // Navigate to login afterwards
+      router.replace('/login');
+    }
   };
 
   return (

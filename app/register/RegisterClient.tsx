@@ -28,7 +28,8 @@ export default function RegisterClient() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Registration failed');
-      router.replace(`/verify?email=${encodeURIComponent(email)}`);
+      // Account created; you are signed in. Head to settings.
+      router.replace('/profile');
       setTimeout(() => setLoading(false), 150);
       return;
     } catch (err: any) {

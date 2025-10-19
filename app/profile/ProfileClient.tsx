@@ -20,12 +20,8 @@ function ProfilePage() {
   const { user } = useUser();
 
   useEffect(() => {
-    if (user?.email) {
-      setEmail(user.email);
-    } else {
-      // In a real app, you'd fetch the user's email from the server
-      // For now, we'll use a placeholder email
-      setEmail('user@example.com'); // This should come from the user data
+    if (user && 'email' in user) {
+      setEmail(user.email || '');
     }
   }, [user]);
 
@@ -84,7 +80,7 @@ function ProfilePage() {
             <div className="bg-white/40 backdrop-blur-xl rounded-[12px] border-2 border-white/30 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] p-6">
               <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-6">
                 <User className="w-6 h-6 text-black" />
-                <h2 className="text-xl font-medium text-black">Profile Information</h2>
+                <h2 className="text-xl font-medium text-black">Settings</h2>
               </div>
 
               <div className="space-y-4">
@@ -110,10 +106,11 @@ function ProfilePage() {
                     </span>
                     <input
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      readOnly
                       className="w-full h-10 rounded-[8px] border border-gray-300 bg-white/40 pl-10 pr-3 text-gray-900 placeholder:text-black/50 focus:border-black focus:outline-none"
                     />
                   </div>
+                  <p className="mt-1 text-xs text-black/60">{user?.verified ? 'Verified' : 'Not verified'}</p>
                 </div>
               </div>
             </div>
@@ -155,13 +152,52 @@ function ProfilePage() {
             </div>
           </div>
 
-          {/* Password Reset */}
+          {/* Verification + Password Reset */}
           <div className="lg:col-span-1">
             <div className="bg-white/40 backdrop-blur-xl rounded-[12px] border-2 border-white/30 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] p-6">
               <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-6">
                 <KeyRound className="w-6 h-6 text-black" />
-                <h2 className="text-xl font-medium text-black">Reset Password</h2>
+                <h2 className="text-xl font-medium text-black">Verify email & Reset Password</h2>
               </div>
+
+              {!user?.verified && (
+                <div className="mb-5 space-y-2">
+                  <div className="text-sm font-medium text-black">Enter verification code</div>
+                  <div className="flex gap-2 items-center">
+                    <input id="settings-verify-code" className="h-10 w-36 rounded-[8px] border border-gray-300 bg-white/40 px-3 text-black" placeholder="123456" />
+                    <button
+                      className="h-10 rounded-lg bg-black px-3 text-white text-sm font-semibold"
+                      onClick={async () => {
+                        setLoading(true);
+                        setError(null);
+                        setSuccess(null);
+                        try {
+                          const code = (document.getElementById('settings-verify-code') as HTMLInputElement)?.value || '';
+                          const res = await fetch('/api/auth/verify', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, code }) });
+                          const data = await res.json().catch(() => ({}));
+                          if (!res.ok) throw new Error(data.error || 'Verification failed');
+                          setSuccess('Email verified! Your quota increased and watermark removed.');
+                        } catch (e: any) {
+                          setError(e?.message || 'Verification failed');
+                        } finally {
+                          setLoading(false);
+                        }
+                      }}
+                      type="button"
+                    >Verify</button>
+                    <button
+                      className="h-10 rounded-lg border px-3 text-sm font-semibold"
+                      onClick={async () => {
+                        try {
+                          await fetch('/api/auth/resend', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email }) });
+                          setSuccess('Verification code sent to your email.');
+                        } catch {}
+                      }}
+                      type="button"
+                    >Resend</button>
+                  </div>
+                </div>
+              )}
 
               <form onSubmit={handlePasswordReset} className="space-y-4">
                 <div>

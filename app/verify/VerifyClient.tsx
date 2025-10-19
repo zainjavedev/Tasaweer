@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { AtSign } from 'lucide-react';
+import { AtSign, KeyRound } from 'lucide-react';
 import { Fredoka } from 'next/font/google';
 import { useRouter, useSearchParams } from 'next/navigation';
 import loginBg from '@/assets/login-bg.png';
@@ -15,8 +15,8 @@ export default function VerifyClient() {
   const [status, setStatus] = useState<'pending' | 'ok' | 'error'>('pending');
   const [message, setMessage] = useState('Enter the 6-digit code we emailed you.');
   const [email, setEmail] = useState('');
-  const [digits, setDigits] = useState<string[]>(Array(OTP_LENGTH).fill(''));
-  const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
+  const [code, setCode] = useState('');
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
 
@@ -34,8 +34,8 @@ export default function VerifyClient() {
       setMessage('Email is required');
       return;
     }
-    const code = digits.join('');
-    if (code.length !== OTP_LENGTH) {
+    const cleaned = code.replace(/\D/g, '');
+    if (cleaned.length !== OTP_LENGTH) {
       setStatus('error');
       setMessage('Enter the full 6-digit code');
       return;
@@ -46,7 +46,7 @@ export default function VerifyClient() {
       const res = await fetch('/api/auth/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code }),
+        body: JSON.stringify({ email, code: cleaned }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Invalid code');
@@ -90,24 +90,22 @@ export default function VerifyClient() {
       />
 
       <div className="relative mx-auto max-w-md overflow-hidden rounded-[12px] border-2 border-white/30 bg-white/40 p-0 text-gray-900 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] backdrop-blur-xl">
-        <div className="relative z-10 space-y-4 p-8 text-center sm:p-10">
-          <h2 className="text-2xl font-medium tracking-tight text-black">Verification Code sent</h2>
-          <p className="text-sm text-black/70">If you didn’t receive it, check spam or try again.</p>
+        <div className="relative z-10 space-y-5 p-8 sm:p-10">
+          <div className="text-center">
+            <h2 className="text-2xl font-medium tracking-tight text-black">Verify your email</h2>
+            <p className="mt-1 text-sm text-black/70">Enter the {OTP_LENGTH}-digit code we sent to your email.</p>
+          </div>
 
-          <form className="space-y-3 text-left" noValidate onSubmit={submit}>
+          <form className="space-y-4" onSubmit={submit} noValidate>
             <div>
-              <label className="mb-1 block text-sm font-medium text-black" htmlFor="email">
-                Email
-              </label>
+              <label className="mb-1 block text-sm font-medium text-black" htmlFor="email">Email</label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-3 flex items-center text-black/60">
-                  <AtSign aria-hidden="true" className="h-5 w-5 flex-none" strokeWidth={1.8} />
+                  <AtSign aria-hidden className="h-5 w-5 flex-none" strokeWidth={1.8} />
                 </span>
                 <input
-                  aria-describedby="email-error"
-                  aria-invalid={status === 'error' && !email}
-                  className="h-11 w-full rounded-[10px] border border-gray-300 bg-white/40 pl-10 pr-28 text-gray-900 placeholder:text-black/50 focus:border-black focus:outline-none"
                   id="email"
+                  className="h-11 w-full rounded-[10px] border border-gray-300 bg-white/40 pl-10 pr-28 text-gray-900 placeholder:text-black/50 focus:border-black focus:outline-none"
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
                   required
@@ -125,54 +123,28 @@ export default function VerifyClient() {
                   </button>
                 </div>
               </div>
-              {status === 'error' && !email ? (
-                <p className="mt-1 text-sm text-red-600" id="email-error">
-                  Email is required
-                </p>
-              ) : null}
             </div>
+
             <div>
-              <label className="mb-1 block text-sm font-medium text-black">6-digit code</label>
-              <div className="flex items-center justify-between gap-2">
-                {Array.from({ length: OTP_LENGTH }).map((_, index) => (
-                  <input
-                    key={index}
-                    ref={(element) => {
-                      inputsRef.current[index] = element;
-                    }}
-                    aria-label={`Digit ${index + 1}`}
-                    className="h-12 w-12 rounded-[10px] border border-gray-300 bg-white/40 text-center text-2xl focus:border-black focus:outline-none sm:h-14 sm:w-14"
-                    inputMode="numeric"
-                    maxLength={1}
-                    onChange={(event) => {
-                      const val = event.target.value.replace(/\D/g, '').slice(0, 1);
-                      const next = [...digits];
-                      next[index] = val;
-                      setDigits(next);
-                      if (val && index < OTP_LENGTH - 1) {
-                        inputsRef.current[index + 1]?.focus();
-                      }
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Backspace' && !digits[index] && index > 0) {
-                        inputsRef.current[index - 1]?.focus();
-                      }
-                    }}
-                    onPaste={(event) => {
-                      const text = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, OTP_LENGTH);
-                      if (!text) return;
-                      event.preventDefault();
-                      const next = Array(OTP_LENGTH).fill('');
-                      for (let j = 0; j < text.length; j += 1) next[j] = text[j];
-                      setDigits(next);
-                      inputsRef.current[Math.min(text.length, OTP_LENGTH - 1)]?.focus();
-                    }}
-                    pattern="[0-9]*"
-                    value={digits[index]}
-                  />
-                ))}
+              <label className="mb-1 block text-sm font-medium text-black" htmlFor="code">Verification code</label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-3 flex items-center text-black/60">
+                  <KeyRound aria-hidden className="h-5 w-5 flex-none" strokeWidth={1.8} />
+                </span>
+                <input
+                  ref={inputRef}
+                  id="code"
+                  inputMode="numeric"
+                  maxLength={OTP_LENGTH}
+                  pattern="[0-9]*"
+                  className="h-11 w-full rounded-[10px] border border-gray-300 bg-white/40 pl-10 pr-3 text-gray-900 placeholder:text-black/50 focus:border-black focus:outline-none tracking-widest"
+                  placeholder="123456"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, OTP_LENGTH))}
+                />
               </div>
             </div>
+
             <button
               className="btn-shine relative h-11 w-full rounded-[10px] bg-black px-4 font-medium tracking-wide text-white shadow-[0_6px_20px_rgba(0,0,0,0.25)] hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-black/30 disabled:opacity-60"
               disabled={loading}
@@ -182,11 +154,9 @@ export default function VerifyClient() {
             </button>
           </form>
 
-          <div className="mt-2 text-sm">{message}</div>
-          <div className="mt-2 text-sm text-black/70">
-            <a className="text-black hover:underline" href="/login">
-              Go to login
-            </a>
+          <div className="text-center text-sm">{message}</div>
+          <div className="text-center text-sm text-black/70">
+            <a className="text-black hover:underline" href="/login">Go to login</a>
           </div>
         </div>
       </div>

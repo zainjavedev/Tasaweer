@@ -97,7 +97,9 @@ export async function getAuthenticatedUser(req: Request | NextRequest) {
       username: user.username,
       role: user.role,
       imageCount: user.imageCount,
-      imageLimit: user.imageLimit
+      imageLimit: user.imageLimit,
+      email: user.email,
+      verified: Boolean(user.emailVerifiedAt)
     };
   } catch {
     return null;

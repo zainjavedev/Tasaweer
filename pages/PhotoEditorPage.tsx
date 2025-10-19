@@ -13,6 +13,7 @@ import { photoEditingSamples } from '@/lib/samples';
 import { useRouter, useSearchParams } from 'next/navigation';
 import SurfaceCard from '@/components/SurfaceCard';
 import { useAuthStatus } from '@/utils/useAuthStatus';
+import CompareSection from '@/components/CompareSection';
 
 const PhotoEditorPage: React.FC = () => {
   const [originalImage, setOriginalImage] = useState<File | null>(null);
@@ -322,6 +323,7 @@ const PhotoEditorPage: React.FC = () => {
   const previousResults = results.slice(1);
 
   return (
+    <>
     <SurfaceCard className="max-w-5xl mx-auto overflow-hidden p-6 sm:p-8 space-y-6 sm:space-y-8">
       <div className="text-center space-y-1">
         <h2 className="text-2xl sm:text-3xl font-bold text-black">Photo Editor</h2>
@@ -447,6 +449,10 @@ const PhotoEditorPage: React.FC = () => {
               )}
             </div>
           </section>
+
+          {false && originalPreview && latestResult && (
+            <CompareSection originalSrc={originalPreview} latestSrc={latestResult} />
+          )}
 
           <section className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -679,8 +685,16 @@ const PhotoEditorPage: React.FC = () => {
 
       </div>
 
-      <Lightbox imageUrl={lightbox} onClose={() => setLightbox(null)} title="Preview" alt="Edited photo preview" />
     </SurfaceCard>
+
+    {originalPreview && latestResult && (
+      <SurfaceCard className="max-w-5xl mx-auto p-6 sm:p-8">
+        <CompareSection originalSrc={originalPreview} latestSrc={latestResult} />
+      </SurfaceCard>
+    )}
+
+    <Lightbox imageUrl={lightbox} onClose={() => setLightbox(null)} title="Preview" alt="Edited photo preview" />
+    </>
   );
 };
 

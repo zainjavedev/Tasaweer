@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -9,14 +10,11 @@ import {
   MenuIcon,
   XIcon,
   SparklesIcon,
-  SwapIcon,
-  MagicWandIcon,
-  CleanIcon,
   BoxIcon,
   ShieldIcon,
-  YoutubeIcon,
   ChevronDownIcon,
 } from './Icon';
+import { toolPages } from '@/lib/tools';
 import { Fredoka } from 'next/font/google';
 import { clearToken } from '@/utils/authClient';
 import { useUser } from '@/utils/useUser';
@@ -33,12 +31,14 @@ export const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isToolsOpen, setIsToolsOpen] = useState(false);
-  const { user, refreshUserData } = useUser();
+  const [mounted, setMounted] = useState(false);
+  const { user, loading, refreshUserData } = useUser();
   const router = useRouter();
   const pathname = usePathname();
   const toolsMenuRef = useRef<HTMLLIElement | null>(null);
 
   useEffect(() => {
+    setMounted(true);
     try {
       const paths = [
         '/',
@@ -56,16 +56,10 @@ export const Header: React.FC = () => {
     } catch {}
   }, [router]);
 
-  const toolsNavItems: NavEntry[] = [
-    { href: '/text2image', label: 'Text → Image', Icon: SparklesIcon },
-    { href: '/try-apparel', label: 'Try Apparel', Icon: SwapIcon },
-    { href: '/photo-editor', label: 'Photo Editor', Icon: MagicWandIcon },
-    { href: '/youtube-thumbnail-editor', label: 'YouTube Thumbnails', Icon: YoutubeIcon },
-    { href: '/gemini-watermark-remover', label: 'Watermark Remover', Icon: CleanIcon },
-  ];
+  const toolsNavItems: NavEntry[] = toolPages.map(({ href, label, Icon }) => ({ href, label, Icon }));
 
   const authenticatedLinks: NavEntry[] = [
-    { href: '/profile', label: 'Profile', Icon: UsersIcon },
+    { href: '/profile', label: 'Settings', Icon: UsersIcon },
     ...(user?.role === 'ADMIN' ? [{ href: '/admin', label: 'Admin', Icon: ShieldIcon }] : []),
   ];
 
@@ -99,24 +93,23 @@ export const Header: React.FC = () => {
     closeMenu();
   };
 
-  const performLogout = () => {
+  const performLogout = async () => {
+    // Clear server HttpOnly cookie first
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+    } catch {}
+    // Clear client tokens and caches
     try {
       clearToken();
       if (typeof window !== 'undefined') {
         window.localStorage.clear();
-        document.cookie.split(';').forEach((c) => {
-          document.cookie = c
-            .replace(/^\s+/, '')
-            .replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
-        });
       }
     } catch {}
 
-    router.replace('/login');
     setShowLogoutConfirm(false);
-    setTimeout(() => {
-      refreshUserData();
-    }, 100);
+    // Refresh header state immediately so UI switches away from authed view
+    await refreshUserData();
+    router.replace('/login');
   };
 
   useEffect(() => {
@@ -147,36 +140,54 @@ export const Header: React.FC = () => {
       <nav className="hidden md:block">
         <ul className="flex items-center gap-6 text-black font-semibold">
           <li ref={toolsMenuRef} className="relative">
-            <button
-              type="button"
-              onClick={() => setIsToolsOpen((open) => !open)}
-              className={`flex items-center gap-2 text-sm transition-colors duration-200 ${
-                isToolsActive ? 'text-black' : 'text-black/70 hover:text-black'
-              }`}
-            >
-              <SparklesIcon className="w-4 h-4" />
-              Tools
-              <ChevronDownIcon className={`w-3 h-3 transition-transform ${isToolsOpen ? 'rotate-180' : ''}`} />
-            </button>
-            {isToolsOpen && (
-              <div className="absolute right-0 mt-3 w-64 rounded-2xl border border-black/10 bg-white/95 p-3 shadow-lg">
-                <div className="flex flex-col gap-1">
-                  {toolsNavItems.map(({ href, label, Icon }) => (
-                    <Link
-                      key={href}
-                      href={href}
-                      className={dropdownLinkClasses(href)}
-                      onClick={() => setIsToolsOpen(false)}
-                    >
-                      <Icon className="w-4 h-4" />
-                      {label}
-                    </Link>
-                  ))}
-                </div>
-              </div>
+            {loading ? (
+              <div className="h-8 w-24 rounded-lg bg-black/10 animate-pulse" />
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsToolsOpen((open) => !open)}
+                  className={`flex items-center gap-2 text-sm transition-colors duration-200 ${
+                    isToolsActive ? 'text-black' : 'text-black/70 hover:text-black'
+                  }`}
+                >
+                  <SparklesIcon className="w-4 h-4" />
+                  Tools
+                  <ChevronDownIcon className={`w-3 h-3 transition-transform ${isToolsOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {isToolsOpen && (
+                  <div className="absolute right-0 mt-3 w-64 rounded-2xl border border-black/10 bg-white/95 p-3 shadow-lg">
+                    <div className="flex flex-col gap-1">
+                      {toolsNavItems.map(({ href, label, Icon }) => (
+                        <Link
+                          key={href}
+                          href={href}
+                          className={dropdownLinkClasses(href)}
+                          onClick={() => setIsToolsOpen(false)}
+                        >
+                          <Icon className="w-4 h-4" />
+                          {label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </li>
-          {user ? (
+          {loading ? (
+            <>
+              <li className="flex items-center gap-2 text-sm text-black">
+                <div className="h-4 w-24 rounded bg-black/10 animate-pulse" />
+              </li>
+              <li className="flex items-center gap-2 text-sm text-black">
+                <div className="h-4 w-20 rounded bg-black/10 animate-pulse" />
+              </li>
+              <li>
+                <div className="h-8 w-24 rounded-lg bg-black/10 animate-pulse" />
+              </li>
+            </>
+          ) : user ? (
             <>
               <li className="flex items-center gap-2 text-sm text-black">
                 <UsersIcon className="w-4 h-4" />
@@ -229,21 +240,44 @@ export const Header: React.FC = () => {
           <nav className="px-6 py-4">
             <ul className="space-y-3 text-black font-semibold">
               <li className="text-xs uppercase tracking-wide text-black/50">Tools</li>
-              {toolsNavItems.map(({ href, label, Icon }) => (
-                <li key={href} className="flex items-center gap-2 rounded-lg p-2 hover:bg-black/10 transition duration-200">
-                  <Icon className="w-5 h-5 text-black flex-shrink-0" />
-                  <Link
-                    href={href}
-                    className="flex-1 text-left text-sm text-black/80 hover:text-black"
-                    onClick={() => {
-                      closeMenu();
-                    }}
-                  >
-                    {label}
-                  </Link>
-                </li>
-              ))}
-              {user ? (
+              {loading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <li key={`tools-skel-${i}`} className="flex items-center gap-2 rounded-lg p-2">
+                    <div className="w-5 h-5 bg-black/10 rounded" />
+                    <div className="h-4 w-40 bg-black/10 rounded animate-pulse" />
+                  </li>
+                ))
+              ) : (
+                toolsNavItems.map(({ href, label, Icon }) => (
+                  <li key={href} className="flex items-center gap-2 rounded-lg p-2 hover:bg-black/10 transition duration-200">
+                    <Icon className="w-5 h-5 text-black flex-shrink-0" />
+                    <Link
+                      href={href}
+                      className="flex-1 text-left text-sm text-black/80 hover:text-black"
+                      onClick={() => {
+                        closeMenu();
+                      }}
+                    >
+                      {label}
+                    </Link>
+                  </li>
+                ))
+              )}
+              {loading ? (
+                <>
+                  <li className="flex items-center gap-2 rounded-lg p-2">
+                    <div className="w-5 h-5 bg-black/10 rounded" />
+                    <div className="h-4 w-32 bg-black/10 rounded animate-pulse" />
+                  </li>
+                  <li className="flex items-center gap-2 rounded-lg p-2">
+                    <div className="w-5 h-5 bg-black/10 rounded" />
+                    <div className="h-4 w-24 bg-black/10 rounded animate-pulse" />
+                  </li>
+                  <li className="flex items-center gap-2 rounded-lg p-2">
+                    <div className="h-8 w-full bg-black/10 rounded animate-pulse" />
+                  </li>
+                </>
+              ) : user ? (
                 <>
                   <li className="flex items-center gap-2 rounded-lg p-2 text-sm text-black">
                     <UsersIcon className="w-5 h-5 text-black flex-shrink-0" />
@@ -294,9 +328,9 @@ export const Header: React.FC = () => {
         </div>
       )}
 
-      {showLogoutConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9999]">
-          <div className="bg-white/40 backdrop-blur-xl rounded-2xl border-2 border-white/30 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] p-6 max-w-sm w-full">
+      {mounted && showLogoutConfirm && createPortal(
+        <div className="fixed inset-0 min-h-screen bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-[10001]">
+          <div className="bg-white rounded-2xl border-2 border-white/30 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] p-6 max-w-sm w-full">
             <div className="text-center mb-6">
               <div className="w-12 h-12 mx-auto mb-4 bg-black/10 rounded-full flex items-center justify-center">
                 <StarIcon className="w-6 h-6 text-black" />
@@ -321,7 +355,8 @@ export const Header: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </header>
   );

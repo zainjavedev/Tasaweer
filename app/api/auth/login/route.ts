@@ -25,23 +25,18 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     const ok = await verifyPassword(password, user.passwordHash);
     if (!ok) return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
-    if (!user.email || !user.emailVerifiedAt) {
-      // Issue a fresh 6-digit code and prompt user to verify
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
-      const codeHash = crypto.createHash('sha256').update(code).digest('hex');
-      const expires = new Date(Date.now() + 1000 * 60 * 15);
-      await prisma.user.update({ where: { id: user.id }, data: { verificationToken: code, verificationTokenExpires: expires } });
-      if (user.email) {
-        await sendVerificationCodeEmail(user.email, code);
-      }
-      return NextResponse.json(
-        { unverified: true, email: user.email, error: 'Email not verified. Enter the code we just sent.' },
-        { status: 403 }
-      );
-    }
+    // Allow login regardless of verification; users can verify later in Settings
     const token = await signToken({ sub: user.id, username: user.username, role: user.role });
     return NextResponse.json(
-      { token, username: user.username, role: user.role, imageCount: user.imageCount, imageLimit: user.imageLimit },
+      {
+        token,
+        username: user.username,
+        role: user.role,
+        imageCount: user.imageCount,
+        imageLimit: user.imageLimit,
+        email: user.email,
+        verified: Boolean(user.emailVerifiedAt),
+      },
       { headers: setAuthCookieHeaders(token) }
     );
   } catch (err: any) {

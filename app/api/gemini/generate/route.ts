@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { prompt, additionalImages, aspectRatio } = await req.json();
+    let { prompt, additionalImages, aspectRatio } = await req.json();
     if (!prompt || typeof prompt !== 'string') {
       return NextResponse.json({ error: 'Missing prompt' }, { status: 400 });
     }
@@ -28,6 +28,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         error: `Image generation limit reached. You have generated ${user.imageCount} out of ${user.imageLimit} images.`
       }, { status: 429 });
+    }
+
+    // Add watermark note for non-verified users
+    if (!isAdmin && !user.verified) {
+      const watermarkNote = 'add small tasaweers watermark on this image on bottom right';
+      if (typeof prompt === 'string') prompt = `${prompt} ${watermarkNote}`;
     }
 
     // Generate the image

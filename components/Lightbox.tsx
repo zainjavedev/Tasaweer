@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 interface LightboxProps {
   imageUrl?: string | null;
@@ -42,56 +43,62 @@ const Lightbox: React.FC<LightboxProps> = ({
 
   const headerTitle = useMemo(() => title ?? 'Image preview', [title]);
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // If no image, we still run hooks above to keep hook order stable
   if (!source) return null;
 
-  return (
+  const overlay = (
     <div
-      className="fixed inset-0 z-[150] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 md:p-8"
+      className="fixed inset-0 z-[10002] bg-black/85 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       onClick={onClose}
     >
-      <div
-        className="relative flex w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-neutral-950 text-white shadow-2xl"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
-          <div className="space-y-1">
-            <p className="text-sm font-semibold text-white/90">{headerTitle}</p>
-            {description && <div className="text-xs text-white/60">{description}</div>}
-          </div>
-          <div className="flex items-center gap-2">
-            {actions}
-            {onDownload && (
-              <button
-                type="button"
-                onClick={onDownload}
-                className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/20"
-              >
-                Download
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-full border border-white/30 bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/25"
-              aria-label="Close preview"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-        <div className="flex-1 overflow-auto bg-neutral-900/40 p-4">
+      <div className="relative grid h-full w-full place-items-center p-2 sm:p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="relative max-w-[88vw] sm:max-w-[78vw] md:max-w-[66vw] lg:max-w-[58vw] xl:max-w-[52vw] max-h-[78vh] sm:max-h-[72vh] md:max-h-[66vh] lg:max-h-[62vh] xl:max-h-[60vh]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={source}
             alt={alt}
-            className="mx-auto h-full max-h-[72vh] w-full max-w-full rounded-2xl object-contain"
+            className="w-auto h-auto object-contain rounded-xl shadow-2xl max-w-[88vw] sm:max-w-[78vw] md:max-w-[66vw] lg:max-w-[58vw] xl:max-w-[52vw] max-h-[78vh] sm:max-h-[72vh] md:max-h-[66vh] lg:max-h-[62vh] xl:max-h-[60vh]"
           />
+          {/* Top overlay with title/actions (YouTube-like) */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-2 sm:p-3">
+            <div className="hidden sm:flex flex-col gap-1 pointer-events-auto bg-black/30 rounded-md px-2 py-1">
+              <p className="text-white text-sm font-semibold leading-tight line-clamp-1">{headerTitle}</p>
+              {description && <div className="text-white/80 text-xs leading-tight">{description}</div>}
+            </div>
+            <div className="ml-auto flex items-center gap-2 pointer-events-auto">
+              {actions}
+              {onDownload && (
+                <button
+                  type="button"
+                  onClick={onDownload}
+                  className="rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-white hover:bg-white/25"
+                >
+                  Download
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-full bg-white/20 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-white hover:bg-white/30"
+                aria-label="Close preview"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
+
+  return mounted && typeof document !== 'undefined' ? createPortal(overlay, document.body) : null;
 };
 
 export default Lightbox;

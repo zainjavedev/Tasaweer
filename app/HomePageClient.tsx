@@ -3,6 +3,8 @@
 import HomePage from '@/pages/HomePage';
 import type { Page } from '@/types';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { toolPages } from '@/lib/tools';
 
 const routeMap: Record<Page, string> = {
   home: '/',
@@ -22,6 +24,13 @@ export default function HomePageClient() {
   const goTo = (page: Page) => {
     router.push(routeMap[page]);
   };
+
+  // Prefetch tool pages to make navigation feel instant from the homepage
+  useEffect(() => {
+    try {
+      toolPages.forEach((t) => router.prefetch?.(t.href));
+    } catch {}
+  }, [router]);
 
   return <HomePage goTo={goTo} />;
 }

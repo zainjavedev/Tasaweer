@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { getToken, authorizedFetch, AUTH_TOKEN_CHANGE_EVENT } from './authClient';
-import { setUserLimits, UserLimits, getUserLimits } from './userLimits';
+import { getToken, authorizedFetch, AUTH_TOKEN_CHANGE_EVENT, hasSessionCookie } from './authClient';
+import { setUserLimits, UserLimits, getUserLimits, clearUserLimits } from './userLimits';
 
 export interface UserData {
   username: string | null;
@@ -10,6 +10,8 @@ export interface UserData {
   imageCount: number | null;
   imageLimit: number | null;
   effectiveLimit: number | null;
+  email?: string | null;
+  verified?: boolean;
 }
 
 export function useUser() {
@@ -29,7 +31,8 @@ export function useUser() {
       if (!response.ok) {
         if (response.status === 401) {
           setUser(null);
-          setUserLimits({ imageCount: 0, imageLimit: null, role: 'FREE' });
+          // Clear any cached limits so UI doesn't show logged-in state
+          clearUserLimits();
           return;
         }
         throw new Error('Failed to fetch user data');
@@ -78,8 +81,10 @@ export function useUser() {
   // Also load initial data from localStorage if available
   useEffect(() => {
     const storedLimits = getUserLimits();
-    if (storedLimits && !user) {
-      const token = getToken();
+    // Only hydrate from local storage if we appear to have a session
+    const token = getToken();
+    const hasSession = !!token || hasSessionCookie();
+    if (storedLimits && !user && hasSession) {
       const username = token ? (() => {
         const idx = token.indexOf(':');
         if (idx > 0) return token.slice(0, idx);

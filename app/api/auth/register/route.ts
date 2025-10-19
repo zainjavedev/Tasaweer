@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, isPrismaAvailable } from '@/lib/prisma';
-import { hashPassword } from '@/lib/authDb';
+import { hashPassword, signToken, setAuthCookieHeaders } from '@/lib/authDb';
 import { sendVerificationCodeEmail } from '@/lib/email';
 import crypto from 'crypto';
 
@@ -34,8 +34,23 @@ export async function POST(req: NextRequest) {
         verificationTokenExpires: expires
       }
     });
+    // Send code, but do not block sign-in. Auto-login user.
     await sendVerificationCodeEmail(email, code);
-    return NextResponse.json({ ok: true, userId: user.id });
+    const token = await signToken({ sub: user.id, username: user.username, role: user.role });
+    return NextResponse.json(
+      {
+        ok: true,
+        userId: user.id,
+        token,
+        username: user.username,
+        role: user.role,
+        imageCount: user.imageCount,
+        imageLimit: user.imageLimit,
+        email: user.email,
+        verified: false,
+      },
+      { headers: setAuthCookieHeaders(token) }
+    );
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || 'Registration failed' }, { status: 500 });
   }

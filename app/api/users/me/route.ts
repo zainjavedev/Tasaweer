@@ -14,11 +14,11 @@ export async function GET(req: NextRequest) {
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const payload = await verifyToken(token);
     if (!isPrismaAvailable) {
-      return NextResponse.json({ username: payload.username, role: 'FREE', imageCount: 0, imageLimit: null });
+      return NextResponse.json({ username: payload.username, role: 'FREE', imageCount: 0, imageLimit: null, email: null, verified: false });
     }
     const user = await prisma.user.findUnique({ where: { id: payload.sub } });
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    return NextResponse.json({ username: user.username, role: user.role, imageCount: user.imageCount, imageLimit: user.imageLimit, effectiveLimit: user.imageLimit });
+    return NextResponse.json({ username: user.username, role: user.role, imageCount: user.imageCount, imageLimit: user.imageLimit, effectiveLimit: user.imageLimit, email: user.email, verified: Boolean(user.emailVerifiedAt) });
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || 'Unauthorized' }, { status: 401 });
   }

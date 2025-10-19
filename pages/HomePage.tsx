@@ -3,6 +3,7 @@
 import React, { useEffect, useState, MouseEvent } from 'react';
 import { Page } from '../types';
 import { SparklesIcon, MagicWandIcon, SwapIcon, CheckIcon, StarIcon, CleanIcon } from '../components/Icon';
+import { toolPages } from '@/lib/tools';
 import { Inter } from 'next/font/google';
 import { getToken, getUsernameFromToken } from '@/utils/authClient';
 import { getUserLimits, getRemainingImages, canUserGenerate } from '@/utils/userLimits';
@@ -188,35 +189,24 @@ const HomePage: React.FC<HomePageProps> = ({ goTo }) => {
         </div>
       </section>
 
-      {/* Quick features */}
-      <section className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-reveal>
-        <div className="bg-white/40 backdrop-blur-xl rounded-2xl border-2 border-white/30 p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:scale-105 transition-all duration-200">
-          <div className="text-lg font-semibold text-black">Image Restoration</div>
-          <p className="mt-2 text-sm text-black">Fix damage, denoise, and color-correct — add optional notes.</p>
-          <button onClick={() => goTo('restoration')} className="mt-4 px-4 py-2 rounded-lg bg-black text-white font-semibold hover:bg-gray-800 transition duration-200 inline-flex items-center gap-2">Explore</button>
-        </div>
-        <div className="bg-white/40 backdrop-blur-xl rounded-2xl border-2 border-white/30 p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:scale-105 transition-all duration-200">
-          <div className="text-lg font-semibold text-black">Object Replacement</div>
-          <p className="mt-2 text-sm text-black">Describe what to swap and with what; add a sample if you like.</p>
-          <button onClick={() => goTo('replace')} className="mt-4 px-4 py-2 rounded-lg bg-black text-white font-semibold hover:bg-gray-800 transition duration-200 inline-flex items-center gap-2">Explore</button>
-        </div>
-        <div className="bg-white/40 backdrop-blur-xl rounded-2xl border-2 border-white/30 p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:scale-105 transition-all duration-200">
-          <div className="text-lg font-semibold text-black">Gemini Watermark Remover</div>
-          <p className="mt-2 text-sm text-black">Clean the Gemini logo from AI photos while preserving all other detail.</p>
-          <button onClick={() => goTo('watermark-remover')} className="mt-4 px-4 py-2 rounded-lg bg-black text-white font-semibold hover:bg-gray-800 transition duration-200 inline-flex items-center gap-2">Explore</button>
-        </div>
-        <div className="bg-white/40 backdrop-blur-xl rounded-2xl border-2 border-white/30 p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:scale-105 transition-all duration-200">
-          <div className="text-lg font-semibold text-black">YouTube Thumbnail Editor</div>
-          <p className="mt-2 text-sm text-black">Design scroll-stopping thumbnails with presets, boosters, and CTA badges.</p>
-          <button onClick={() => goTo('youtube-thumbnail-editor')} className="mt-4 px-4 py-2 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition duration-200 inline-flex items-center gap-2">Explore</button>
-        </div>
-        <div className="bg-white/40 backdrop-blur-xl rounded-2xl border-2 border-white/30 p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)]">
-          <div className="text-lg font-semibold text-black">Why Tasaweers?</div>
-          <ul className="mt-2 space-y-1 text-sm text-black">
-            <li className="flex items-center gap-2"><CheckIcon className="w-4 h-4 text-black"/> Natural-looking edits</li>
-            <li className="flex items-center gap-2"><CheckIcon className="w-4 h-4 text-black"/> Fast & interactive</li>
-            <li className="flex items-center gap-2"><CheckIcon className="w-4 h-4 text-black"/> No setup required</li>
-          </ul>
+      {/* Quick features — kept in sync with Tools dropdown */}
+      <section className="mt-12" data-reveal>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {toolPages.map(({ page, label, description, Icon }) => (
+            <div key={page} className="bg-white/40 backdrop-blur-xl rounded-2xl border-2 border-white/30 p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] hover:scale-105 transition-all duration-200">
+              <div className="flex items-center gap-2 text-lg font-semibold text-black"><Icon className="w-5 h-5" /> {label}</div>
+              <p className="mt-2 text-sm text-black">{description}</p>
+              <button onClick={() => goTo(page)} className="mt-4 px-4 py-2 rounded-lg bg-black text-white font-semibold hover:bg-gray-800 transition duration-200 inline-flex items-center gap-2">Explore</button>
+            </div>
+          ))}
+          <div className="bg-white/40 backdrop-blur-xl rounded-2xl border-2 border-white/30 p-6">
+            <div className="text-lg font-semibold text-black">Why Tasaweers?</div>
+            <ul className="mt-2 space-y-1 text-sm text-black">
+              <li className="flex items-center gap-2"><CheckIcon className="w-4 h-4 text-black"/> Natural-looking edits</li>
+              <li className="flex items-center gap-2"><CheckIcon className="w-4 h-4 text-black"/> Fast & interactive</li>
+              <li className="flex items-center gap-2"><CheckIcon className="w-4 h-4 text-black"/> No setup required</li>
+            </ul>
+          </div>
         </div>
       </section>
 

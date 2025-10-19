@@ -12,6 +12,7 @@ import Lightbox from '@/components/Lightbox';
 import SurfaceCard from '@/components/SurfaceCard';
 import { useRouter } from 'next/navigation';
 import { useAuthStatus } from '@/utils/useAuthStatus';
+import CompareSection from '@/components/CompareSection';
 
 type ColorOption = string;
 
@@ -522,6 +523,7 @@ const TryApparelPage: React.FC = () => {
   }, [maxCarouselIndex, showCarousel]);
 
   return (
+    <>
     <SurfaceCard className="max-w-5xl mx-auto overflow-hidden p-6 sm:p-8 space-y-6 sm:space-y-8">
       <div className="text-center space-y-1">
         <h2 className="text-2xl sm:text-3xl font-bold text-black inline-flex items-center gap-2 justify-center">
@@ -853,6 +855,7 @@ const TryApparelPage: React.FC = () => {
           </section>
 
           {isWideForCarousel ? (
+            <>
             <section className="space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-sm font-semibold text-black">Apparel library</span>
@@ -910,6 +913,8 @@ const TryApparelPage: React.FC = () => {
                 <div className="text-xs text-black/60">Add images under <code>public/apparels</code> to build your library.</div>
               )}
             </section>
+
+            </>
           ) : (
             <section className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -966,8 +971,16 @@ const TryApparelPage: React.FC = () => {
         </div>
       </div>
 
-      <Lightbox imageUrl={lightbox} onClose={() => setLightbox(null)} title="Preview" alt="Generated apparel preview" />
     </SurfaceCard>
+
+    {userImage && latestResult && (
+      <SurfaceCard className="max-w-5xl mx-auto p-6 sm:p-8">
+        <CompareSection originalSrc={userImage} latestSrc={latestResult} />
+      </SurfaceCard>
+    )}
+
+    <Lightbox imageUrl={lightbox} onClose={() => setLightbox(null)} title="Preview" alt="Generated apparel preview" />
+    </>
   );
 };
 

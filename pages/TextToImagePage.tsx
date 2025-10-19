@@ -267,7 +267,6 @@ const TextToImagePage: React.FC = () => {
               <div className="flex flex-wrap gap-2">
                 <button onClick={() => download(latestResult.imageUrl, 'text-to-image-latest.png')} className="rounded-lg border-2 border-black px-3 py-2 text-sm font-semibold text-black transition-colors hover:bg-black hover:text-white">Download</button>
                 <button onClick={() => addRefFromUrl(latestResult.imageUrl)} className="rounded-lg border-2 border-black px-3 py-2 text-sm font-semibold text-black transition-colors hover:bg-black hover:text-white">Add as reference</button>
-                <button onClick={() => router.push(`/photo-editor?src=${encodeURIComponent(latestResult.imageUrl)}`)} className="rounded-lg border-2 border-black px-3 py-2 text-sm font-semibold text-black transition-colors hover:bg-black hover:text-white">Open in editor</button>
               </div>
             )}
           </section>
@@ -296,12 +295,7 @@ const TextToImagePage: React.FC = () => {
                       >
                         Ref
                       </button>
-                      <button
-                        onClick={() => router.push(`/photo-editor?src=${encodeURIComponent(res.imageUrl)}`)}
-                        className="rounded border-2 border-black bg-white px-2 py-1 text-[11px] font-semibold text-black transition-colors hover:bg-black hover:text-white"
-                      >
-                        Editor
-                      </button>
+                      
                     </div>
                     {res.text && <div className="p-2 text-xs text-black">{res.text}</div>}
                   </div>

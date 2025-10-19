@@ -2,13 +2,11 @@
 
 import React, { useState } from 'react';
 import { AtSign, KeyRound } from 'lucide-react';
-import { Fredoka } from 'next/font/google';
 import { useRouter } from 'next/navigation';
 import loginBg from '@/assets/login-bg.png';
 import { setToken } from '@/utils/authClient';
 import { setUserLimits } from '@/utils/userLimits';
 
-const fredoka = Fredoka({ subsets: ['latin'], weight: ['400', '500', '600', '700'] });
 
 export default function LoginClient() {
   const [identifier, setIdentifier] = useState('');
@@ -55,7 +53,7 @@ export default function LoginClient() {
   };
 
   return (
-    <div className={`${fredoka.className} relative w-full`}>
+    <div className="relative w-full">
       <div
         aria-hidden="true"
         className="fixed inset-0 -z-10 bg-cover bg-center"

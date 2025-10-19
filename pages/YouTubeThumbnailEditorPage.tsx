@@ -12,6 +12,7 @@ import { useAuthStatus } from '@/utils/useAuthStatus';
 import { useUser } from '@/utils/useUser';
 import EtaTimer from '@/components/EtaTimer';
 import Lightbox from '@/components/Lightbox';
+import CompareSection from '@/components/CompareSection';
 import {
   CheckIcon,
   MagicWandIcon,
@@ -876,7 +877,14 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
         <p className="text-xs text-center text-black/50 sm:text-left">
           Sign in required. Each export counts toward your generation allowance. Reference uploads stay private to your account.
         </p>
+
       </SurfaceCard>
+
+      {preview && results[0] && (
+        <SurfaceCard className="max-w-5xl mx-auto p-6 sm:p-8">
+          <CompareSection originalSrc={preview} latestSrc={results[0]} title="Comparison" />
+        </SurfaceCard>
+      )}
 
       <SurfaceCard className="max-w-6xl mx-auto p-6 sm:p-8 space-y-8">
         <div className="space-y-2">

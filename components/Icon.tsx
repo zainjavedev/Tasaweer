@@ -11,7 +11,7 @@ export const HomeIcon: React.FC<IconProps> = ({ className }) => (
 );
 
 export const SparklesIcon: React.FC<IconProps> = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg suppressHydrationWarning xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l-3 3m0 0l-3 3m3-3l3 3m-3-3v12.586a1 1 0 01-.293.707l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 013 15.586V12M15 3l-3 3m0 0l-3 3m3-3l3 3m-3-3v12.586a1 1 0 01-.293.707l-2.414 2.414a1 1 0 01-.707.293H9.828a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 016 15.586V3" />
     </svg>
 );
