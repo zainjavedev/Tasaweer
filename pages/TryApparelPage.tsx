@@ -4,7 +4,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { CameraIcon, SwapIcon, UploadIcon, ChevronDownIcon } from '../components/Icon';
 import { addUserImage } from '../utils/userImages';
 import { editImageWithNanoBanana } from '../services/geminiService';
-import EtaTimer from '../components/EtaTimer';
 import { compressImageFile, dataURLToBase64 } from '@/utils/image';
 import SurfaceCard from '@/components/SurfaceCard';
 import { useRouter } from 'next/navigation';
@@ -555,7 +554,7 @@ const TryApparelPage: React.FC = () => {
                     <div className="px-4 text-center text-sm text-black/60">Upload a garment or accessory image to try on.</div>
                   )}
                 </div>
-                <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2">
                   <label className="flex h-10 w-10 items-center justify-center rounded-lg border border-black/20 bg-white text-black transition-colors duration-200 hover:bg-gray-50 cursor-pointer" title="Upload apparel">
                     <UploadIcon className="h-4 w-4" />
                     <span className="sr-only">Upload apparel</span>
@@ -646,7 +645,7 @@ const TryApparelPage: React.FC = () => {
               {isAuthenticated ? (iterLoading ? 'Generating…' : 'Try on') : 'Signup to generate'}
               <span aria-hidden className="shine"></span>
             </button>
-            {iterLoading && <div className="text-xs text-black/70"><EtaTimer seconds={18} label="Usually ~15–25s" /></div>}
+            {iterLoading && <div className="text-xs text-black/70">AI is generating your try-on…</div>}
             {iterError && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">{iterError}</div>}
           </section>
 
@@ -748,7 +747,7 @@ const TryApparelPage: React.FC = () => {
                       </button>
                     </div>
                   </div>
-                  {colorLoading && <div className="text-xs text-black/60"><EtaTimer seconds={12} label="Color tweak ~8–15s" /></div>}
+                  {colorLoading && <div className="text-xs text-black/60">Adjusting color…</div>}
                 </div>
               </div>
             )}

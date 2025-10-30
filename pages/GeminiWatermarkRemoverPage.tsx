@@ -3,7 +3,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import SurfaceCard from '@/components/SurfaceCard';
 import { ImageUploader } from '@/components/ImageUploader';
-import EtaTimer from '@/components/EtaTimer';
 import { editImageWithNanoBanana } from '@/services/geminiService';
 import { compressImageFile } from '@/utils/image';
 import { addUserImage } from '@/utils/userImages';
@@ -147,7 +146,7 @@ const GeminiWatermarkRemoverPage: React.FC = () => {
             {isLoading ? 'Working…' : 'Remove watermark'}
           </button>
           {isLoading ? (
-            <EtaTimer seconds={45} label="Processing with Gemini — hang tight" />
+            <div className="text-xs text-black/60">Processing with Gemini — hang tight</div>
           ) : (
             <div className="text-xs uppercase tracking-wide text-black/50">Average turnaround 25–40 seconds</div>
           )}

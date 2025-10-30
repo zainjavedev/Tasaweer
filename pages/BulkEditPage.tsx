@@ -2,7 +2,6 @@
 
 import React, { useCallback, useMemo, useState } from 'react';
 import { editImageWithNanoBanana } from '@/services/geminiService';
-import EtaTimer from '@/components/EtaTimer';
 import { compressImageFile } from '@/utils/image';
 import { createZip, dataUrlToUint8 } from '@/utils/zip';
 import SurfaceCard from '@/components/SurfaceCard';
@@ -152,9 +151,7 @@ const BulkEditPage: React.FC = () => {
           <span aria-hidden className="shine"></span>
         </button>
         {running && (
-          <div className="max-w-xs">
-            <EtaTimer seconds={tasks.length * 12} label="Batch ETA varies by count" />
-          </div>
+          <div className="text-sm text-black/60">Processing batch…</div>
         )}
       </div>
 

@@ -4,7 +4,6 @@ import React, { useState, useCallback } from 'react';
 import { ImageUploader } from '../components/ImageUploader';
 import { ImageDisplay } from '../components/ImageDisplay';
 import { Loader } from '../components/Loader';
-import EtaTimer from '../components/EtaTimer';
 import { editImageWithNanoBanana } from '../services/geminiService';
 import { EditedImageResult } from '../types';
 import { addUserImage } from '../utils/userImages';
@@ -153,7 +152,7 @@ const RestorationPage: React.FC = () => {
       {isLoading && (
         <div className="space-y-4">
           <Loader />
-          <EtaTimer seconds={14} label="Typically 10–20s depending on size" />
+          <div className="text-xs text-black/60">Restoring… hang tight.</div>
           <p className="text-center text-black/70">AI is restoring your image…</p>
         </div>
       )}

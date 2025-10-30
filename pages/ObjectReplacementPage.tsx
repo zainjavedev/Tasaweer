@@ -4,7 +4,6 @@ import React, { useState, useCallback } from 'react';
 import { ImageUploader } from '../components/ImageUploader';
 import { ImageDisplay } from '../components/ImageDisplay';
 import { Loader } from '../components/Loader';
-import EtaTimer from '../components/EtaTimer';
 import { editImageWithNanoBanana } from '../services/geminiService';
 import { EditedImageResult } from '../types';
 import { addUserImage } from '../utils/userImages';
@@ -195,7 +194,7 @@ const ObjectReplacementPage: React.FC = () => {
       {isLoading && (
         <div className="space-y-4">
           <Loader />
-          <EtaTimer seconds={20} label="Usually 15–30s for complex swaps" />
+          <div className="text-xs text-black/60">AI is crafting the swap…</div>
           <p className="text-center text-black/70">AI is performing the replacement…</p>
         </div>
       )}

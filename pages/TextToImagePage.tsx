@@ -1,16 +1,16 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
-import { generateImageFromText } from '../services/geminiService';
+import React, { useState, useCallback, useMemo } from 'react';
+import { generateImageFromText, optimizePrompt as optimizePromptService } from '../services/geminiService';
 import { EditedImageResult } from '../types';
 import { addUserImage } from '../utils/userImages';
 import { Loader } from '../components/Loader';
-import EtaTimer from '../components/EtaTimer';
 import { SparklesIcon } from '../components/Icon';
 import SurfaceCard from '@/components/SurfaceCard';
 import { textToImageSamples } from '@/lib/samples';
 import { compressImageFile } from '@/utils/image';
 import { useImageViewer } from '@/components/ImageViewerProvider';
+import { AspectRatio, DEFAULT_IMAGEN_ASPECT_RATIO, IMAGE_MODEL_OPTIONS, IMAGEN_ASPECT_RATIOS, ImageModel } from '@/lib/imageModels';
 
 const TextToImagePage: React.FC = () => {
   const [prompt, setPrompt] = useState('');
@@ -19,6 +19,9 @@ const TextToImagePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [refImages, setRefImages] = useState<File[]>([]);
   const [refPreviews, setRefPreviews] = useState<string[]>([]);
+  const [model, setModel] = useState<ImageModel>(ImageModel.NANO_BANANA);
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>(DEFAULT_IMAGEN_ASPECT_RATIO);
+  const [optimizing, setOptimizing] = useState(false);
   const maxRefImages = 3;
   const { openImage } = useImageViewer();
 
@@ -69,7 +72,12 @@ const TextToImagePage: React.FC = () => {
         }));
         additionalImages = pairs;
       }
-      const generated = await generateImageFromText(prompt.trim(), additionalImages);
+      const generated = await generateImageFromText({
+        prompt: prompt.trim(),
+        model,
+        additionalImages,
+        aspectRatio: model === ImageModel.IMAGEN ? aspectRatio : undefined,
+      });
       setResults((arr) => [generated, ...arr]);
       try {
         addUserImage({ kind: 'text2image', prompt: prompt.trim(), generated: generated.imageUrl });
@@ -79,7 +87,7 @@ const TextToImagePage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [prompt, refImages]);
+  }, [prompt, refImages, model, aspectRatio]);
 
   const download = useCallback((url: string, name = 'generated-image.png') => {
     const a = document.createElement('a');
@@ -90,6 +98,21 @@ const TextToImagePage: React.FC = () => {
 
   const latestResult = results[0] ?? null;
   const previousResults = results.slice(1);
+  const isImagen = useMemo(() => model === ImageModel.IMAGEN, [model]);
+
+  const handleOptimizePrompt = useCallback(async () => {
+    const current = prompt.trim();
+    if (!current) return;
+    setOptimizing(true);
+    try {
+      const optimized = await optimizePromptService(current);
+      setPrompt(optimized);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Prompt optimization failed.');
+    } finally {
+      setOptimizing(false);
+    }
+  }, [prompt]);
 
   return (
     <SurfaceCard className="max-w-5xl mx-auto overflow-hidden p-6 sm:p-8 space-y-6 sm:space-y-8">
@@ -100,6 +123,27 @@ const TextToImagePage: React.FC = () => {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-8">
         <div className="space-y-6">
+          <section className="space-y-2">
+            <span className="block text-sm font-medium text-black">Model</span>
+            <div className="flex flex-wrap gap-2">
+              {IMAGE_MODEL_OPTIONS.map(({ value, label }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setModel(value)}
+                  className={`rounded-lg border px-3 py-2 text-xs font-semibold transition ${
+                    model === value
+                      ? 'border-black bg-black text-white'
+                      : 'border-black/20 bg-white text-black/70 hover:border-black/40 hover:text-black'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-black/60">Gemini Flash is fast and flexible. Imagen delivers higher fidelity and supports multiple aspect ratios.</p>
+          </section>
+
           <section className="space-y-2">
             <label htmlFor="t2i" className="block text-sm font-medium text-black">Prompt</label>
             <div className="relative">
@@ -124,7 +168,40 @@ const TextToImagePage: React.FC = () => {
                 </button>
               )}
             </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleOptimizePrompt}
+                disabled={optimizing || !prompt.trim()}
+                className="rounded-lg border border-black/20 bg-white px-3 py-1.5 text-xs font-semibold text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {optimizing ? 'Optimizing…' : 'Optimize prompt'}
+              </button>
+              <span className="text-xs text-black/50">Refines your description for better results.</span>
+            </div>
           </section>
+
+          {isImagen && (
+            <section className="space-y-2">
+              <span className="block text-sm font-semibold text-black">Aspect ratio</span>
+              <div className="flex flex-wrap gap-2">
+                {IMAGEN_ASPECT_RATIOS.map(({ value, label }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setAspectRatio(value)}
+                    className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
+                      aspectRatio === value
+                        ? 'border-black bg-black text-white'
+                        : 'border-black/20 bg-white text-black/70 hover:border-black/40 hover:text-black'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
 
           {textToImageSamples.length > 0 && (
             <section className="space-y-2">
@@ -198,7 +275,6 @@ const TextToImagePage: React.FC = () => {
             {isLoading && (
               <div className="space-y-2 text-sm text-black/70">
                 <Loader />
-                <EtaTimer seconds={18} label="Usually ~15–25s for first render" />
                 <p className="text-center">AI is creating your image…</p>
               </div>
             )}

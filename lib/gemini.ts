@@ -1,52 +1,104 @@
 // Server-only Gemini client wrapper
 import { GoogleGenAI, Modality, type GenerateContentResponse } from '@google/genai';
 import { requireEnv } from './env';
+import { AspectRatio, DEFAULT_IMAGEN_ASPECT_RATIO, ImageModel } from './imageModels';
 
-const MODEL_NAME = 'gemini-2.5-flash-image-preview';
+const DEFAULT_IMAGE_MODEL = ImageModel.NANO_BANANA;
 
 function client() {
   const apiKey = requireEnv('GEMINI_API_KEY');
   return new GoogleGenAI({ apiKey });
 }
 
-export async function generateImage(
-  prompt: string,
-  additionalImages?: { data: string; mimeType: string }[],
-  aspectRatio?: string
-) {
+const fakeImageResponse = {
+  imageUrl:
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==',
+  text: 'FAKE: image generated (test mode)',
+};
+
+export async function optimizePrompt(prompt: string): Promise<string> {
+  if (process.env.GEMINI_FAKE === '1') return prompt;
+
+  const ai = client();
+  const systemInstruction = `You are an expert in crafting highly detailed and effective prompts for AI image generation models. 
+Take the user's input and expand it into a rich, descriptive prompt that includes details about the subject, style, lighting, composition, and mood. 
+Do not add any conversational text, just return the optimized prompt.`;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: [
+      {
+        role: 'user',
+        parts: [{ text: prompt }],
+      },
+    ],
+    config: { systemInstruction },
+  });
+
+  const parts = response.candidates?.[0]?.content?.parts ?? [];
+  const optimized = parts
+    .map((part) => (part.text ? part.text : ''))
+    .join(' ')
+    .trim();
+
+  return optimized || prompt;
+}
+
+interface GenerateImageParams {
+  prompt: string;
+  model: ImageModel;
+  additionalImages?: { data: string; mimeType: string }[];
+  aspectRatio?: AspectRatio;
+}
+
+export async function generateImage({
+  prompt,
+  model,
+  additionalImages,
+  aspectRatio,
+}: GenerateImageParams) {
   if (process.env.GEMINI_FAKE === '1') {
-    // 1x1 transparent PNG
-    const tinyPngBase64 =
-      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg=='
-    ;
+    return fakeImageResponse;
+  }
+
+  const ai = client();
+  const selectedModel = model ?? DEFAULT_IMAGE_MODEL;
+
+  if (selectedModel === ImageModel.IMAGEN) {
+    const response = await ai.models.generateImages({
+      model: ImageModel.IMAGEN,
+      prompt,
+      config: {
+        numberOfImages: 1,
+        outputMimeType: 'image/png',
+        aspectRatio: (aspectRatio ?? DEFAULT_IMAGEN_ASPECT_RATIO) as AspectRatio,
+      },
+    });
+
+    const image = response.generatedImages?.[0]?.image?.imageBytes;
+    if (!image) throw new Error('Imagen did not return an image');
+
     return {
-      imageUrl: `data:image/png;base64,${tinyPngBase64}`,
-      text: 'FAKE: image generated (test mode)'
+      imageUrl: `data:image/png;base64,${image}`,
+      text: '',
     };
   }
-  const ai = client();
+
   const parts: any[] = [];
   if (Array.isArray(additionalImages) && additionalImages.length) {
     parts.push({ text: 'Reference images to guide generation:' });
-    for (const img of additionalImages) parts.push({ inlineData: { data: img.data, mimeType: img.mimeType } });
+    for (const img of additionalImages) {
+      parts.push({ inlineData: { data: img.data, mimeType: img.mimeType } });
+    }
   }
   parts.push({ text: prompt });
 
-  const config: any = {
-    responseModalities: [Modality.IMAGE, Modality.TEXT],
-  };
-
-  if (aspectRatio) {
-    config.imageConfig = {
-      ...(config.imageConfig ?? {}),
-      aspectRatio,
-    };
-  }
-
   const response: GenerateContentResponse = await ai.models.generateContent({
-    model: MODEL_NAME,
+    model: selectedModel,
     contents: { parts },
-    config,
+    config: {
+      responseModalities: [Modality.IMAGE, Modality.TEXT],
+    },
   });
 
   let imageUrl = '';
@@ -69,16 +121,11 @@ export async function editImage(
   mimeType: string,
   prompt: string,
   additionalImages?: { data: string; mimeType: string }[],
-  aspectRatio?: string
 ) {
   if (process.env.GEMINI_FAKE === '1') {
-    // Echo back a tiny PNG to simulate edited output
-    const tinyPngBase64 =
-      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg=='
-    ;
     return {
-      imageUrl: `data:image/png;base64,${tinyPngBase64}`,
-      text: 'FAKE: image edited (test mode)'
+      imageUrl: fakeImageResponse.imageUrl,
+      text: 'FAKE: image edited (test mode)',
     };
   }
   const ai = client();
@@ -89,21 +136,12 @@ export async function editImage(
   }
   parts.push({ text: prompt });
 
-  const config: any = {
-    responseModalities: [Modality.IMAGE, Modality.TEXT],
-  };
-
-  if (aspectRatio) {
-    config.imageConfig = {
-      ...(config.imageConfig ?? {}),
-      aspectRatio,
-    };
-  }
-
   const response: GenerateContentResponse = await ai.models.generateContent({
-    model: MODEL_NAME,
+    model: DEFAULT_IMAGE_MODEL,
     contents: { parts },
-    config,
+    config: {
+      responseModalities: [Modality.IMAGE, Modality.TEXT],
+    },
   });
 
   let imageUrl = '';

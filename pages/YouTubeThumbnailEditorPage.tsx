@@ -9,7 +9,6 @@ import { addUserImage } from '@/utils/userImages';
 import { useRouter } from 'next/navigation';
 import { useAuthStatus } from '@/utils/useAuthStatus';
 import { useUser } from '@/utils/useUser';
-import EtaTimer from '@/components/EtaTimer';
 import CompareSection from '@/components/CompareSection';
 import { useImageViewer } from '@/components/ImageViewerProvider';
 import {
@@ -858,7 +857,7 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
         <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
           {isLoading ? (
             <div className="w-full">
-              <EtaTimer seconds={50} label="Rendering with Gemini — hang tight" />
+              <div className="text-xs text-black/60">Rendering with Gemini — hang tight</div>
             </div>
           ) : (
             <>

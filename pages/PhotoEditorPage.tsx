@@ -3,7 +3,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { CameraIcon, UploadIcon, MagicWandIcon, SwapIcon } from '../components/Icon';
 import { editImageWithNanoBanana } from '../services/geminiService';
-import EtaTimer from '../components/EtaTimer';
 import { addUserImage } from '../utils/userImages';
 import { compressImageFile } from '@/utils/image';
 import { useUser } from '@/utils/useUser';
@@ -555,9 +554,8 @@ const PhotoEditorPage: React.FC = () => {
             )}
 
             {isLoading && (
-              <div className="space-y-1 text-xs text-black/70">
-                <EtaTimer seconds={14} label="Usually 10–20s" />
-                <p className="text-center">AI is editing your photo…</p>
+              <div className="text-xs text-black/70 text-center">
+                AI is editing your photo…
               </div>
             )}
           </section>
