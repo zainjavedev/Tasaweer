@@ -1,57 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma, isPrismaAvailable } from '@/lib/prisma';
-import { hashPassword, signToken, setAuthCookieHeaders } from '@/lib/authDb';
-import { sendVerificationCodeEmail } from '@/lib/email';
-import crypto from 'crypto';
+import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
-export async function POST(req: NextRequest) {
-  if (!isPrismaAvailable) {
-    return NextResponse.json({ error: 'Registration requires a database' }, { status: 400 });
-  }
-  try {
-    const { email, username, password } = await req.json();
-    if (!email || !username || !password) return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
-    const exists = await prisma.user.findFirst({ where: { OR: [{ email }, { username }] } });
-    if (exists) return NextResponse.json({ error: 'Email or username already in use' }, { status: 400 });
-    const passwordHash = await hashPassword(password);
-    // Get default image limit from environment variables
-    const defaultImageLimit = Number(process.env.DEFAULT_USER_IMAGE_LIMIT) || 20;
-
-    // Generate a 6-digit numeric code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const codeHash = crypto.createHash('sha256').update(code).digest('hex');
-    const expires = new Date(Date.now() + 1000 * 60 * 15); // 15 minutes
-    const user = await prisma.user.create({
-      data: {
-        email,
-        username,
-        passwordHash,
-        imageLimit: defaultImageLimit,
-        imageCount: 0,
-        verificationToken: codeHash,
-        verificationTokenExpires: expires
-      }
-    });
-    // Send code, but do not block sign-in. Auto-login user.
-    await sendVerificationCodeEmail(email, code);
-    const token = await signToken({ sub: user.id, username: user.username, role: user.role });
-    return NextResponse.json(
-      {
-        ok: true,
-        userId: user.id,
-        token,
-        username: user.username,
-        role: user.role,
-        imageCount: user.imageCount,
-        imageLimit: user.imageLimit,
-        email: user.email,
-        verified: false,
-      },
-      { headers: setAuthCookieHeaders(token) }
-    );
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message || 'Registration failed' }, { status: 500 });
-  }
+export async function POST() {
+  return NextResponse.json(
+    { error: 'Authentication is disabled. Registration is no longer required.' },
+    { status: 410 }
+  );
 }

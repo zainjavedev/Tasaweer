@@ -5,15 +5,13 @@ import { CameraIcon, UploadIcon, MagicWandIcon, SwapIcon } from '../components/I
 import { editImageWithNanoBanana } from '../services/geminiService';
 import EtaTimer from '../components/EtaTimer';
 import { addUserImage } from '../utils/userImages';
-import { AspectRatioSelector } from '@/components/AspectRatioSelector';
 import { compressImageFile } from '@/utils/image';
 import { useUser } from '@/utils/useUser';
-import Lightbox from '@/components/Lightbox';
 import { photoEditingSamples } from '@/lib/samples';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import SurfaceCard from '@/components/SurfaceCard';
-import { useAuthStatus } from '@/utils/useAuthStatus';
 import CompareSection from '@/components/CompareSection';
+import { useImageViewer } from '@/components/ImageViewerProvider';
 
 const PhotoEditorPage: React.FC = () => {
   const [originalImage, setOriginalImage] = useState<File | null>(null);
@@ -22,17 +20,14 @@ const PhotoEditorPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<string[]>([]); // newest first
-  const [lightbox, setLightbox] = useState<string | null>(null);
   const [showEditButtons, setShowEditButtons] = useState(true);
   const [refImages, setRefImages] = useState<File[]>([]);
   const [refPreviews, setRefPreviews] = useState<string[]>([]);
-  const [aspectRatio, setAspectRatio] = useState<string>('16:9'); // Default to Landscape
   const maxRefImages = 3;
   const searchParams = useSearchParams();
-  const router = useRouter();
   const loadedFromQueryRef = useRef(false);
   const { refreshUserData } = useUser();
-  const isAuthenticated = useAuthStatus();
+  const { openImage } = useImageViewer();
 
   // Preset prompts for common tasks
   const PRESET_PROMPTS = [
@@ -127,11 +122,6 @@ const PhotoEditorPage: React.FC = () => {
   const handleSubmit = useCallback(async () => {
     if (!originalImage) { setError('Please upload a photo.'); return; }
     if (!prompt.trim()) { setError('Please describe the edit.'); return; }
-    if (!isAuthenticated) {
-      setError("Oops, you'll have to create an account to generate.");
-      router.push('/register');
-      return;
-    }
     setIsLoading(true);
     setError(null);
     try {
@@ -145,7 +135,7 @@ const PhotoEditorPage: React.FC = () => {
         }));
         additionalImages = pairs;
       }
-      const result = await editImageWithNanoBanana(base64, mimeType, prompt.trim(), additionalImages, aspectRatio);
+      const result = await editImageWithNanoBanana(base64, mimeType, prompt.trim(), additionalImages);
       setResults((arr) => [result.imageUrl, ...arr]);
       try {
         addUserImage({ kind: 'edit', prompt: prompt.trim(), original: originalPreview || undefined, generated: result.imageUrl });
@@ -157,7 +147,7 @@ const PhotoEditorPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [originalImage, prompt, originalPreview, refImages, refreshUserData, isAuthenticated, router, aspectRatio]);
+  }, [originalImage, prompt, originalPreview, refImages, refreshUserData]);
 
   const download = (url: string, name = 'edited-photo.png') => {
     const a = document.createElement('a');
@@ -544,23 +534,19 @@ const PhotoEditorPage: React.FC = () => {
             </div>
           </section>
 
-          <AspectRatioSelector selectedRatio={aspectRatio} onSelect={setAspectRatio} />
-
            <section className="space-y-2">
-             <button
-               onClick={handleSubmit}
-               disabled={isLoading || !originalImage || !prompt.trim()}
-               className="btn-shine flex w-full items-center justify-center gap-2 rounded-lg bg-black px-6 py-3 text-white font-bold transition-colors duration-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-400 disabled:text-black"
-               title="Generate an edited version of your photo using AI"
-             >
-              {isAuthenticated ? (
-                isLoading ? 'Generating…' : (
-                  <>
-                    <MagicWandIcon className="h-5 w-5" />
-                    Generate edit
-                  </>
-                )
-              ) : 'Signup to generate'}
+            <button
+              onClick={handleSubmit}
+              disabled={isLoading || !originalImage || !prompt.trim()}
+              className="btn-shine flex w-full items-center justify-center gap-2 rounded-lg bg-black px-6 py-3 text-white font-bold transition-colors duration-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-400 disabled:text-black"
+              title="Generate an edited version of your photo using AI"
+            >
+              {isLoading ? 'Generating…' : (
+                <>
+                  <MagicWandIcon className="h-5 w-5" />
+                  Generate edit
+                </>
+              )}
               <span aria-hidden className="shine"></span>
             </button>
 
@@ -590,7 +576,18 @@ const PhotoEditorPage: React.FC = () => {
             </div>
             <div className="relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-2xl border border-black/12 bg-white/85">
               {latestResult ? (
-                <button type="button" onClick={() => setLightbox(latestResult)} className="h-full w-full">
+                <button
+                  type="button"
+                  onClick={() =>
+                    openImage({
+                      url: latestResult,
+                      title: 'Edited photo preview',
+                      alt: 'Latest result',
+                      onDownload: () => download(latestResult, 'photo-edit-latest.png'),
+                    })
+                  }
+                  className="h-full w-full"
+                >
                   <img src={latestResult} alt="Latest result" className="h-full w-full object-contain" />
                 </button>
               ) : (
@@ -646,7 +643,14 @@ const PhotoEditorPage: React.FC = () => {
                       src={url}
                       alt={`Result ${idx + 2}`}
                       className="h-32 w-full cursor-zoom-in object-contain"
-                      onClick={() => setLightbox(url)}
+                      onClick={() =>
+                        openImage({
+                          url,
+                          title: 'Edited photo preview',
+                          alt: `Result ${idx + 2}`,
+                          onDownload: () => download(url, `photo-edit-${idx + 2}.png`),
+                        })
+                      }
                     />
                     <div className="absolute top-2 right-2 flex gap-2">
                       <button
@@ -692,8 +696,6 @@ const PhotoEditorPage: React.FC = () => {
         <CompareSection originalSrc={originalPreview} latestSrc={latestResult} />
       </SurfaceCard>
     )}
-
-    <Lightbox imageUrl={lightbox} onClose={() => setLightbox(null)} title="Preview" alt="Edited photo preview" />
     </>
   );
 };

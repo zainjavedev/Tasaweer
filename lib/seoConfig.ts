@@ -220,7 +220,7 @@ const ROUTE_MAP: Record<string, SeoConfigEntry> = {
   '/text2image': {
     title: 'AI Text to Image Generator | Tasaweers',
     description:
-      'Turn your prompts into beautiful visuals with the Tasaweers text-to-image generator. Guide Gemini AI with references, aspect ratios, and detailed descriptions.',
+      'Turn your prompts into beautiful visuals with the Tasaweers text-to-image generator. Guide Gemini AI with references and detailed descriptions.',
     keywords: [
       'tasaweers text to image',
       'ai image generator',

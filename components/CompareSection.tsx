@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
-import Lightbox from '@/components/Lightbox';
+import React from 'react';
+import { useImageViewer } from './ImageViewerProvider';
 
 type Props = {
   originalSrc?: string | null;
@@ -13,7 +13,7 @@ type Props = {
 // Side-by-side comparison (Original vs Latest)
 // Responsive: stacks on small screens, two columns on md+
 const CompareSection: React.FC<Props> = ({ originalSrc, latestSrc, className, title }) => {
-  const [open, setOpen] = useState<string | null>(null);
+  const { openImage } = useImageViewer();
   if (!originalSrc || !latestSrc) return null;
 
   return (
@@ -24,7 +24,13 @@ const CompareSection: React.FC<Props> = ({ originalSrc, latestSrc, className, ti
       <div className="grid gap-3 md:grid-cols-2">
         <button
           type="button"
-          onClick={() => setOpen(originalSrc)}
+          onClick={() =>
+            openImage({
+              url: originalSrc,
+              title: 'Original preview',
+              alt: 'Original image',
+            })
+          }
           className="group relative overflow-hidden rounded-xl border border-black/12 bg-white/85 p-2"
           aria-label="View original image"
         >
@@ -35,7 +41,13 @@ const CompareSection: React.FC<Props> = ({ originalSrc, latestSrc, className, ti
 
         <button
           type="button"
-          onClick={() => setOpen(latestSrc)}
+          onClick={() =>
+            openImage({
+              url: latestSrc,
+              title: 'Latest preview',
+              alt: 'Latest image',
+            })
+          }
           className="group relative overflow-hidden rounded-xl border border-black/12 bg-white/85 p-2"
           aria-label="View latest image"
         >
@@ -44,11 +56,8 @@ const CompareSection: React.FC<Props> = ({ originalSrc, latestSrc, className, ti
           <img src={latestSrc} alt="Latest" className="h-64 w-full object-contain md:h-72 lg:h-80" />
         </button>
       </div>
-
-      <Lightbox imageUrl={open} onClose={() => setOpen(null)} title="Preview" />
     </section>
   );
 };
 
 export default CompareSection;
-

@@ -4,7 +4,6 @@ import React, { useCallback, useMemo, useState } from 'react';
 import SurfaceCard from '@/components/SurfaceCard';
 import { ImageUploader } from '@/components/ImageUploader';
 import EtaTimer from '@/components/EtaTimer';
-import Lightbox from '@/components/Lightbox';
 import { editImageWithNanoBanana } from '@/services/geminiService';
 import { compressImageFile } from '@/utils/image';
 import { addUserImage } from '@/utils/userImages';
@@ -12,6 +11,7 @@ import { useAuthStatus } from '@/utils/useAuthStatus';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/utils/useUser';
 import { CheckIcon, MagicWandIcon } from '@/components/Icon';
+import { useImageViewer } from '@/components/ImageViewerProvider';
 
 const BASE_PROMPT = [
   'Remove the visible Gemini watermark and any residual artifacts from this image.',
@@ -39,10 +39,10 @@ const GeminiWatermarkRemoverPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<string[]>([]);
-  const [lightbox, setLightbox] = useState<string | null>(null);
   const router = useRouter();
   const isAuthenticated = useAuthStatus();
   const { refreshUserData } = useUser();
+  const { openImage } = useImageViewer();
 
   const handleImageUpload = useCallback(async (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -177,7 +177,17 @@ const GeminiWatermarkRemoverPage: React.FC = () => {
                   className="h-64 w-full object-cover transition duration-300 group-hover:scale-[1.02]"
                 />
                 <div className="flex items-center justify-between gap-3 border-t border-black/5 bg-white/70 px-4 py-3 text-xs font-semibold">
-                  <button onClick={() => setLightbox(url)} className="text-black/70 hover:text-black transition">
+                  <button
+                    onClick={() =>
+                      openImage({
+                        url,
+                        title: 'Watermark-free preview',
+                        alt: 'Tasaweers watermark-free result',
+                        onDownload: () => download(url, `tasaweers-clean-${idx + 1}.png`),
+                      })
+                    }
+                    className="text-black/70 hover:text-black transition"
+                  >
                     View
                   </button>
                   <button onClick={() => download(url, `tasaweers-clean-${idx + 1}.png`)} className="text-black/70 hover:text-black transition">
@@ -282,8 +292,6 @@ const GeminiWatermarkRemoverPage: React.FC = () => {
           </div>
         </div>
       </SurfaceCard>
-
-      <Lightbox imageUrl={lightbox} onClose={() => setLightbox(null)} title="Preview" alt="Watermark-free preview" />
     </div>
   );
 };

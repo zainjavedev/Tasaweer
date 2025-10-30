@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { EditedImageResult } from '../types';
-import Lightbox from './Lightbox';
+import { useImageViewer } from './ImageViewerProvider';
 
 interface ImageDisplayProps {
   original: string;
@@ -9,7 +9,7 @@ interface ImageDisplayProps {
 }
 
 export const ImageDisplay: React.FC<ImageDisplayProps> = ({ original, edited }) => {
-  const [open, setOpen] = useState<string | null>(null);
+  const { openImage } = useImageViewer();
   return (
     <div className="mt-8 space-y-6">
        <div className="text-center">
@@ -24,7 +24,25 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({ original, edited }) 
         <div>
           <h3 className="text-lg font-semibold mb-2 text-center text-gray-700 dark:text-gray-300">Generated</h3>
           <div className="relative">
-            <img onClick={() => setOpen(edited.imageUrl)} loading="lazy" src={edited.imageUrl} alt="Edited" className="cursor-zoom-in rounded-lg shadow-lg w-full h-auto object-contain" />
+            <img
+              onClick={() =>
+                openImage({
+                  url: edited.imageUrl,
+                  title: 'Generated preview',
+                  alt: 'Generated image preview',
+                  onDownload: () => {
+                    const a = document.createElement('a');
+                    a.href = edited.imageUrl;
+                    a.download = 'edited-image.png';
+                    a.click();
+                  },
+                })
+              }
+              loading="lazy"
+              src={edited.imageUrl}
+              alt="Edited"
+              className="cursor-zoom-in rounded-lg shadow-lg w-full h-auto object-contain"
+            />
             <button
               onClick={() => { const a = document.createElement('a'); a.href = edited.imageUrl; a.download = 'edited-image.png'; a.click(); }}
               className="absolute top-2 right-2 p-2 rounded-full bg-white/90 dark:bg-gray-800/80 border shadow"
@@ -45,7 +63,6 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({ original, edited }) 
           <p className="text-gray-600 dark:text-gray-400 mt-1">{edited.text}</p>
         </div>
       )}
-      <Lightbox imageUrl={open} onClose={() => setOpen(null)} title="Generated preview" alt="Generated image preview" />
     </div>
   );
 };

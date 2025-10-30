@@ -6,7 +6,7 @@ import EtaTimer from '@/components/EtaTimer';
 import { compressImageFile } from '@/utils/image';
 import { createZip, dataUrlToUint8 } from '@/utils/zip';
 import SurfaceCard from '@/components/SurfaceCard';
-import Lightbox from '@/components/Lightbox';
+import { useImageViewer } from '@/components/ImageViewerProvider';
 
 type Task = {
   file: File;
@@ -21,7 +21,7 @@ const BulkEditPage: React.FC = () => {
   const [prompt, setPrompt] = useState('Fix lighting, enhance clarity, and make colors pop naturally.');
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lightbox, setLightbox] = useState<{ url: string; name: string } | null>(null);
+  const { openImage } = useImageViewer();
 
   const onFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -93,8 +93,13 @@ const BulkEditPage: React.FC = () => {
   }, []);
 
   const openLightbox = useCallback((url: string, name: string) => {
-    setLightbox({ url, name });
-  }, []);
+    openImage({
+      url,
+      title: 'Bulk edit preview',
+      alt: name,
+      onDownload: () => downloadSingle(url, name.replace(/\.[^.]+$/, '') + '-edited.png'),
+    });
+  }, [downloadSingle, openImage]);
 
   return (
     <SurfaceCard className="max-w-5xl mx-auto overflow-hidden p-6 sm:p-8 space-y-6">
@@ -208,14 +213,6 @@ const BulkEditPage: React.FC = () => {
           </div>
         </div>
       )}
-
-      <Lightbox
-        imageUrl={lightbox?.url}
-        onClose={() => setLightbox(null)}
-        title="Bulk edit preview"
-        alt="Processed image preview"
-        onDownload={lightbox ? () => downloadSingle(lightbox.url, lightbox.name.replace(/\.[^.]+$/, '') + '-edited.png') : undefined}
-      />
     </SurfaceCard>
   );
 };

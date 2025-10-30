@@ -3,16 +3,14 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { CameraIcon, SwapIcon, UploadIcon, ChevronDownIcon } from '../components/Icon';
 import { addUserImage } from '../utils/userImages';
-import { AspectRatioSelector } from '@/components/AspectRatioSelector';
 import { editImageWithNanoBanana } from '../services/geminiService';
 import EtaTimer from '../components/EtaTimer';
-import { authorizedFetch } from '@/utils/authClient';
 import { compressImageFile, dataURLToBase64 } from '@/utils/image';
-import Lightbox from '@/components/Lightbox';
 import SurfaceCard from '@/components/SurfaceCard';
 import { useRouter } from 'next/navigation';
 import { useAuthStatus } from '@/utils/useAuthStatus';
 import CompareSection from '@/components/CompareSection';
+import { useImageViewer } from '@/components/ImageViewerProvider';
 
 type ColorOption = string;
 
@@ -25,7 +23,6 @@ const TryApparelPage: React.FC = () => {
   // User capture/upload
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const carouselRef = useRef<HTMLDivElement | null>(null);
   const [camLoading, setCamLoading] = useState(false);
   const [camError, setCamError] = useState<string | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
@@ -34,28 +31,21 @@ const TryApparelPage: React.FC = () => {
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const [userImage, setUserImage] = useState<string | null>(null); // data URL
 
-  // Apparel selection (upload + suggestions)
+  // Apparel selection
   const [apparelImage, setApparelImage] = useState<string | null>(null); // data URL
-  type ApparelSuggestion = { src: string; label?: string };
-  const [suggestions, setSuggestions] = useState<ApparelSuggestion[]>([]);
-  const [suggLoading, setSuggLoading] = useState(true);
-  const [suggError, setSuggError] = useState<string | null>(null);
 
   // Results / iteration
   const [results, setResults] = useState<string[]>([]); // newest first
-  const [lightbox, setLightbox] = useState<string | null>(null);
   const [iterLoading, setIterLoading] = useState(false); // initial try-on
   const [iterError, setIterError] = useState<string | null>(null);
-  const [aspectRatio, setAspectRatio] = useState<string>('9:16'); // Default to Portrait for apparel
   const [customColor, setCustomColor] = useState('');
   const [stylePrompt, setStylePrompt] = useState('');
   const [instructionsOpen, setInstructionsOpen] = useState(false);
-  const [carouselIndex, setCarouselIndex] = useState(0);
   const [colorLoading, setColorLoading] = useState<string | null>(null); // which color button is generating
   const [refImages, setRefImages] = useState<string[]>([]);
-  const [isWideForCarousel, setIsWideForCarousel] = useState(false);
   const latestResult = results[0] ?? null;
   const previousResults = results.slice(1);
+  const { openImage } = useImageViewer();
 
   const stopStream = (opts: { preserveActive?: boolean } = {}) => {
     const s = streamRef.current;
@@ -197,53 +187,6 @@ const TryApparelPage: React.FC = () => {
   }, [facing]);
 
   useEffect(() => () => stopStream(), []);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const update = () => setIsWideForCarousel(window.innerWidth >= 768);
-    update();
-    window.addEventListener('resize', update);
-    window.addEventListener('orientationchange', update);
-    return () => {
-      window.removeEventListener('resize', update);
-      window.removeEventListener('orientationchange', update);
-    };
-  }, []);
-
-  const itemsPerView = isWideForCarousel ? 3 : 2;
-  const maxCarouselIndex = Math.max(suggestions.length - itemsPerView, 0);
-  const showCarousel = isWideForCarousel && suggestions.length > itemsPerView;
-
-  useEffect(() => {
-    if (!showCarousel) {
-      setCarouselIndex(0);
-      return undefined;
-    }
-    const id = setInterval(() => {
-      setCarouselIndex((idx) => (idx >= maxCarouselIndex ? 0 : idx + 1));
-    }, 6000);
-    return () => clearInterval(id);
-  }, [itemsPerView, maxCarouselIndex, showCarousel]);
-
-  useEffect(() => {
-    setCarouselIndex((idx) => Math.min(idx, maxCarouselIndex));
-  }, [itemsPerView, maxCarouselIndex]);
-
-  useEffect(() => {
-    if (!showCarousel) return;
-    const container = carouselRef.current;
-    if (!container || !suggestions.length) return;
-    const firstCard = container.querySelector('button');
-    if (!firstCard) return;
-    const cardRect = firstCard.getBoundingClientRect();
-    let step = cardRect.width;
-    if (typeof window !== 'undefined') {
-      const gap = parseFloat(getComputedStyle(container).columnGap || '0');
-      step += gap;
-    }
-    if (!Number.isFinite(step) || step <= 0) return;
-    container.scrollTo({ left: step * carouselIndex, behavior: 'smooth' });
-  }, [carouselIndex, showCarousel, suggestions.length, itemsPerView]);
 
   const flipCamera = useCallback(() => {
     const newFacing = facing === 'user' ? 'environment' : 'user';
@@ -389,52 +332,6 @@ const TryApparelPage: React.FC = () => {
     setRefImages((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const pickSuggestion = async (src: string) => {
-    try {
-      const dataUrl = await fetchUrlAsDataUrl(src);
-      setApparelImage(dataUrl);
-    } catch {
-      alert('Failed to load apparel image');
-    }
-  };
-
-  // Load suggestions from public/apparels/manifest.json if present
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        setSuggLoading(true);
-        setSuggError(null);
-        // Try manifest.json first
-        const res = await authorizedFetch('/apparels/manifest.json', { cache: 'no-store', redirectOn401: false });
-        if (res.ok) {
-          const data = await res.json();
-          const items: ApparelSuggestion[] = Array.isArray(data)
-            ? data.map((it: any) => (typeof it === 'string' ? { src: it } : it))
-            : [];
-          if (mounted) setSuggestions(items);
-        } else {
-          // Fallback: ask server to list files under public/apparels
-          const lr = await authorizedFetch('/api/apparels/list', { cache: 'no-store', redirectOn401: false });
-          if (lr.ok) {
-            const data = await lr.json();
-            const items: ApparelSuggestion[] = Array.isArray(data?.items)
-              ? data.items.map((p: string) => ({ src: p }))
-              : [];
-            if (mounted) setSuggestions(items);
-          } else {
-            throw new Error('no suggestions');
-          }
-        }
-      } catch (e) {
-        if (mounted) setSuggError('No suggestions found. Add images under public/apparels or a manifest.json.');
-      } finally {
-        if (mounted) setSuggLoading(false);
-      }
-    })();
-    return () => { mounted = false; };
-  }, []);
-
   const tryOn = useCallback(async () => {
     if (!userImage || !apparelImage) return;
     if (!isAuthenticated) {
@@ -469,15 +366,15 @@ const TryApparelPage: React.FC = () => {
         { data: base64Apparel, mimeType: apparelMime },
         ...referenceAttachments
       ];
-      const result = await editImageWithNanoBanana(base64User, userMime, prompt, attachments, aspectRatio);
-      setResults((arr) => [result.imageUrl, ...arr]);
+    const result = await editImageWithNanoBanana(base64User, userMime, prompt, attachments);
+    setResults((arr) => [result.imageUrl, ...arr]);
       try { addUserImage({ kind: 'replace', prompt, original: userImage, generated: result.imageUrl, meta: { apparelSource: 'custom' } }); } catch {}
     } catch (e) {
       setIterError(e instanceof Error ? e.message : 'Failed to generate try-on');
     } finally {
       setIterLoading(false);
     }
-  }, [userImage, apparelImage, stylePrompt, aspectRatio, refImages, isAuthenticated, router]);
+  }, [userImage, apparelImage, stylePrompt, refImages, isAuthenticated, router]);
 
   const recolor = useCallback(async (color: string) => {
     const base = latestResult || userImage;
@@ -493,7 +390,7 @@ const TryApparelPage: React.FC = () => {
       const base64 = dataURLToBase64(base);
       const mime = (base.split(';')[0].split(':')[1]) || 'image/webp';
       const prompt = `Change the color of the apparel being worn to ${color}. Keep everything else (person, background, pose, lighting) unchanged.`;
-      const result = await editImageWithNanoBanana(base64, mime, prompt, undefined, aspectRatio);
+      const result = await editImageWithNanoBanana(base64, mime, prompt, undefined);
       setResults((arr) => [result.imageUrl, ...arr]);
       try { addUserImage({ kind: 'replace', prompt, original: userImage || undefined, generated: result.imageUrl, meta: { variant: 'color', color } }); } catch {}
     } catch (e) {
@@ -501,26 +398,20 @@ const TryApparelPage: React.FC = () => {
     } finally {
       setColorLoading(null);
     }
-  }, [latestResult, userImage, aspectRatio, isAuthenticated, router]);
+  }, [latestResult, userImage, isAuthenticated, router]);
+
+  const downloadUrl = useCallback((url: string, name: string) => {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    a.click();
+  }, []);
 
   const download = useCallback(() => {
     const url = latestResult || userImage;
     if (!url) return;
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'try-apparel.png';
-    a.click();
-  }, [latestResult, userImage]);
-
-  const handlePrevSuggestion = useCallback(() => {
-    if (!showCarousel) return;
-    setCarouselIndex((idx) => (idx <= 0 ? maxCarouselIndex : idx - 1));
-  }, [maxCarouselIndex, showCarousel]);
-
-  const handleNextSuggestion = useCallback(() => {
-    if (!showCarousel) return;
-    setCarouselIndex((idx) => (idx >= maxCarouselIndex ? 0 : idx + 1));
-  }, [maxCarouselIndex, showCarousel]);
+    downloadUrl(url, 'try-apparel.png');
+  }, [downloadUrl, latestResult, userImage]);
 
   return (
     <>
@@ -661,7 +552,7 @@ const TryApparelPage: React.FC = () => {
                   {apparelImage ? (
                     <img loading="lazy" src={apparelImage} alt="Apparel" className="h-full w-full object-contain" />
                   ) : (
-                    <div className="px-4 text-center text-sm text-black/60">Upload an apparel or select from the library.</div>
+                    <div className="px-4 text-center text-sm text-black/60">Upload a garment or accessory image to try on.</div>
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -746,8 +637,6 @@ const TryApparelPage: React.FC = () => {
             )}
           </section>
 
-          <AspectRatioSelector selectedRatio={aspectRatio} onSelect={setAspectRatio} />
-
           <section className="space-y-3">
             <button
               onClick={tryOn}
@@ -771,7 +660,18 @@ const TryApparelPage: React.FC = () => {
             </div>
             <div className="relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-2xl border border-black/12 bg-white/85">
               {latestResult ? (
-                <button type="button" onClick={() => setLightbox(latestResult)} className="h-full w-full">
+                <button
+                  type="button"
+                  onClick={() =>
+                    openImage({
+                      url: latestResult,
+                      title: 'Try-on preview',
+                      alt: 'Generated apparel preview',
+                      onDownload: download,
+                    })
+                  }
+                  className="h-full w-full"
+                >
                   <img loading="lazy" src={latestResult} alt="Latest try-on" className="h-full w-full object-contain" />
                 </button>
               ) : (
@@ -854,76 +754,6 @@ const TryApparelPage: React.FC = () => {
             )}
           </section>
 
-          {isWideForCarousel ? (
-            <>
-            <section className="space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-sm font-semibold text-black">Apparel library</span>
-                {!suggLoading && suggestions.length > 0 && (
-                  <span className="text-xs text-black/50">{showCarousel ? 'Auto-scroll enabled' : 'Tap to load'}</span>
-                )}
-              </div>
-              {suggLoading && <div className="text-sm text-black">Loading…</div>}
-              {!suggLoading && suggError && <div className="text-xs text-black">{suggError}</div>}
-              {!suggLoading && !suggError && suggestions.length > 0 && (
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  {showCarousel && (
-                    <button
-                      type="button"
-                      onClick={handlePrevSuggestion}
-                      className="flex h-8 w-8 items-center justify-center rounded-full border border-black/20 bg-white text-black hover:bg-black hover:text-white transition-colors"
-                      aria-label="Previous apparel"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                        <path fillRule="evenodd" d="M12.78 4.22a.75.75 0 010 1.06L8.56 9.5l4.22 4.22a.75.75 0 11-1.06 1.06l-4.75-4.75a.75.75 0 010-1.06l4.75-4.75a.75.75 0 011.06 0z" clipRule="evenodd" />
-                      </svg>
-                    </button>
-                  )}
-                  <div
-                    ref={carouselRef}
-                    className={`flex flex-1 gap-3 ${showCarousel ? 'overflow-x-auto scroll-smooth pb-2 snap-x snap-mandatory' : 'flex-wrap'}`}
-                  >
-                    {suggestions.map((item, idx) => (
-                      <button
-                        key={`${item.src}-${idx}`}
-                        type="button"
-                        onClick={() => pickSuggestion(item.src)}
-                        className={`group relative overflow-hidden rounded-lg border border-black/15 bg-white shadow-sm transition-all duration-300 ease-in-out hover:shadow ${showCarousel ? 'flex-shrink-0 snap-center sm:basis-1/2 lg:basis-1/3 xl:basis-1/4' : 'flex-1 min-w-[140px]'}`}
-                      >
-                        <img loading="lazy" src={item.src} alt={item.label || 'Apparel'} className="h-24 w-full object-cover" />
-                        <div className="p-2 text-xs text-black truncate group-hover:underline">{item.label || 'Apparel'}</div>
-                      </button>
-                    ))}
-                  </div>
-                  {showCarousel && (
-                    <button
-                      type="button"
-                      onClick={handleNextSuggestion}
-                      className="flex h-8 w-8 items-center justify-center rounded-full border border-black/20 bg-white text-black hover:bg-black hover:text-white transition-colors"
-                      aria-label="Next apparel"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                        <path fillRule="evenodd" d="M7.22 4.22a.75.75 0 011.06 0l4.75 4.75a.75.75 0 010 1.06l-4.75 4.75a.75.75 0 11-1.06-1.06L11.44 10 7.22 5.78a.75.75 0 010-1.06z" clipRule="evenodd" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              )}
-              {!suggLoading && !suggError && suggestions.length === 0 && (
-                <div className="text-xs text-black/60">Add images under <code>public/apparels</code> to build your library.</div>
-              )}
-            </section>
-
-            </>
-          ) : (
-            <section className="space-y-2">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-sm font-semibold text-black">Apparel library</span>
-              </div>
-              <div className="text-xs text-black/60">Browse the apparel library on a larger screen. You can still upload your own apparel above.</div>
-            </section>
-          )}
-
           {previousResults.length > 0 && (
             <section className="space-y-2">
               <div className="text-sm font-semibold text-black">History</div>
@@ -931,7 +761,14 @@ const TryApparelPage: React.FC = () => {
                 {previousResults.map((url, idx) => (
                   <div key={`${url}-${idx}`} className="relative overflow-hidden rounded-xl border border-black/12 bg-white/80">
                     <img
-                      onClick={() => setLightbox(url)}
+                      onClick={() =>
+                        openImage({
+                          url,
+                          title: 'Try-on preview',
+                          alt: `Result ${idx + 2}`,
+                          onDownload: () => downloadUrl(url, `try-apparel-${idx + 2}.png`),
+                        })
+                      }
                       loading="lazy"
                       src={url}
                       alt={`Result ${idx + 2}`}
@@ -939,7 +776,7 @@ const TryApparelPage: React.FC = () => {
                     />
                     <div className="absolute top-2 right-2 flex gap-2">
                       <button
-                        onClick={() => { const a = document.createElement('a'); a.href = url; a.download = `try-apparel-${idx + 2}.png`; a.click(); }}
+                        onClick={() => downloadUrl(url, `try-apparel-${idx + 2}.png`)}
                         className="rounded-full border border-black/20 bg-white p-2 shadow-sm transition hover:scale-105"
                         aria-label="Download"
                         title="Download"
@@ -978,9 +815,7 @@ const TryApparelPage: React.FC = () => {
         <CompareSection originalSrc={userImage} latestSrc={latestResult} />
       </SurfaceCard>
     )}
-
-    <Lightbox imageUrl={lightbox} onClose={() => setLightbox(null)} title="Preview" alt="Generated apparel preview" />
-    </>
+  </>
   );
 };
 

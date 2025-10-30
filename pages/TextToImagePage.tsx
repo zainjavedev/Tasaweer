@@ -1,44 +1,26 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { generateImageFromText } from '../services/geminiService';
 import { EditedImageResult } from '../types';
 import { addUserImage } from '../utils/userImages';
 import { Loader } from '../components/Loader';
 import EtaTimer from '../components/EtaTimer';
 import { SparklesIcon } from '../components/Icon';
-import Lightbox from '@/components/Lightbox';
 import SurfaceCard from '@/components/SurfaceCard';
-import { AspectRatioSelector } from '@/components/AspectRatioSelector';
 import { textToImageSamples } from '@/lib/samples';
 import { compressImageFile } from '@/utils/image';
-import { useRouter } from 'next/navigation';
-import { getUserLimits, canUserGenerate } from '@/utils/userLimits';
-import { useAuthStatus } from '@/utils/useAuthStatus';
+import { useImageViewer } from '@/components/ImageViewerProvider';
 
 const TextToImagePage: React.FC = () => {
   const [prompt, setPrompt] = useState('');
   const [results, setResults] = useState<EditedImageResult[]>([]); // newest first
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lightbox, setLightbox] = useState<string | null>(null);
   const [refImages, setRefImages] = useState<File[]>([]);
   const [refPreviews, setRefPreviews] = useState<string[]>([]);
-  const [aspectRatio, setAspectRatio] = useState<string>('16:9'); // Default to Landscape
   const maxRefImages = 3;
-  const router = useRouter();
-
-  // User Limits state
-  const isAuthenticated = useAuthStatus();
-  const [canGenerate, setCanGenerate] = useState(true);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      setCanGenerate(canUserGenerate());
-    } else {
-      setCanGenerate(true);
-    }
-  }, [isAuthenticated]);
+  const { openImage } = useImageViewer();
 
   const addRefFiles = useCallback((files: FileList | File[]) => {
     const incoming = Array.from(files).filter(f => f.type.startsWith('image/'));
@@ -74,19 +56,6 @@ const TextToImagePage: React.FC = () => {
       return;
     }
 
-    if (!isAuthenticated) {
-      setError("Oops, you'll have to create an account to generate.");
-      router.push('/register');
-      return;
-    }
-
-    // Check if user can generate images
-    if (isAuthenticated && !canGenerate) {
-      const limits = getUserLimits();
-      setError(`Image generation limit reached. You have generated ${limits?.imageCount} out of ${limits?.imageLimit} images.`);
-      return;
-    }
-
     setIsLoading(true);
     setError(null);
     // do not clear previous results; we'll prepend new one
@@ -100,7 +69,7 @@ const TextToImagePage: React.FC = () => {
         }));
         additionalImages = pairs;
       }
-      const generated = await generateImageFromText(prompt.trim(), additionalImages, aspectRatio);
+      const generated = await generateImageFromText(prompt.trim(), additionalImages);
       setResults((arr) => [generated, ...arr]);
       try {
         addUserImage({ kind: 'text2image', prompt: prompt.trim(), generated: generated.imageUrl });
@@ -110,7 +79,7 @@ const TextToImagePage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [prompt, isAuthenticated, canGenerate, refImages, router, aspectRatio]);
+  }, [prompt, refImages]);
 
   const download = useCallback((url: string, name = 'generated-image.png') => {
     const a = document.createElement('a');
@@ -156,8 +125,6 @@ const TextToImagePage: React.FC = () => {
               )}
             </div>
           </section>
-
-          <AspectRatioSelector selectedRatio={aspectRatio} onSelect={setAspectRatio} />
 
           {textToImageSamples.length > 0 && (
             <section className="space-y-2">
@@ -216,17 +183,15 @@ const TextToImagePage: React.FC = () => {
           <section className="space-y-3">
             <button
               onClick={handleGenerate}
-              disabled={isLoading || (isAuthenticated && !canGenerate)}
-              className={`btn-shine flex w-full items-center justify-center gap-2 rounded-lg bg-black px-6 py-3 text-white font-bold transition-colors duration-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-400 disabled:text-black ${isAuthenticated && !canGenerate ? 'opacity-50' : ''}`}
+              disabled={isLoading}
+              className="btn-shine flex w-full items-center justify-center gap-2 rounded-lg bg-black px-6 py-3 text-white font-bold transition-colors duration-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-400 disabled:text-black"
             >
-              {isAuthenticated ? (
-                isLoading ? 'Generating…' : (
-                  <>
-                    <SparklesIcon className="h-5 w-5" />
-                    Generate{isAuthenticated && !canGenerate ? ' (Limited)' : ''}
-                  </>
-                )
-              ) : 'Signup to generate'}
+              {isLoading ? 'Generating…' : (
+                <>
+                  <SparklesIcon className="h-5 w-5" />
+                  Generate
+                </>
+              )}
               <span aria-hidden className="shine"></span>
             </button>
             {error && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">{error}</div>}
@@ -247,8 +212,19 @@ const TextToImagePage: React.FC = () => {
               {latestResult && <span className="text-xs text-black/50">Newest result</span>}
             </div>
             <div className="relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-2xl border border-white/50 bg-white/70">
-              {latestResult ? (
-                <button type="button" onClick={() => setLightbox(latestResult.imageUrl)} className="h-full w-full">
+            {latestResult ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    openImage({
+                      url: latestResult.imageUrl,
+                      title: 'Generated image',
+                      alt: 'Generated image preview',
+                      onDownload: () => download(latestResult.imageUrl, 'text-to-image-latest.png'),
+                    })
+                  }
+                  className="h-full w-full"
+                >
                   <img loading="lazy" src={latestResult.imageUrl} alt="Latest generated" className="h-full w-full object-contain" />
                 </button>
               ) : (
@@ -277,7 +253,20 @@ const TextToImagePage: React.FC = () => {
               <div className="grid gap-3 sm:grid-cols-2">
                 {previousResults.map((res, idx) => (
                   <div key={`${res.imageUrl}-${idx}`} className="relative overflow-hidden rounded-lg border-2 border-black bg-white">
-                    <img onClick={() => setLightbox(res.imageUrl)} loading="lazy" src={res.imageUrl} alt={`Generated ${idx + 2}`} className="h-40 w-full cursor-zoom-in object-contain" />
+                    <img
+                      onClick={() =>
+                        openImage({
+                          url: res.imageUrl,
+                          title: 'Generated image',
+                          alt: `Generated ${idx + 2}`,
+                          onDownload: () => download(res.imageUrl, `t2i-${idx + 2}.png`),
+                        })
+                      }
+                      loading="lazy"
+                      src={res.imageUrl}
+                      alt={`Generated ${idx + 2}`}
+                      className="h-40 w-full cursor-zoom-in object-contain"
+                    />
                     <div className="absolute top-2 right-2 flex gap-2">
                       <button
                         onClick={() => download(res.imageUrl, `t2i-${idx + 2}.png`)}
@@ -305,8 +294,6 @@ const TextToImagePage: React.FC = () => {
           )}
         </div>
       </div>
-
-      <Lightbox imageUrl={lightbox} onClose={() => setLightbox(null)} title="Generated image" alt="Generated image preview" />
     </SurfaceCard>
   );
 };

@@ -3,7 +3,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import SurfaceCard from '@/components/SurfaceCard';
 import { ImageUploader } from '@/components/ImageUploader';
-import { AspectRatioSelector } from '@/components/AspectRatioSelector';
 import { editImageWithNanoBanana } from '@/services/geminiService';
 import { compressImageFile } from '@/utils/image';
 import { addUserImage } from '@/utils/userImages';
@@ -11,8 +10,8 @@ import { useRouter } from 'next/navigation';
 import { useAuthStatus } from '@/utils/useAuthStatus';
 import { useUser } from '@/utils/useUser';
 import EtaTimer from '@/components/EtaTimer';
-import Lightbox from '@/components/Lightbox';
 import CompareSection from '@/components/CompareSection';
+import { useImageViewer } from '@/components/ImageViewerProvider';
 import {
   CheckIcon,
   MagicWandIcon,
@@ -204,7 +203,7 @@ const PLAYBOOK_COLUMNS = [
 const FAQ_ITEMS = [
   {
     q: 'What image size is best for YouTube thumbnails?',
-    a: 'YouTube recommends 1280×720 (16:9). Use the aspect ratio selector to keep the right proportions; exports arrive ready to upload.',
+    a: 'YouTube recommends 1280×720 (16:9). Tasaweers exports arrive ready to upload at the proper size, so you don’t need to tweak ratios.',
   },
   {
     q: 'Can I reuse branding elements?',
@@ -240,7 +239,6 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
   const [prompt, setPrompt] = useState<string>(
     'Turn this into a high-impact YouTube thumbnail with bold contrast, headline space, and the subject centered with dramatic lighting.'
   );
-  const [selectedRatio, setSelectedRatio] = useState<string>('16:9');
   const [selectedEnhancers, setSelectedEnhancers] = useState<string[]>([]);
   const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
   const [selectedPresetId, setSelectedPresetId] = useState<string>(PRESET_PROMPTS[0].id);
@@ -253,10 +251,10 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
   const [results, setResults] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lightbox, setLightbox] = useState<string | null>(null);
   const router = useRouter();
   const isAuthenticated = useAuthStatus();
   const { refreshUserData } = useUser();
+  const { openImage } = useImageViewer();
 
   const selectedPreset = useMemo(
     () => PRESET_PROMPTS.find((preset) => preset.id === selectedPresetId) ?? PRESET_PROMPTS[0],
@@ -414,7 +412,7 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
         supplemental.push(...referencePayloads);
       }
       const additionalImages = supplemental.length ? supplemental : undefined;
-      const result = await editImageWithNanoBanana(base64, mimeType, finalPrompt, additionalImages, selectedRatio);
+      const result = await editImageWithNanoBanana(base64, mimeType, finalPrompt, additionalImages);
       setResults((prev) => [result.imageUrl, ...prev]);
       try {
         addUserImage({
@@ -424,7 +422,6 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
           generated: result.imageUrl,
           meta: {
             tool: 'youtube-thumbnail-editor',
-            ratio: selectedRatio,
             boosters: [...selectedEnhancers, ...selectedBadges],
             hostPortrait: Boolean(hostImage),
             references: refImages.length,
@@ -448,7 +445,6 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
     router,
     selectedBadges,
     selectedEnhancers,
-    selectedRatio,
     sourceImage,
     prompt,
     refreshUserData,
@@ -686,7 +682,6 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
           </div>
 
           <div className="space-y-6">
-            <AspectRatioSelector selectedRatio={selectedRatio} onSelect={setSelectedRatio} />
             <div className="space-y-4">
               <div className="space-y-2">
                 <span className="text-sm font-semibold text-black">Host portrait (optional)</span>
@@ -793,7 +788,14 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
                           src={url}
                           alt={`Generated thumbnail ${version}`}
                           className="h-full w-full cursor-pointer object-cover transition group-hover:scale-[1.02]"
-                          onClick={() => setLightbox(url)}
+                          onClick={() =>
+                            openImage({
+                              url,
+                              title: 'Thumbnail preview',
+                              alt: `Generated thumbnail ${version}`,
+                              onDownload: () => download(url, `thumbnail-${version}.png`),
+                            })
+                          }
                         />
                         <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-black/65 px-3 py-2 text-[11px] font-semibold text-white opacity-0 transition group-hover:opacity-100">
                           <span className="truncate uppercase tracking-wide">Version {version}</span>
@@ -927,16 +929,6 @@ const YouTubeThumbnailEditorPage: React.FC = () => {
           ))}
         </div>
       </SurfaceCard>
-
-      {lightbox && (
-        <Lightbox
-          imageUrl={lightbox}
-          onClose={() => setLightbox(null)}
-          onDownload={() => lightbox && download(lightbox)}
-          title="Thumbnail preview"
-          alt="Generated YouTube thumbnail"
-        />
-      )}
     </div>
   );
 };

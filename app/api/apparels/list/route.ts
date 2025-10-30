@@ -3,7 +3,6 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import sharp from 'sharp';
-import { requireApiAuth } from '@/lib/authDb';
 
 export const runtime = 'nodejs';
 
@@ -61,8 +60,6 @@ async function normalizeFilenames(dir: string, files: string[]) {
 
 export async function GET(req: NextRequest) {
   try {
-    const authErr = await requireApiAuth(req);
-    if (authErr) return NextResponse.json({ error: authErr }, { status: 401 });
     const dir = path.join(process.cwd(), 'public', 'apparels');
     let entries: string[] = [];
     const normalize = new URL(req.url).searchParams.get('normalize') === '1';

@@ -3,11 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import { getUserImages, removeUserImage, clearUserImages } from '../utils/userImages';
 import { UserImage } from '../types';
-import Lightbox from '@/components/Lightbox';
+import { useImageViewer } from '@/components/ImageViewerProvider';
 
 const MyImagesPage: React.FC = () => {
   const [items, setItems] = useState<UserImage[]>([]);
-  const [lightbox, setLightbox] = useState<{ url: string; name: string } | null>(null);
+  const { openImage } = useImageViewer();
 
   const reload = () => setItems(getUserImages());
 
@@ -33,7 +33,12 @@ const MyImagesPage: React.FC = () => {
   };
 
   const openPreview = (url: string, name: string) => {
-    setLightbox({ url, name });
+    openImage({
+      url,
+      title: 'Saved image preview',
+      alt: 'Saved image preview',
+      onDownload: () => downloadImage(url, name),
+    });
   };
 
   return (
@@ -97,14 +102,6 @@ const MyImagesPage: React.FC = () => {
           ))}
         </div>
       )}
-
-      <Lightbox
-        imageUrl={lightbox?.url}
-        onClose={() => setLightbox(null)}
-        title="Saved image preview"
-        alt="Saved image preview"
-        onDownload={lightbox ? () => downloadImage(lightbox.url, lightbox.name) : undefined}
-      />
     </div>
   );
 };
