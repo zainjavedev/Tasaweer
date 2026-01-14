@@ -1,5 +1,5 @@
-
 {
   "name": "Tasaweers",
-  "description": "Tasaweers is an AI-powered studio for photo editing, apparel try-on, YouTube thumbnail design, watermark removal, and real estate visuals. Clean clutter, restyle rooms, improve lighting, and generate fresh imagery with guided Gemini prompts."
+  "description": "Tasaweers transforms text into stunning images, then brings those images to life as dynamic videos. Generate, animate, and extend your creations in a seamless two-step workflow.",
+  "requestFramePermissions": []
 }
